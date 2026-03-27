@@ -2,7 +2,7 @@
 
 import { requireAuth } from '@/lib/supabase/server'
 import { scrapeWebsite } from '@/lib/scraper'
-import { analyzeWebsite } from '@/lib/onboarding/analyze-website'
+import { analyzeWebsite } from '@/lib/ai/analyze-website'
 import { redirect } from 'next/navigation'
 import { z } from 'zod/v4'
 
@@ -50,21 +50,21 @@ export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResul
 
     const profile: ProfileData = {
       website_url: websiteUrl,
-      company_name: analysis.company_name,
-      description: analysis.description,
+      company_name: analysis.companyName,
+      description: analysis.productsServices.join(', '),
       industry: analysis.industry,
-      product_summary: analysis.product_summary,
-      value_proposition: analysis.value_proposition,
-      target_market: analysis.target_market,
+      product_summary: analysis.productsServices.join('; '),
+      value_proposition: analysis.valueProposition,
+      target_market: `${analysis.targetCustomers.companySize} in ${analysis.targetCustomers.industries.join(', ')}`,
       raw_scraped_content: rawContent,
     }
 
     const icp: IcpData = {
-      job_titles: analysis.suggested_job_titles,
-      seniority_levels: analysis.suggested_seniority_levels,
-      industries: analysis.suggested_industries,
-      company_sizes: analysis.suggested_company_sizes,
-      regions: analysis.suggested_regions,
+      job_titles: analysis.suggestedJobTitles,
+      seniority_levels: analysis.suggestedSeniorityLevels,
+      industries: analysis.targetCustomers.industries,
+      company_sizes: analysis.suggestedCompanySizes,
+      regions: analysis.suggestedRegions,
     }
 
     return { profile, icp }
