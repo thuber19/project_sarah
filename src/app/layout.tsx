@@ -12,6 +12,18 @@ export const metadata: Metadata = {
   title: "Sarah — Dein AI Sales Agent für den DACH-Markt",
   description:
     "Sarah findet automatisch die besten Leads für dein Unternehmen. KI-gestützte Website-Analyse, Lead-Discovery und intelligentes Scoring.",
+  openGraph: {
+    title: "Sarah — AI Sales Agent für den DACH-Markt",
+    description:
+      "Automatische Lead-Discovery, KI-Scoring und klare Handlungsempfehlungen für B2B Sales Teams.",
+    type: "website",
+    locale: "de_AT",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sarah — AI Sales Agent für den DACH-Markt",
+    description: "Automatische Lead-Discovery und KI-Scoring für den DACH-Markt.",
+  },
 };
 
 export default function RootLayout({
