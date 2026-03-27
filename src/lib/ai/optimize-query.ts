@@ -1,6 +1,8 @@
 import { generateObject } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod/v4'
+import { buildSystemPrompt } from './system-prompt'
+import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 const optimizedQuerySchema = z.object({
   apolloParams: z.object({
@@ -23,58 +25,20 @@ const optimizedQuerySchema = z.object({
 
 export type OptimizedQuery = z.infer<typeof optimizedQuerySchema>
 
-export interface BusinessProfile {
-  company_name: string
-  industry: string
-  description: string
-  services: string[]
-  target_market: string
-  website_url: string
-}
-
-export interface ICPProfile {
-  target_industries: string[]
-  target_company_sizes: string[]
-  target_countries: string[]
-  target_seniorities: string[]
-  target_titles: string[]
-  additional_criteria?: string
-}
-
-const DACH_CONTEXT = `
-## DACH-Markt Kontext
-- Deutsche Jobtitel einbeziehen: Geschäftsführer, Leiter, Abteilungsleiter, Inhaber, Vorstand
-- Österreich (at), Deutschland (de), Schweiz (ch)
-- Branchen auf Englisch für Apollo, auf Deutsch für Google Places
-- Bei Google Places lokale Begriffe verwenden (z.B. "Steuerberater Wien" statt "tax consultant Vienna")
-`
-
 export async function optimizeSearchQuery(
   businessProfile: BusinessProfile,
-  icpProfile: ICPProfile,
+  icpProfile: IcpProfile,
 ): Promise<OptimizedQuery> {
+  const systemPrompt = buildSystemPrompt('ein B2B Sales-Stratege für Lead-Recherche', {
+    business: businessProfile,
+    icp: icpProfile,
+  })
+
   const { object } = await generateObject({
     model: anthropic('claude-sonnet-4-20250514'),
+    system: systemPrompt,
     schema: optimizedQuerySchema,
-    prompt: `Du bist ein B2B Sales-Stratege spezialisiert auf den DACH-Markt. Optimiere die Suchparameter für die Lead-Suche.
-
-## Business-Profil
-- Firma: ${businessProfile.company_name}
-- Branche: ${businessProfile.industry}
-- Beschreibung: ${businessProfile.description}
-- Services: ${businessProfile.services.join(', ')}
-- Zielmarkt: ${businessProfile.target_market}
-- Website: ${businessProfile.website_url}
-
-## Ideal Customer Profile (ICP)
-- Zielbranchen: ${icpProfile.target_industries.join(', ')}
-- Zielgrößen: ${icpProfile.target_company_sizes.join(', ')}
-- Zielländer: ${icpProfile.target_countries.join(', ')}
-- Ziel-Seniority: ${icpProfile.target_seniorities.join(', ')}
-- Ziel-Titel: ${icpProfile.target_titles.join(', ')}
-${icpProfile.additional_criteria ? `- Zusätzliche Kriterien: ${icpProfile.additional_criteria}` : ''}
-
-${DACH_CONTEXT}
+    prompt: `Optimiere die Suchparameter für die Lead-Suche basierend auf dem Unternehmensprofil und ICP.
 
 ## Aufgabe
 1. Generiere optimale Apollo.io Suchparameter (englische Industry-Tags, Seniority-Levels gemäß Apollo API)
@@ -82,7 +46,10 @@ ${DACH_CONTEXT}
 3. Beziehe sowohl englische als auch deutsche Jobtitel ein
 4. Erkläre kurz deine Strategie
 
-Wichtig: Die Parameter müssen direkt mit den Apollo.io und Google Places APIs kompatibel sein.`,
+Wichtig:
+- Die Parameter müssen direkt mit den Apollo.io und Google Places APIs kompatibel sein.
+- Bei Google Places lokale Begriffe verwenden (z.B. "Steuerberater Wien" statt "tax consultant Vienna")
+- Branchen auf Englisch für Apollo, auf Deutsch für Google Places`,
   })
 
   return object

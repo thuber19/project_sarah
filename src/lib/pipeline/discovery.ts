@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Lead } from '@/types/lead'
-import { optimizeSearchQuery, type BusinessProfile, type ICPProfile } from '@/lib/ai/optimize-query'
+import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
+import type { BusinessProfile, IcpProfile } from '@/types/database'
 import { searchPeople, enrichPerson } from '@/lib/apollo/client'
 import type { ApolloPerson } from '@/lib/apollo/types'
 import { textSearch } from '@/lib/google-places/client'
@@ -124,7 +125,7 @@ export async function runDiscoveryPipeline(
   userId: string,
   campaignId: string,
   businessProfile: BusinessProfile,
-  icpProfile: ICPProfile,
+  icpProfile: IcpProfile,
 ): Promise<DiscoveryResult> {
   try {
     // Step 1: Campaign running
@@ -207,11 +208,11 @@ export async function runDiscoveryPipeline(
     // Step 7: Score all leads
     await logAgentEvent(supabase, userId, 'lead_scored', 'Bewerte und score Leads...')
     const icp: ICP = {
-      target_industries: icpProfile.target_industries,
-      target_company_sizes: icpProfile.target_company_sizes,
-      target_countries: icpProfile.target_countries,
-      target_seniorities: icpProfile.target_seniorities,
-      target_titles: icpProfile.target_titles,
+      target_industries: icpProfile.industries ?? [],
+      target_company_sizes: icpProfile.company_sizes ?? [],
+      target_countries: icpProfile.regions ?? [],
+      target_seniorities: icpProfile.seniority_levels ?? [],
+      target_titles: icpProfile.job_titles ?? [],
     }
     const scoringResult = await runScoringPipeline(supabase, savedLeads as Lead[], icp, userId)
 

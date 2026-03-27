@@ -1,6 +1,7 @@
 import { generateObject } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod/v4'
+import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import type { ScrapedContent } from '@/lib/scraper'
 
 const analysisSchema = z.object({
@@ -24,6 +25,8 @@ const analysisSchema = z.object({
 export type WebsiteAnalysis = z.infer<typeof analysisSchema>
 
 export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAnalysis> {
+  const systemPrompt = buildSystemPrompt('ein B2B Sales-Experte für Website-Analyse und ICP-Ableitung')
+
   const context = [
     `URL: ${content.url}`,
     content.title ? `Titel: ${content.title}` : '',
@@ -38,12 +41,13 @@ export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAn
 
   const { object } = await generateObject({
     model: anthropic('claude-sonnet-4-20250514'),
+    system: systemPrompt,
     schema: analysisSchema,
-    prompt: `Du bist ein B2B Sales-Experte für den DACH-Markt. Analysiere diesen Website-Inhalt und extrahiere strukturierte Informationen auf Deutsch.
+    prompt: `Analysiere diesen Website-Inhalt und extrahiere strukturierte Informationen.
 
 ${context.slice(0, 15_000)}
 
-Wenn Informationen nicht eindeutig erkennbar sind, mache sinnvolle Annahmen. Fokussiere auf den DACH-Markt.`,
+Wenn Informationen nicht eindeutig erkennbar sind, mache sinnvolle Annahmen basierend auf dem Kontext.`,
   })
 
   return object

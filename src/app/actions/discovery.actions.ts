@@ -131,24 +131,40 @@ export async function startDiscoveryAction(
     const technologies = formData.technologies?.split(',').map((s) => s.trim()).filter(Boolean) ?? []
     const keywords = formData.keywords?.split(',').map((s) => s.trim()).filter(Boolean) ?? []
 
-    const optimizedQuery = await optimizeSearchQuery(
-      {
-        company_name: profile?.company_name ?? '',
-        industry: profile?.industry ?? '',
-        description: profile?.description ?? '',
-        services: [],
-        target_market: profile?.target_market ?? 'DACH',
-        website_url: profile?.website_url ?? '',
-      },
-      {
-        target_industries: icpData?.industries ?? industries,
-        target_company_sizes: icpData?.company_sizes ?? [formData.companySize],
-        target_countries: icpData?.regions ?? regions,
-        target_seniorities: icpData?.seniority_levels ?? [],
-        target_titles: icpData?.job_titles ?? [],
-        additional_criteria: keywords.length > 0 ? keywords.join(', ') : undefined,
-      },
-    )
+    // Build effective ICP by merging DB data with form inputs as fallback
+    const effectiveIcp = {
+      id: icpData?.id ?? '',
+      user_id: user.id,
+      business_profile_id: icpData?.business_profile_id ?? null,
+      industries: icpData?.industries ?? industries,
+      company_sizes: icpData?.company_sizes ?? [formData.companySize],
+      regions: icpData?.regions ?? regions,
+      seniority_levels: icpData?.seniority_levels ?? [],
+      job_titles: icpData?.job_titles ?? [],
+      tech_stack: technologies,
+      revenue_ranges: icpData?.revenue_ranges ?? null,
+      funding_stages: icpData?.funding_stages ?? null,
+      keywords: keywords.length > 0 ? keywords : icpData?.keywords ?? null,
+      created_at: icpData?.created_at ?? new Date().toISOString(),
+      updated_at: icpData?.updated_at ?? new Date().toISOString(),
+    }
+
+    const effectiveProfile = profile ?? {
+      id: '',
+      user_id: user.id,
+      website_url: '',
+      company_name: null,
+      description: null,
+      industry: null,
+      product_summary: null,
+      value_proposition: null,
+      target_market: 'DACH',
+      raw_scraped_content: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    const optimizedQuery = await optimizeSearchQuery(effectiveProfile, effectiveIcp)
 
     await logAgent(supabase, user.id, campaign.id, 'query_optimized', `Suchstrategie: ${optimizedQuery.reasoning}`)
 

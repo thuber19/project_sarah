@@ -1,11 +1,14 @@
 import { generateObject } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { websiteAnalysisSchema, type WebsiteAnalysis } from './schemas'
+import { buildSystemPrompt } from './system-prompt'
 import type { ScrapedContent } from '@/lib/scraper'
 
 export type { WebsiteAnalysis }
 
 export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAnalysis> {
+  const systemPrompt = buildSystemPrompt('ein B2B Sales-Experte für Website-Analyse')
+
   const context = [
     `URL: ${content.url}`,
     content.title ? `Titel: ${content.title}` : '',
@@ -20,12 +23,13 @@ export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAn
 
   const { object } = await generateObject({
     model: anthropic('claude-sonnet-4-20250514'),
+    system: systemPrompt,
     schema: websiteAnalysisSchema,
-    prompt: `Du bist ein B2B Sales-Experte für den DACH-Markt. Analysiere diesen Website-Inhalt und extrahiere strukturierte Informationen auf Deutsch.
+    prompt: `Analysiere diesen Website-Inhalt und extrahiere strukturierte Informationen.
 
 ${context.slice(0, 15_000)}
 
-Wenn Informationen nicht eindeutig erkennbar sind, mache sinnvolle Annahmen basierend auf dem Kontext. Fokussiere auf den DACH-Markt.`,
+Wenn Informationen nicht eindeutig erkennbar sind, mache sinnvolle Annahmen basierend auf dem Kontext.`,
   })
 
   return object
