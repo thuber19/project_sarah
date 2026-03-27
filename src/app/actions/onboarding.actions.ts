@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/supabase/server'
 import { scrapeWebsite } from '@/lib/scraper'
 import { analyzeWebsite } from '@/lib/onboarding/analyze-website'
 import { redirect } from 'next/navigation'
@@ -35,12 +35,7 @@ type AnalyzeResult =
   | { error: string }
 
 export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResult> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'Nicht eingeloggt' }
+  const { user } = await requireAuth()
 
   const parsed = urlSchema.safeParse(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ungültige URL' }
@@ -82,12 +77,7 @@ export async function saveOnboardingAction(
   profile: ProfileData,
   icp: IcpData,
 ): Promise<{ error: string } | never> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'Nicht eingeloggt' }
+  const { user, supabase } = await requireAuth()
 
   const profileValidation = profileSchema.safeParse(profile)
   if (!profileValidation.success) return { error: 'Ungültige Profildaten' }
