@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio'
 
-const FETCH_TIMEOUT_MS = 10_000
+const SAFE_PROTOCOLS = ['http:', 'https:']
+const BLOCKED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
+const FETCH_TIMEOUT_MS = 15_000
 const MAX_CONTENT_LENGTH = 15_000
 const USER_AGENT = 'Mozilla/5.0 (compatible; ProjectSarahBot/1.0)'
 
@@ -35,17 +37,41 @@ export interface ScrapedContent {
   footerText: string
 }
 
-export async function scrapeWebsite(url: string): Promise<ScrapedContent> {
-  const normalizedUrl = url.startsWith('http') ? url : `https://${url}`
+function isBlockedHost(hostname: string): boolean {
+  if (BLOCKED_HOSTNAMES.has(hostname)) return true
+  if (/^10\./.test(hostname)) return true
+  if (/^192\.168\./.test(hostname)) return true
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true
+  if (/^169\.254\./.test(hostname)) return true
+  return false
+}
 
-  const response = await fetch(normalizedUrl, {
+export async function scrapeWebsite(rawUrl: string): Promise<ScrapedContent> {
+  const normalizedUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`
+
+  let url: URL
+  try {
+    url = new URL(normalizedUrl)
+  } catch {
+    throw new Error('Ungültige URL — bitte vollständige Adresse eingeben (z.B. https://beispiel.at)')
+  }
+
+  if (!SAFE_PROTOCOLS.includes(url.protocol)) {
+    throw new Error('Nur HTTP und HTTPS sind erlaubt')
+  }
+
+  if (isBlockedHost(url.hostname)) {
+    throw new Error('Diese URL ist nicht erreichbar')
+  }
+
+  const response = await fetch(url.toString(), {
     headers: { 'User-Agent': USER_AGENT },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     redirect: 'follow',
   })
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    throw new Error(`Website nicht erreichbar (HTTP ${response.status})`)
   }
 
   const html = await response.text()
@@ -54,23 +80,19 @@ export async function scrapeWebsite(url: string): Promise<ScrapedContent> {
   // Remove noise
   $('script, style, noscript, iframe, svg, nav, [role="navigation"]').remove()
 
-  // Title
   const title = $('title').first().text().trim()
 
-  // Meta description
   const metaDescription =
     $('meta[name="description"]').attr('content')?.trim() ??
     $('meta[property="og:description"]').attr('content')?.trim() ??
     ''
 
-  // Headings h1-h3
   const headings: string[] = []
   $('h1, h2, h3').each((_, el) => {
     const text = $(el).text().trim()
     if (text) headings.push(text)
   })
 
-  // Body text (paragraphs)
   const paragraphs: string[] = []
   $('p').each((_, el) => {
     const text = $(el).text().trim()
@@ -78,17 +100,12 @@ export async function scrapeWebsite(url: string): Promise<ScrapedContent> {
   })
   const bodyText = paragraphs.join('\n\n')
 
-  // About section
   const aboutSection = extractSection($, ABOUT_SELECTORS)
-
-  // Services section
   const servicesSection = extractSection($, SERVICES_SELECTORS)
-
-  // Footer
   const footerText = $('footer').first().text().replace(/\s+/g, ' ').trim()
 
   return {
-    url: normalizedUrl,
+    url: url.toString(),
     title,
     metaDescription,
     headings: headings.slice(0, 20),
