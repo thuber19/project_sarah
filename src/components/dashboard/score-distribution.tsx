@@ -1,98 +1,44 @@
-type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
-
-interface GradeData {
-  grade: Grade;
-  label: string;
-  count: number;
-  percent: number;
-  textColor: string;
-  barColor: string;
+interface ScoreDistributionProps {
+  counts: Record<string, number>
+  total: number
 }
 
-const mockData: GradeData[] = [
-  {
-    grade: "HOT",
-    label: "HOT",
-    count: 12,
-    percent: 9,
-    textColor: "text-score-hot",
-    barColor: "bg-score-hot",
-  },
-  {
-    grade: "QUALIFIED",
-    label: "QUALIFIED",
-    count: 31,
-    percent: 24,
-    textColor: "text-score-qualified",
-    barColor: "bg-score-qualified",
-  },
-  {
-    grade: "ENGAGED",
-    label: "ENGAGED",
-    count: 28,
-    percent: 22,
-    textColor: "text-score-engaged",
-    barColor: "bg-score-engaged",
-  },
-  {
-    grade: "POTENTIAL",
-    label: "POTENTIAL",
-    count: 38,
-    percent: 30,
-    textColor: "text-score-potential",
-    barColor: "bg-score-potential",
-  },
-  {
-    grade: "POOR_FIT",
-    label: "POOR FIT",
-    count: 18,
-    percent: 14,
-    textColor: "text-score-poor-fit",
-    barColor: "bg-score-poor-fit",
-  },
-];
+const gradeConfig = [
+  { key: 'HOT', label: 'HOT', textColor: 'text-score-hot', barColor: 'bg-score-hot' },
+  { key: 'QUALIFIED', label: 'QUALIFIED', textColor: 'text-score-qualified', barColor: 'bg-score-qualified' },
+  { key: 'ENGAGED', label: 'ENGAGED', textColor: 'text-score-engaged', barColor: 'bg-score-engaged' },
+  { key: 'POTENTIAL', label: 'POTENTIAL', textColor: 'text-score-potential', barColor: 'bg-score-potential' },
+  { key: 'POOR', label: 'POOR FIT', textColor: 'text-score-poor-fit', barColor: 'bg-score-poor-fit' },
+]
 
-export function ScoreDistribution() {
+export function ScoreDistribution({ counts, total }: ScoreDistributionProps) {
   return (
     <div className="flex w-[340px] flex-col rounded-[--radius-card] border border-border bg-white">
-      {/* Header */}
       <div className="border-b border-border px-5 py-4">
-        <span className="text-[15px] font-semibold text-foreground">
-          Lead Score Verteilung
-        </span>
+        <span className="text-[15px] font-semibold text-foreground">Lead Score Verteilung</span>
       </div>
 
-      {/* Body */}
       <div className="flex flex-1 flex-col justify-center gap-3 px-5 py-5">
-        {mockData.map((item) => (
-          <div key={item.grade} className="flex items-center gap-2.5">
-            {/* Grade label */}
-            <span
-              className={`w-[80px] shrink-0 text-xs font-semibold ${item.textColor}`}
-            >
-              {item.label}
-            </span>
+        {total === 0 ? (
+          <p className="text-center text-sm text-muted-foreground">Noch keine bewerteten Leads</p>
+        ) : (
+          gradeConfig.map(({ key, label, textColor, barColor }) => {
+            const count = counts[key] ?? 0
+            const percent = total > 0 ? Math.round((count / total) * 100) : 0
 
-            {/* Bar container */}
-            <div className="h-3 flex-1 rounded-full bg-secondary">
-              <div
-                className={`h-full rounded-full ${item.barColor}`}
-                style={{ width: `${item.percent}%` }}
-              />
-            </div>
-
-            {/* Count */}
-            <span className="w-16 text-right text-xs text-muted-foreground">
-              {item.count} Leads
-            </span>
-
-            {/* Percent */}
-            <span className="w-8 text-right text-xs text-muted-foreground">
-              {item.percent}%
-            </span>
-          </div>
-        ))}
+            return (
+              <div key={key} className="flex items-center gap-2.5">
+                <span className={`w-[80px] shrink-0 text-xs font-semibold ${textColor}`}>{label}</span>
+                <div className="h-3 flex-1 rounded-full bg-secondary">
+                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${percent}%` }} />
+                </div>
+                <span className="w-16 text-right text-xs text-muted-foreground">{count} Leads</span>
+                <span className="w-8 text-right text-xs text-muted-foreground">{percent}%</span>
+              </div>
+            )
+          })
+        )}
       </div>
     </div>
-  );
+  )
 }
