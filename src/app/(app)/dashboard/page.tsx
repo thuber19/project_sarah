@@ -7,20 +7,13 @@ import { requireAuth } from '@/lib/supabase/server'
 async function getDashboardData(userId: string) {
   const { supabase } = await requireAuth()
 
-  const [leadsResult, scoresResult, feedResult] = await Promise.all([
+  const [leadsResult, scoresResult] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lead_scores').select('grade, total_score').eq('user_id', userId),
-    supabase
-      .from('agent_logs')
-      .select('id, action_type, message, metadata, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(8),
   ])
 
   const totalLeads = leadsResult.count ?? 0
   const scores = scoresResult.data ?? []
-  const feedItems = feedResult.data ?? []
 
   const hotLeads = scores.filter((s) => s.grade === 'HOT').length
   const qualifiedLeads = scores.filter((s) => ['HOT', 'QUALIFIED'].includes(s.grade)).length
@@ -40,12 +33,12 @@ async function getDashboardData(userId: string) {
     if (s.grade in gradeCounts) gradeCounts[s.grade]++
   }
 
-  return { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored: scores.length }
+  return { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored: scores.length }
 }
 
 export default async function DashboardPage() {
   const { user } = await requireAuth()
-  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored } =
+  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored } =
     await getDashboardData(user.id)
 
   return (
@@ -97,7 +90,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="flex h-[400px] gap-6">
-          <LiveFeed items={feedItems} />
+          <LiveFeed />
           <ScoreDistribution counts={gradeCounts} total={totalScored} />
         </div>
       </div>
