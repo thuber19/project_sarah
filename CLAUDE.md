@@ -26,11 +26,34 @@ pnpm db:types     # supabase gen types typescript --local > src/lib/database.typ
 
 ## Architecture
 - **App Router** — RSC by default; add `"use client"` only when needed.
+- **Route Groups** — `(marketing)` public pages, `(auth)` login/callback, `(app)` protected app shell.
 - **Server Actions** — `src/app/actions/*.actions.ts` (e.g. `leads.actions.ts`).
 - **Auth** — Supabase Auth (magic link). Guard server actions with `requireAuth()` from `src/lib/auth.ts`. Never trust client-side auth alone.
 - **RLS** — Every Supabase table has row-level security. Policies reference `auth.uid()`.
-- **Styling** — Tailwind CSS 4 + shadcn/ui components in `src/components/ui/`.
+- **Styling** — Tailwind CSS 4 + shadcn/ui. Design tokens in `globals.css` (Slate palette + score colors). Font: Inter.
+- **Layouts** — App sidebar (dark, 240px) in `(app)/layout.tsx`. Marketing navbar/footer in `(marketing)/layout.tsx`. Onboarding wizard in `(app)/onboarding/layout.tsx`.
 - **Security** — `proxy.ts` handles CSP headers; `middleware.ts` handles rate limiting and auth redirects.
+
+## Frontend Structure
+```
+src/app/
+├── (marketing)/page.tsx        # Landing page (hero, features, social proof)
+├── (auth)/login/page.tsx       # Split-screen magic link login
+├── (app)/
+│   ├── dashboard/page.tsx      # Stats + live feed + score chart
+│   ├── leads/page.tsx          # Filterable lead table
+│   ├── leads/[id]/page.tsx     # Lead detail (score breakdown)
+│   ├── discovery/page.tsx      # Lead search + results
+│   ├── scoring/page.tsx        # Score distribution + rule config
+│   ├── settings/page.tsx       # Tabbed settings (profile, ICP, integrations)
+│   ├── agent-logs/page.tsx     # Activity timeline
+│   └── onboarding/step-{1-4}/  # 4-step onboarding wizard
+src/components/
+├── ui/                         # shadcn/ui primitives (20+ components)
+├── layout/                     # AppSidebar, AppTopbar, MarketingNavbar
+├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution
+└── leads/                      # ScoreBadge, LeadTable, LeadFilters, ScoreBreakdown
+```
 
 ## Environment
 Copy `.env.example` to `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `APOLLO_API_KEY`, `GOOGLE_PLACES_API_KEY`.
