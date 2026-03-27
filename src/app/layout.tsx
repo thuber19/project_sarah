@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "Sarah — Dein AI Sales Agent für den DACH-Markt",
   description:
     "Sarah findet automatisch die besten Leads für dein Unternehmen. KI-gestützte Website-Analyse, Lead-Discovery und intelligentes Scoring.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "Sarah — AI Sales Agent für den DACH-Markt",
     description:
