@@ -82,7 +82,7 @@ export default async function DashboardPage() {
         <DashboardEmptyState />
       ) : (
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" changeBgColor="#DBEAFE" />
             <StatCard label="Qualifizierte Leads" value={String(qualifiedLeads)} changeType="positive" />
             <StatCard
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="flex h-[400px] gap-6">
+          <div className="flex flex-col gap-6 lg:h-[400px] lg:flex-row">
             <LiveFeed items={feedItems} />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
@@ -152,7 +152,7 @@ function DashboardEmptyState() {
       </div>
 
       {/* Zero stat cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Leads gesamt" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
         <StatCard label="Qualifizierte Leads" value="0" changeType="neutral" />
         <StatCard label="Hot Leads" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
@@ -160,7 +160,7 @@ function DashboardEmptyState() {
       </div>
 
       {/* Onboarding hint cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {hintCards.map((card) => (
           <Link
             key={card.href}

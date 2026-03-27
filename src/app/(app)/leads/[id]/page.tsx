@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, Bell, ExternalLink, Mail, Search, User } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
+import { AnimatedScore } from '@/components/leads/animated-score'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
@@ -111,14 +112,14 @@ export default async function LeadDetailPage({ params }: Props) {
           </div>
           {score && (
             <div className="text-right">
-              <span className={`text-4xl font-bold ${scoreColor}`}>{score.total_score}</span>
+              <AnimatedScore value={score.total_score} className={`text-4xl font-bold ${scoreColor}`} />
               <p className="mt-1 text-sm font-medium text-muted-foreground">{grade}</p>
             </div>
           )}
         </div>
 
         {/* Two-column layout */}
-        <div className="mt-8 flex gap-8">
+        <div className="mt-8 flex flex-col gap-8 lg:flex-row">
           {/* Left column */}
           <div className="flex flex-1 flex-col gap-8">
             {score && (
@@ -182,7 +183,7 @@ export default async function LeadDetailPage({ params }: Props) {
           </div>
 
           {/* Right column */}
-          <div className="flex w-[340px] flex-col gap-6">
+          <div className="flex w-full flex-col gap-6 lg:w-[340px]">
             <div className="rounded-xl border border-border bg-white p-6">
               <h2 className="mb-4 text-base font-semibold text-foreground">Unternehmensprofil</h2>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
