@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+out/
+.next/
+builds/
+coverage/
+
+# Test fixtures
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+tests/fixtures/
+
+# Generated
+*.min.js
+*.bundle.js
+pnpm-lock.yaml
+package-lock.json
+
+# Config
+*.config.js
+*.config.mjs
+*.config.ts
+eslint.config.mjs
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npx *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(node *)",
+      "Bash(supabase *)",
+      "Bash(vercel *)",
+      "Bash(mkdir *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(tree *)",
+      "mcp__pencil__*",
+      "mcp__shadcn__*",
+      "mcp__magic-ui__*",
+      "mcp__magic__*",
+      "mcp__playwright__*",
+      "mcp__Ref__*",
+      "mcp__context7__*",
+      "mcp__notion__*",
+      "mcp__sequential-thinking__*"
+    ]
+  }
+}

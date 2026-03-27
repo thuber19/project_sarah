@@ -1,0 +1,3 @@
+{
+  "extends": ["@goetzendorfer/commitlint-config"]
+}
