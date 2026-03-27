@@ -55,7 +55,10 @@ export default function OnboardingLayout({
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 items-center justify-center">
+      <div
+        key={currentStep}
+        className="flex flex-1 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-300"
+      >
         {children}
       </div>
 
