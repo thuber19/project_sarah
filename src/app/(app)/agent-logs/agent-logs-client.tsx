@@ -34,25 +34,25 @@ function getEventIcon(type: EventType) {
   switch (type) {
     case 'Discovery':
       return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-info-bg">
           <Compass className="h-4 w-4 text-accent" />
         </div>
       )
     case 'Scoring':
       return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-success-bg">
           <Target className="h-4 w-4 text-success" />
         </div>
       )
     case 'Enrichment':
       return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-50">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-warning-bg">
           <Sparkles className="h-4 w-4 text-warning" />
         </div>
       )
     case 'Error':
       return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-error-bg">
           <AlertCircle className="h-4 w-4 text-destructive" />
         </div>
       )

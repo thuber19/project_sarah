@@ -1,51 +1,40 @@
-import { Compass, Play, Search, Settings2, Star } from 'lucide-react'
+import Link from 'next/link'
+import { Compass, Play, Search, Settings, Sparkles } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { EmptyState } from '@/components/shared/empty-state'
 
-interface HelpCardProps {
-  step: string
-  title: string
-  description: string
-  icon: React.ReactNode
-}
-
-function HelpCard({ step, title, description, icon }: HelpCardProps) {
-  return (
-    <div className="flex flex-1 flex-col gap-3 rounded-xl border border-border bg-white p-5">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-accent-light">
-        {icon}
-      </div>
-      <div>
-        <p className="text-xs font-medium text-accent">{step}</p>
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-      </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
-    </div>
-  )
-}
+const hintCards = [
+  {
+    icon: Settings,
+    title: 'Profil vervollständigen',
+    description: 'Ergänze dein Firmenprofil und ICP, damit der Agent passende Leads findet.',
+    href: '/settings',
+    cta: 'Einstellungen öffnen',
+  },
+  {
+    icon: Compass,
+    title: 'Erste Discovery starten',
+    description: 'Starte eine Lead-Suche basierend auf deinem Ideal Customer Profile.',
+    href: '/discovery',
+    cta: 'Discovery starten',
+  },
+  {
+    icon: Sparkles,
+    title: 'Scoring verstehen',
+    description: 'Erfahre, wie der AI-Score deine Leads nach Relevanz bewertet.',
+    href: '/scoring',
+    cta: 'Scoring ansehen',
+  },
+] as const
 
 export function DashboardEmpty() {
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-      {/* Welcome header */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Willkommen, Bernhard!</h1>
-        <p className="text-sm text-muted-foreground">Lass uns deine ersten Leads finden.</p>
-      </div>
-
-      {/* Stats row — zeroed out */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Neue Leads" value="0" />
-        <StatCard label="Qualifizierte Leads" value="0" />
-        <StatCard label="Hot Leads" value="0" />
-        <StatCard label="Durchschnitt Score" value="—" />
-      </div>
-
-      {/* Empty state card */}
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
+      {/* Welcome — reuses shared EmptyState */}
       <EmptyState
         icon={Search}
-        title="Noch keine Leads"
-        description="Starte deine erste Lead Discovery, um qualifizierte Unternehmen im DACH-Raum zu finden."
+        title="Willkommen bei Sarah"
+        description="Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit Daten zu füllen."
         primaryAction={{
           label: 'Erste Discovery starten',
           href: '/discovery',
@@ -57,26 +46,32 @@ export function DashboardEmpty() {
         }}
       />
 
-      {/* Help cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <HelpCard
-          step="Schritt 1"
-          title="ICP prüfen"
-          description="Überprüfe dein Ideal Customer Profile und passe die Kriterien an."
-          icon={<Settings2 className="size-5 text-accent" />}
-        />
-        <HelpCard
-          step="Schritt 2"
-          title="Discovery starten"
-          description="Starte eine automatische Suche nach passenden Unternehmen."
-          icon={<Compass className="size-5 text-accent" />}
-        />
-        <HelpCard
-          step="Schritt 3"
-          title="Leads bewerten"
-          description="Bewerte und qualifiziere die gefundenen Leads mit Scoring-Daten."
-          icon={<Star className="size-5 text-accent" />}
-        />
+      {/* Zero stat cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Leads gesamt" value="0" changeType="neutral" />
+        <StatCard label="Qualifizierte Leads" value="0" changeType="neutral" />
+        <StatCard label="Hot Leads" value="0" changeType="neutral" />
+        <StatCard label="Ø Score" value="—" change="Noch keine Scores" changeType="neutral" />
+      </div>
+
+      {/* Onboarding hint cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {hintCards.map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="group rounded-xl border border-border bg-white p-4 transition-colors hover:border-accent lg:p-6"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-light">
+              <card.icon className="h-5 w-5 text-accent" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-foreground">{card.title}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
+            <span className="mt-3 inline-block text-xs font-medium text-accent group-hover:underline">
+              {card.cta} &rarr;
+            </span>
+          </Link>
+        ))}
       </div>
     </div>
   )

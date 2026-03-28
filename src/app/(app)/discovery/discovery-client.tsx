@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Compass, Loader2, Play, Search, Settings, SlidersHorizontal, Square } from 'lucide-react'
 import { toast } from 'sonner'
+import { EmptyState } from '@/components/shared/empty-state'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import {
   startDiscoveryAction,
@@ -173,35 +174,22 @@ export function DiscoveryClient({
 
       {!hasIcp && !hasDiscovery && latestLeads.length === 0 && !showDiscovered ? (
         <div className="flex flex-1 items-center justify-center px-4 py-8 lg:p-8">
-          <div className="flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-6 lg:p-12">
-            <div className="flex size-24 items-center justify-center rounded-full bg-accent-light">
-              <Compass className="size-12 text-accent" aria-hidden="true" />
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <h3 className="text-xl font-bold text-foreground">Keine Discovery gestartet</h3>
-              <p className="max-w-[420px] text-center text-sm leading-relaxed text-muted-foreground">
-                Definiere deinen ICP und finde passende Unternehmen automatisch.
-              </p>
-            </div>
-            <div className="flex flex-col items-center gap-3 lg:flex-row">
-              <Link
-                href="/settings?tab=icp"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
-              >
-                <SlidersHorizontal className="size-4" aria-hidden="true" />
-                ICP konfigurieren
-              </Link>
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={handleDiscovery}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-              >
-                <Play className="size-4" aria-hidden="true" />
-                {isPending ? 'Suche läuft...' : 'Erste Discovery starten'}
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            icon={Compass}
+            title="Keine Discovery gestartet"
+            description="Definiere deinen ICP und finde passende Unternehmen automatisch."
+            primaryAction={{
+              label: 'ICP konfigurieren',
+              href: '/settings?tab=icp',
+              icon: SlidersHorizontal,
+            }}
+            secondaryAction={{
+              label: isPending ? 'Suche läuft...' : 'Erste Discovery starten',
+              onClick: handleDiscovery,
+              disabled: isPending,
+              icon: Play,
+            }}
+          />
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-5 lg:flex-row lg:gap-8 lg:px-8 lg:py-8">
@@ -346,14 +334,14 @@ export function DiscoveryClient({
 
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-green-500" />
+                      <div className="size-2 rounded-full bg-success" />
                       <span className="text-xs text-muted-foreground">Apollo.io</span>
-                      <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+                      <span className="ml-auto text-xs font-medium text-status-success-text">Aktiv</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-green-500" />
+                      <div className="size-2 rounded-full bg-success" />
                       <span className="text-xs text-muted-foreground">Google Places</span>
-                      <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+                      <span className="ml-auto text-xs font-medium text-status-success-text">Aktiv</span>
                     </div>
                   </div>
                 </div>

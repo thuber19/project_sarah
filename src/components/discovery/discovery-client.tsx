@@ -191,8 +191,8 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
             <h2 className="mb-3 text-base font-semibold text-foreground">Datenquellen</h2>
             <div className="flex flex-col gap-2">
               {[
-                { initial: 'A', bg: 'bg-blue-600', label: 'Apollo.io' },
-                { initial: 'G', bg: 'bg-red-500', label: 'Google Places' },
+                { initial: 'A', bg: 'bg-accent', label: 'Apollo.io' },
+                { initial: 'G', bg: 'bg-destructive', label: 'Google Places' },
               ].map(({ initial, bg, label }) => (
                 <div key={label} className="flex items-center gap-3">
                   <div
@@ -228,7 +228,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
 
           {/* Error */}
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-lg border border-destructive/30 bg-status-error-bg p-4 text-sm text-status-error-text">
               {error}
             </div>
           )}
@@ -250,7 +250,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
           {showResults && leads && leads.length > 0 && (
             <div className="rounded-xl border border-border bg-white">
               {/* Success banner */}
-              <div className="flex items-center gap-3 border-b border-border bg-green-50 px-5 py-3 rounded-t-xl">
+              <div className="flex items-center gap-3 border-b border-border bg-status-success-bg px-5 py-3 rounded-t-xl">
                 <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                 <p className="text-sm font-medium text-success">
                   {leadsFound} Leads erfolgreich gefunden und gespeichert

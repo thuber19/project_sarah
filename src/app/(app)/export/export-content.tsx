@@ -142,7 +142,7 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
       {/* HubSpot CRM — Coming Soon */}
       <div className="rounded-xl border border-dashed border-border bg-white p-4 lg:p-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-lg font-bold text-orange-500">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-hubspot/15 text-lg font-bold text-brand-hubspot">
             H
           </div>
           <div>

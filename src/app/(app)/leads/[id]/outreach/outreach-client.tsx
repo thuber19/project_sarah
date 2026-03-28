@@ -144,7 +144,7 @@ export function OutreachClient({ lead, score }: OutreachClientProps) {
               </p>
 
               <div className="mt-4">
-                <span className="inline-flex items-center rounded-lg bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700">
+                <span className="inline-flex items-center rounded-lg bg-status-success-bg px-3 py-1.5 text-xs font-medium text-status-success-text">
                   KI-Konfidenz: 94%
                 </span>
               </div>

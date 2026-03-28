@@ -1,262 +1,241 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Cpu, Loader2, RefreshCw, Search, Swords, CheckCircle } from 'lucide-react'
+import { Lightbulb, Swords, TrendingUp, RefreshCw } from 'lucide-react'
+import { AppTopbar } from '@/components/layout/app-topbar'
 import {
-  refreshCompetitorAnalysisAction,
-  type CompetitorAnalysisRow,
-} from '@/app/actions/competitor.actions'
-import { toast } from 'sonner'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
-interface AvailableLead {
-  id: string
-  company_name: string | null
-  company_domain: string | null
-  company_website: string | null
-  industry: string | null
+interface Competitor {
+  name: string
+  score: number
+  strength: number
+  overlap: number
+  threat: 'Hoch' | 'Mittel' | 'Niedrig'
 }
 
-interface CompetitorClientProps {
-  analyses: CompetitorAnalysisRow[]
-  availableLeads: AvailableLead[]
+const mockCompetitors: Competitor[] = [
+  { name: 'Dealfront', score: 87, strength: 82, overlap: 74, threat: 'Hoch' },
+  { name: 'Cognism', score: 79, strength: 68, overlap: 61, threat: 'Mittel' },
+  { name: 'Apollo.io', score: 91, strength: 90, overlap: 45, threat: 'Mittel' },
+  { name: 'Lusha', score: 72, strength: 55, overlap: 38, threat: 'Niedrig' },
+  { name: 'Echobot', score: 65, strength: 48, overlap: 82, threat: 'Hoch' },
+]
+
+const threatColors: Record<Competitor['threat'], string> = {
+  Hoch: 'bg-status-error-bg text-status-error-text',
+  Mittel: 'bg-status-warning-bg text-status-warning-text',
+  Niedrig: 'bg-status-success-bg text-status-success-text',
 }
 
-function TechBadge({ name, isMatch }: { name: string; isMatch?: boolean }) {
+const recommendations = [
+  {
+    icon: Lightbulb,
+    title: 'Differenzierung',
+    description:
+      'Durch spezialisierte KI-Lösungen für B2B-Vertrieb gibt es klare Alleinstellungsmerkmale im Markt. Wettbewerbsvorteil simplifizieren!',
+  },
+  {
+    icon: Swords,
+    title: 'Wettbewerb',
+    description:
+      'Direkte Konkurrenz durch größere Plattformen. Marktpositionierung als Spezialisten-Tool fokussieren.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Marktchance',
+    description:
+      'Kein Wettbewerber deckt den DACH-Markt spezialisiert ab. Hier liegt eine große Marktchance.',
+  },
+] as const
+
+function ProgressBar({ value, className }: { value: number; className?: string }) {
   return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        isMatch
-          ? 'bg-accent-light text-accent ring-1 ring-accent/30'
-          : 'bg-secondary text-muted-foreground'
-      }`}
-    >
-      {name}
-      {isMatch && ' ✓'}
-    </span>
-  )
-}
-
-function CompetitorCard({ analysis }: { analysis: CompetitorAnalysisRow }) {
-  const companyName = analysis.lead?.company_name ?? 'Unbekannt'
-  const domain = analysis.lead?.company_domain
-  const totalTech = analysis.tech_stack.length
-  const totalCompetitors = analysis.competitor_matches.length
-  const matchedCount = analysis.icp_tech_matched.length
-  const matchedSet = new Set(analysis.icp_tech_matched.map((t) => t.toLowerCase()))
-
-  return (
-    <div className="rounded-xl border border-border bg-white p-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-foreground">{companyName}</h3>
-          {domain && (
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{domain}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Cpu className="h-3.5 w-3.5" />
-          {totalTech} Tech{totalTech !== 1 ? 's' : ''}
-          {totalCompetitors > 0 && (
-            <>
-              <span className="text-border">·</span>
-              <Swords className="h-3.5 w-3.5 text-score-qualified" />
-              <span className="text-score-qualified font-medium">{totalCompetitors} Wettbewerber</span>
-            </>
-          )}
-        </div>
+    <div className="flex items-center gap-2">
+      <div className="h-2 flex-1 rounded-full bg-border">
+        <div
+          className={`h-2 rounded-full ${className ?? 'bg-accent'}`}
+          style={{ width: `${value}%` }}
+        />
       </div>
-
-      {/* Tech Stack */}
-      {totalTech > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {analysis.tech_stack.map((tech) => (
-            <TechBadge
-              key={tech}
-              name={tech}
-              isMatch={matchedSet.has(tech.toLowerCase())}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ICP Match Info */}
-      {matchedCount > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          <CheckCircle className="mr-1 inline h-3 w-3 text-accent" />
-          {matchedCount} ICP-Technologie{matchedCount !== 1 ? 'n' : ''} erkannt
-        </p>
-      )}
-
-      {/* Competitor Matches */}
-      {totalCompetitors > 0 && (
-        <div className="mt-3 flex flex-col gap-2">
-          {analysis.competitor_matches.map((match, i) => (
-            <div
-              key={i}
-              className="rounded-lg bg-score-qualified/5 border border-score-qualified/20 px-3 py-2"
-            >
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <span className="truncate text-xs font-medium text-foreground">{match.technology}</span>
-                <span className="shrink-0 rounded-full bg-score-qualified/10 px-2 py-0.5 text-[10px] font-medium text-score-qualified">
-                  {match.category}
-                </span>
-              </div>
-              <p className="mt-0.5 break-words text-[11px] text-muted-foreground">
-                Alternativen: {match.competitors.slice(0, 3).join(', ')}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* AI Summary */}
-      {analysis.ai_summary && (
-        <div className="mt-3 overflow-hidden rounded-lg bg-secondary p-3">
-          <p className="break-words text-xs text-foreground">{analysis.ai_summary}</p>
-        </div>
-      )}
-
-      {/* Timestamp */}
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Analysiert: {new Date(analysis.analyzed_at).toLocaleDateString('de-AT', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </p>
+      <span className="w-8 text-right text-xs text-muted-foreground">{value}%</span>
     </div>
   )
 }
 
-export function CompetitorClient({ analyses: initialAnalyses, availableLeads }: CompetitorClientProps) {
-  const [analyses] = useState(initialAnalyses)
-  const [isPending, startTransition] = useTransition()
-  const [selectedLeadId, setSelectedLeadId] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Leads that don't have an analysis yet
-  const analyzedLeadIds = new Set(analyses.map((a) => a.lead_id))
-  const unanalyzedLeads = availableLeads.filter((l) => !analyzedLeadIds.has(l.id))
-
-  const filteredAnalyses = searchQuery
-    ? analyses.filter((a) =>
-        a.lead?.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.tech_stack.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : analyses
-
-  function handleAnalyze(leadId: string) {
-    startTransition(async () => {
-      const result = await refreshCompetitorAnalysisAction({ leadId })
-      if (result.success) {
-        toast.success('Competitor-Analyse abgeschlossen')
-        // Reload page to get fresh data
-        window.location.reload()
-      } else {
-        toast.error(result.error)
-      }
-    })
-  }
-
-  const totalCompetitorTools = analyses.reduce((sum, a) => sum + a.competitor_matches.length, 0)
-  const totalTechDetected = analyses.reduce((sum, a) => sum + a.tech_stack.length, 0)
-
+function CompetitorCard({ competitor }: { competitor: Competitor }) {
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-border bg-white p-4">
-          <p className="text-xs text-muted-foreground">Analysierte Leads</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{analyses.length}</p>
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">{competitor.name}</span>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${threatColors[competitor.threat]}`}
+        >
+          {competitor.threat}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Score</span>
+        <span className="text-sm font-semibold text-foreground">{competitor.score}</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        <div>
+          <span className="text-xs text-muted-foreground">Stärke</span>
+          <ProgressBar value={competitor.strength} />
         </div>
-        <div className="rounded-xl border border-border bg-white p-4">
-          <p className="text-xs text-muted-foreground">Technologien erkannt</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{totalTechDetected}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-white p-4">
-          <p className="text-xs text-muted-foreground">Wettbewerber-Tools</p>
-          <p className="mt-1 text-2xl font-bold text-score-qualified">{totalCompetitorTools}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-white p-4">
-          <p className="text-xs text-muted-foreground">Noch zu analysieren</p>
-          <p className="mt-1 text-2xl font-bold text-accent">{unanalyzedLeads.length}</p>
+        <div>
+          <span className="text-xs text-muted-foreground">Überlappung</span>
+          <ProgressBar value={competitor.overlap} className="bg-warning" />
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* Actions Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search */}
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Firma oder Technologie suchen..."
-            className="h-9 w-full rounded-lg border border-border bg-white pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+export function CompetitorClient() {
+  return (
+    <div className="flex h-full flex-1 flex-col">
+      <AppTopbar title="Wettbewerbsanalyse" />
+
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 lg:p-8">
+        {/* Header badges */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="rounded-lg border border-border bg-white px-3 py-1.5 text-sm font-medium text-foreground">
+            SaaS / Cloud Services — DACH
+          </span>
+          <span className="rounded-lg bg-accent-light px-3 py-1.5 text-xs font-medium text-accent">
+            KI-gestützt
+          </span>
         </div>
 
-        {/* Analyze new lead */}
-        {unanalyzedLeads.length > 0 && (
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedLeadId}
-              onChange={(e) => setSelectedLeadId(e.target.value)}
-              className="h-9 rounded-lg border border-border bg-white px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Lead auswählen...</option>
-              {unanalyzedLeads.map((lead) => (
-                <option key={lead.id} value={lead.id}>
-                  {lead.company_name ?? lead.company_domain ?? lead.id.slice(0, 8)}
-                </option>
+        {/* Main two-column layout */}
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Left column — Competitor Table */}
+          <div className="flex flex-1 flex-col gap-4">
+            <h2 className="text-base font-semibold text-foreground">
+              Unternehmen und Marktpositionsvergleich
+            </h2>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-hidden rounded-xl border border-border bg-white lg:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                      Unternehmen
+                    </TableHead>
+                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                      Score
+                    </TableHead>
+                    <TableHead className="min-w-[140px] text-xs font-medium uppercase text-muted-foreground">
+                      Stärke
+                    </TableHead>
+                    <TableHead className="min-w-[140px] text-xs font-medium uppercase text-muted-foreground">
+                      Überlappung
+                    </TableHead>
+                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                      Bedrohung
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockCompetitors.map((competitor) => (
+                    <TableRow key={competitor.name}>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {competitor.name}
+                      </TableCell>
+                      <TableCell className="text-sm font-semibold text-foreground">
+                        {competitor.score}
+                      </TableCell>
+                      <TableCell>
+                        <ProgressBar value={competitor.strength} />
+                      </TableCell>
+                      <TableCell>
+                        <ProgressBar value={competitor.overlap} className="bg-warning" />
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${threatColors[competitor.threat]}`}
+                        >
+                          {competitor.threat}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="flex flex-col gap-3 lg:hidden">
+              {mockCompetitors.map((competitor) => (
+                <CompetitorCard key={competitor.name} competitor={competitor} />
               ))}
-            </select>
+            </div>
+          </div>
+
+          {/* Right column — KI-Empfehlungen */}
+          <div className="flex w-full flex-col gap-4 lg:w-[360px] lg:shrink-0">
+            <h2 className="text-base font-semibold text-foreground">KI-Empfehlungen</h2>
+
+            <div className="flex flex-col gap-3">
+              {recommendations.map(({ icon: Icon, title, description }) => (
+                <div
+                  key={title}
+                  className="flex gap-4 rounded-xl border border-border bg-white p-5"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-light">
+                    <Icon className="size-5 text-accent" aria-hidden="true" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Market Overview Card */}
+        <div className="rounded-xl border border-border bg-white p-6">
+          <h2 className="mb-4 text-base font-semibold text-foreground">Marktübersicht</h2>
+
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Identifizierte Wettbewerber</span>
+              <span className="text-xl font-bold text-foreground">5</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Marktüberlappung</span>
+              <span className="text-xl font-bold text-foreground">68%</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Marktbewertung</span>
+              <span className="text-xl font-bold text-foreground">B von 5</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Letzte Analyse</span>
+              <span className="text-xl font-bold text-foreground">28.03.2026</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
             <button
               type="button"
-              onClick={() => selectedLeadId && handleAnalyze(selectedLeadId)}
-              disabled={!selectedLeadId || isPending}
-              className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
             >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Analysieren
+              <RefreshCw className="size-4" aria-hidden="true" />
+              Analyse aktualisieren
             </button>
           </div>
-        )}
+        </div>
       </div>
-
-      {/* Results */}
-      {filteredAnalyses.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {filteredAnalyses.map((analysis) => (
-            <CompetitorCard key={analysis.id} analysis={analysis} />
-          ))}
-        </div>
-      ) : analyses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border bg-white py-16">
-          <Swords className="h-8 w-8 text-muted-foreground" />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">Keine Analysen vorhanden</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Wähle einen Lead aus und starte die Competitor-Analyse.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-white py-12">
-          <Search className="h-6 w-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Keine Ergebnisse für &quot;{searchQuery}&quot;
-          </p>
-        </div>
-      )}
     </div>
   )
 }

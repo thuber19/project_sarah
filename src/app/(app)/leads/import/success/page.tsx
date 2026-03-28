@@ -108,9 +108,9 @@ export default function ImportSuccessPage() {
 
       <div className="flex flex-1 flex-col overflow-y-auto">
         {/* Success banner */}
-        <div className="flex items-center gap-3 bg-green-50 px-4 py-3 lg:px-8">
-          <CheckCircle2 className="size-5 shrink-0 text-green-600" />
-          <p className="text-sm font-medium text-green-800">
+        <div className="flex items-center gap-3 bg-status-success-bg px-4 py-3 lg:px-8">
+          <CheckCircle2 className="size-5 shrink-0 text-status-success-text" />
+          <p className="text-sm font-medium text-success">
             127 Leads erfolgreich importiert! Sarah bewertet sie jetzt automatisch.
           </p>
         </div>

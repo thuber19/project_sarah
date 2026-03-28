@@ -49,7 +49,7 @@ export default function OnboardingStep4() {
 
   return (
     <div className="flex w-full max-w-[560px] flex-col items-center gap-7 rounded-xl border border-border bg-white p-12 pt-12 pb-10">
-      <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-green-50">
+      <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-status-success-bg">
         <CheckCircle className="text-success" size={36} />
       </div>
 
@@ -67,6 +67,12 @@ export default function OnboardingStep4() {
         </span>
         <span className="text-sm text-muted-foreground">Min. Score: {scoreThreshold}</span>
       </div>
+
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"

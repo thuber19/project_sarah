@@ -76,9 +76,9 @@ export default function MarketingPage() {
           <div className="hidden flex-1 lg:block">
             <div className="overflow-hidden rounded-xl border bg-secondary">
               <div className="flex h-9 items-center gap-1.5 rounded-t-xl bg-primary px-3">
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                <span className="h-2 w-2 rounded-full bg-green-500" />
+                <span className="h-2 w-2 rounded-full bg-destructive" />
+                <span className="h-2 w-2 rounded-full bg-warning" />
+                <span className="h-2 w-2 rounded-full bg-success" />
               </div>
 
               <div className="flex flex-col gap-3 p-4">

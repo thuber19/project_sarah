@@ -31,11 +31,11 @@ const categoryConfig: Record<
   ActionCategory,
   { icon: React.ElementType; bg: string; color: string }
 > = {
-  discovery: { icon: Compass, bg: 'bg-blue-50', color: 'text-accent' },
-  scoring: { icon: Target, bg: 'bg-green-50', color: 'text-success' },
-  enrichment: { icon: Sparkles, bg: 'bg-yellow-50', color: 'text-warning' },
-  error: { icon: AlertCircle, bg: 'bg-red-50', color: 'text-destructive' },
-  other: { icon: Search, bg: 'bg-gray-50', color: 'text-muted-foreground' },
+  discovery: { icon: Compass, bg: 'bg-status-info-bg', color: 'text-accent' },
+  scoring: { icon: Target, bg: 'bg-status-success-bg', color: 'text-success' },
+  enrichment: { icon: Sparkles, bg: 'bg-status-warning-bg', color: 'text-warning' },
+  error: { icon: AlertCircle, bg: 'bg-status-error-bg', color: 'text-destructive' },
+  other: { icon: Search, bg: 'bg-status-neutral-bg', color: 'text-muted-foreground' },
 }
 
 function formatTime(dateStr: string): string {

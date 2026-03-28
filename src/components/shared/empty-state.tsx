@@ -2,11 +2,23 @@ import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface EmptyStateAction {
+interface EmptyStateLinkAction {
   label: string
   href: string
+  onClick?: never
+  disabled?: never
   icon?: LucideIcon
 }
+
+interface EmptyStateButtonAction {
+  label: string
+  onClick: () => void
+  href?: never
+  disabled?: boolean
+  icon?: LucideIcon
+}
+
+type EmptyStateAction = EmptyStateLinkAction | EmptyStateButtonAction
 
 interface EmptyStateProps {
   icon: LucideIcon
@@ -25,9 +37,6 @@ export function EmptyState({
   secondaryAction,
   className,
 }: EmptyStateProps) {
-  const PrimaryIcon = primaryAction.icon
-  const SecondaryIcon = secondaryAction?.icon
-
   return (
     <div
       className={cn(
@@ -49,23 +58,54 @@ export function EmptyState({
       </div>
 
       <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-        <Link
-          href={primaryAction.href}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 sm:w-auto"
-        >
-          {PrimaryIcon && <PrimaryIcon className="size-4" aria-hidden="true" />}
-          {primaryAction.label}
-        </Link>
+        <EmptyStateActionElement
+          action={primaryAction}
+          variant="primary"
+        />
         {secondaryAction && (
-          <Link
-            href={secondaryAction.href}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary sm:w-auto"
-          >
-            {SecondaryIcon && <SecondaryIcon className="size-4" aria-hidden="true" />}
-            {secondaryAction.label}
-          </Link>
+          <EmptyStateActionElement
+            action={secondaryAction}
+            variant="secondary"
+          />
         )}
       </div>
     </div>
+  )
+}
+
+const primaryClasses =
+  'inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50 sm:w-auto'
+const secondaryClasses =
+  'inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50 sm:w-auto'
+
+function EmptyStateActionElement({
+  action,
+  variant,
+}: {
+  action: EmptyStateAction
+  variant: 'primary' | 'secondary'
+}) {
+  const ActionIcon = action.icon
+  const classes = variant === 'primary' ? primaryClasses : secondaryClasses
+
+  if (action.href) {
+    return (
+      <Link href={action.href} className={classes}>
+        {ActionIcon && <ActionIcon className="size-4" aria-hidden="true" />}
+        {action.label}
+      </Link>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={action.onClick}
+      disabled={action.disabled}
+      className={classes}
+    >
+      {ActionIcon && <ActionIcon className="size-4" aria-hidden="true" />}
+      {action.label}
+    </button>
   )
 }

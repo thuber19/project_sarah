@@ -12,6 +12,33 @@ Design source: `sarahdesign.pen` Frame "Variant 1 - Professional Trust"
 | `--border` | `#E2E8F0` (Slate 200) | Card borders, dividers |
 | `--muted-foreground` | `#64748B` (Slate 500) | Secondary text, labels |
 
+## Status Colors (Badges, Indicators, Categories)
+Always use semantic status tokens for status indicators, badges, and category colors:
+
+| Level | Background | Text |
+|-------|-----------|------|
+| Success | `bg-status-success-bg` (#DCFCE7) | `text-status-success-text` (#15803D) |
+| Warning | `bg-status-warning-bg` (#FEF9C3) | `text-status-warning-text` (#A16207) |
+| Error | `bg-status-error-bg` (#FEE2E2) | `text-status-error-text` (#B91C1C) |
+| Info | `bg-status-info-bg` (#DBEAFE) | `text-status-info-text` (#1D4ED8) |
+| Neutral | `bg-status-neutral-bg` (#F1F5F9) | `text-status-neutral-text` (#475569) |
+
+Use for: agent log categories, data quality badges, threat levels, success/error states.
+
+## Stat Change Indicators
+| Change | Background | Text |
+|--------|-----------|------|
+| Positive | `bg-stat-positive-bg` | `text-stat-positive-text` |
+| Negative | `bg-stat-negative-bg` | `text-stat-negative-text` |
+| Neutral | `bg-stat-neutral-bg` | `text-stat-neutral-text` |
+
+## Brand Colors (Third-Party)
+| Brand | Token | Value |
+|-------|-------|-------|
+| HubSpot | `bg-brand-hubspot` | #FF7A59 |
+| HubSpot Hover | `hover:bg-brand-hubspot-hover` | #FF6A45 |
+| HubSpot Light | `bg-brand-hubspot/15 text-brand-hubspot` | 15% opacity bg |
+
 ## Score Grade Colors
 Always use semantic tokens, never hardcode hex:
 - HOT → `bg-score-hot` / `text-score-hot` (#EF4444)
@@ -47,14 +74,16 @@ All data pages use `EmptyState` from `src/components/shared/empty-state.tsx`:
 
 ## Anti-Patterns
 - Never use `bg-gray-*` or `text-gray-*` — always use semantic tokens
+- Never use `bg-red-*`, `bg-green-*`, `bg-yellow-*`, `bg-blue-*`, `bg-orange-*`, `bg-amber-*`, `bg-emerald-*` — use `--status-*` or `--score-*` tokens
 - Never hardcode hex colors in components — use CSS variables via Tailwind
+- Third-party brand colors use `--brand-{name}` tokens (e.g., `--brand-hubspot`)
 - Never use `font-family: Inter` directly — use `font-sans` class
 - Score colors MUST use `--score-*` tokens, not semantic red/orange/yellow
 - shadcn/ui `Button` uses `@base-ui/react` — no `asChild` prop available. Use `Link` with Tailwind classes for link-as-button patterns.
 
 ## Pencil Design File Sync
 - Design tokens are synced from `globals.css` to `sarahdesign.pen` via Pencil MCP `set_variables()`.
-- 53 CSS custom properties are mapped (core palette, surfaces, score colors, sidebar theme, charts).
+- 68 CSS custom properties are mapped (core palette, surfaces, score colors, status colors, stat indicators, brand colors, sidebar theme, charts).
 - Pencil frames reference tokens via `$--variable-name` syntax (e.g., `$--primary`, `$--accent`).
 - After changing tokens in `globals.css`, re-sync to Pencil using `set_variables()` with `replace: true`.
 - Source of truth: `globals.css` → Pencil (one-way sync, CSS is authoritative).

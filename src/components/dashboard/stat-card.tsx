@@ -8,9 +8,9 @@ interface StatCardProps {
 }
 
 const changeStyles: Record<string, { bg: string; text: string }> = {
-  positive: { bg: 'bg-stat-positive-bg', text: 'text-green-700' },
-  negative: { bg: 'bg-stat-negative-bg', text: 'text-red-700' },
-  neutral: { bg: 'bg-stat-neutral-bg', text: 'text-blue-700' },
+  positive: { bg: 'bg-stat-positive-bg', text: 'text-stat-positive-text' },
+  negative: { bg: 'bg-stat-negative-bg', text: 'text-stat-negative-text' },
+  neutral: { bg: 'bg-stat-neutral-bg', text: 'text-stat-neutral-text' },
 }
 
 export function StatCard({ label, value, change, changeType = 'neutral' }: StatCardProps) {

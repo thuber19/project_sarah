@@ -79,19 +79,19 @@ function getStatusBadge(status: ExportStatus) {
   switch (status) {
     case 'Exportiert':
       return (
-        <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-success">
+        <span className="rounded-full bg-status-success-bg px-2.5 py-0.5 text-xs font-medium text-success">
           Exportiert
         </span>
       )
     case 'Ausstehend':
       return (
-        <span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-warning">
+        <span className="rounded-full bg-status-warning-bg px-2.5 py-0.5 text-xs font-medium text-warning">
           Ausstehend
         </span>
       )
     case 'Fehler':
       return (
-        <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-destructive">
+        <span className="rounded-full bg-status-error-bg px-2.5 py-0.5 text-xs font-medium text-destructive">
           Fehler
         </span>
       )
@@ -116,7 +116,7 @@ export function ExportConnected() {
               <Download className="size-4" />
               CSV Export
             </Button>
-            <Button className="gap-2 bg-orange-500 text-white hover:bg-orange-600">
+            <Button className="gap-2 bg-brand-hubspot text-white hover:bg-brand-hubspot-hover">
               <RefreshCw className="size-4" />
               HubSpot synchen
             </Button>
@@ -127,7 +127,7 @@ export function ExportConnected() {
         <div className="rounded-xl border border-border bg-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-orange-100 text-lg font-bold text-orange-500">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-brand-hubspot/15 text-lg font-bold text-brand-hubspot">
                 H
               </div>
               <div>
@@ -135,7 +135,7 @@ export function ExportConnected() {
                 <p className="text-xs text-muted-foreground">Verbunden seit 15. März 2026</p>
               </div>
             </div>
-            <span className="flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-success">
+            <span className="flex items-center gap-1.5 rounded-full bg-status-success-bg px-3 py-1 text-xs font-medium text-success">
               <span className="size-2 rounded-full bg-success" />
               Verbunden
             </span>

@@ -8,7 +8,7 @@ export default function DatenschutzPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
       {/* Beta disclaimer */}
-      <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <div className="mb-8 rounded-lg border border-warning/30 bg-status-warning-bg px-4 py-3 text-sm text-status-warning-text">
         <strong>Beta-Hinweis:</strong> Sarah AI befindet sich in der Beta-Phase. Diese
         Datenschutzerklärung gilt für den Demo-Betrieb. Vor der Verarbeitung echter Produktivdaten
         ist eine rechtliche Prüfung erforderlich.

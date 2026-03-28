@@ -8,10 +8,10 @@ interface DataQualityBadgeProps {
 }
 
 function getQualityLabel(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: 'Vollständig', color: 'bg-emerald-100 text-emerald-700' }
-  if (score >= 60) return { label: 'Gut', color: 'bg-blue-100 text-blue-700' }
-  if (score >= 40) return { label: 'Ausbaufähig', color: 'bg-amber-100 text-amber-700' }
-  return { label: 'Lückenhaft', color: 'bg-red-100 text-red-700' }
+  if (score >= 80) return { label: 'Vollständig', color: 'bg-status-success-bg text-status-success-text' }
+  if (score >= 60) return { label: 'Gut', color: 'bg-status-info-bg text-status-info-text' }
+  if (score >= 40) return { label: 'Ausbaufähig', color: 'bg-status-warning-bg text-status-warning-text' }
+  return { label: 'Lückenhaft', color: 'bg-status-error-bg text-status-error-text' }
 }
 
 export function DataQualityBadge({ score, className }: DataQualityBadgeProps) {

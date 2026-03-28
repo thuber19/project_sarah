@@ -1,9 +1,8 @@
-import Link from 'next/link'
-import { Compass, Settings, Sparkles } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { LiveFeed } from '@/components/dashboard/live-feed'
 import { ScoreDistribution } from '@/components/dashboard/score-distribution'
 import { RecentLeads } from '@/components/dashboard/recent-leads'
+import { DashboardEmpty } from '@/components/dashboard/dashboard-empty'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
@@ -78,7 +77,7 @@ export default async function DashboardPage() {
 
       {/* Content */}
       {totalLeads === 0 ? (
-        <DashboardEmptyState />
+        <DashboardEmpty />
       ) : (
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -113,75 +112,3 @@ export default async function DashboardPage() {
   )
 }
 
-const hintCards = [
-  {
-    icon: Settings,
-    title: 'Profil vervollständigen',
-    description: 'Ergänze dein Firmenprofil und ICP, damit der Agent passende Leads findet.',
-    href: '/settings',
-    cta: 'Einstellungen öffnen',
-  },
-  {
-    icon: Compass,
-    title: 'Erste Discovery starten',
-    description: 'Starte eine Lead-Suche basierend auf deinem Ideal Customer Profile.',
-    href: '/discovery',
-    cta: 'Discovery starten',
-  },
-  {
-    icon: Sparkles,
-    title: 'Scoring verstehen',
-    description: 'Erfahre, wie der AI-Score deine Leads nach Relevanz bewertet.',
-    href: '/scoring',
-    cta: 'Scoring ansehen',
-  },
-] as const
-
-function DashboardEmptyState() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
-      {/* Welcome */}
-      <div className="rounded-xl border border-border bg-white p-5 text-center lg:p-8">
-        <h2 className="text-lg font-bold text-foreground lg:text-xl">Willkommen bei Sarah</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit
-          Daten zu füllen.
-        </p>
-        <Link
-          href="/discovery"
-          className="mt-4 inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Erste Discovery starten
-        </Link>
-      </div>
-
-      {/* Zero stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Leads gesamt" value="0" changeType="neutral" />
-        <StatCard label="Qualifizierte Leads" value="0" changeType="neutral" />
-        <StatCard label="Hot Leads" value="0" changeType="neutral" />
-        <StatCard label="Ø Score" value="—" change="Noch keine Scores" changeType="neutral" />
-      </div>
-
-      {/* Onboarding hint cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {hintCards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="group rounded-xl border border-border bg-white p-4 transition-colors hover:border-accent lg:p-6"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-light">
-              <card.icon className="h-5 w-5 text-accent" />
-            </div>
-            <h3 className="mt-4 text-sm font-semibold text-foreground">{card.title}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{card.description}</p>
-            <span className="mt-3 inline-block text-xs font-medium text-accent group-hover:underline">
-              {card.cta} &rarr;
-            </span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  )
-}

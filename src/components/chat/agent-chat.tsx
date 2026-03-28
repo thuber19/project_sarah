@@ -271,7 +271,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
           <button
             type="button"
             onClick={stop}
-            className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+            className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-destructive/30 bg-status-error-bg text-status-error-text transition-colors hover:bg-status-error-bg"
             aria-label="Abbrechen"
           >
             <X className="h-4 w-4" />

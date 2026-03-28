@@ -112,8 +112,8 @@ export default async function LeadDetailPage({ params }: Props) {
                 <DataQualityBadge score={score.data_quality_score} />
               )}
               {lead.enrichment_status === 'enriching' && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-status-info-bg px-2.5 py-0.5 text-xs font-medium text-status-info-text">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
                   Wird angereichert…
                 </span>
               )}
