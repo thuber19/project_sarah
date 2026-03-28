@@ -2,15 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Lead } from '@/types/lead'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
-import { searchPeople, enrichPerson } from '@/lib/apollo/client'
-import type { ApolloPerson } from '@/lib/apollo/types'
+import { searchPeople, searchOrganizations } from '@/lib/apollo/client'
+import type { ApolloPerson, ApolloOrganization } from '@/lib/apollo/types'
 import { textSearch } from '@/lib/google-places/client'
 import { runScoringPipeline } from '@/lib/scoring/pipeline'
 import type { ICP } from '@/lib/scoring/rule-engine'
 import { logAgentEvent } from '@/lib/agent-log'
 
-const ENRICHMENT_CONCURRENCY = 3
-const MAX_ENRICHMENTS = 20
+// Max number of top organizations to fetch contacts for (one people search request)
+const MAX_CONTACT_ORGS = 10
 
 interface DiscoveryResult {
   leadsFound: number
@@ -101,39 +101,53 @@ function placesToLeads(
   }
 }
 
-async function enrichTopLeads(people: ApolloPerson[]): Promise<ApolloPerson[]> {
-  const toEnrich = people
-    .slice(0, MAX_ENRICHMENTS)
-    .filter((p) => !p.email && (p.first_name || p.last_name))
-  const enriched: ApolloPerson[] = []
+/**
+ * Two-step Apollo strategy:
+ * 1. Search organizations to find matching companies (uses org search endpoint)
+ * 2. Fetch contacts for the top-ranked organizations in a single people search
+ *
+ * This avoids per-org requests and keeps Apollo API calls to exactly 2.
+ */
+async function runApolloSearch(
+  params: {
+    keywords: string[]
+    employeeRanges: string[]
+    locations: string[]
+    technologies?: string[]
+    personTitles: string[]
+    personSeniorities: string[]
+  },
+  userId: string,
+): Promise<ApolloPerson[]> {
+  // Step A: Find matching organizations
+  const orgResult = await searchOrganizations({
+    organization_keywords: params.keywords,
+    organization_num_employees_ranges: params.employeeRanges,
+    organization_locations: params.locations,
+    organization_technologies: params.technologies,
+    per_page: 25,
+  })
 
-  for (let i = 0; i < toEnrich.length; i += ENRICHMENT_CONCURRENCY) {
-    const batch = toEnrich.slice(i, i + ENRICHMENT_CONCURRENCY)
-    const results = await Promise.allSettled(
-      batch.map((person) =>
-        enrichPerson({
-          first_name: person.first_name ?? undefined,
-          last_name: person.last_name ?? undefined,
-          domain: person.organization?.website_url ?? undefined,
-          linkedin_url: person.linkedin_url ?? undefined,
-        }),
-      ),
-    )
+  const orgs: ApolloOrganization[] = orgResult.organizations
+  if (orgs.length === 0) return []
 
-    for (let j = 0; j < results.length; j++) {
-      const result = results[j]
-      if (result.status === 'fulfilled' && result.value.person) {
-        enriched.push(result.value.person)
-      } else {
-        enriched.push(batch[j])
-      }
-    }
-  }
+  // Step B: Take the top N orgs (Apollo returns them relevance-sorted) and
+  // fetch contacts for all of them in a single people search request.
+  const topOrgNames = orgs
+    .slice(0, MAX_CONTACT_ORGS)
+    .map((o) => o.name)
+    .filter((n): n is string => !!n)
 
-  // Merge enriched back: replace originals that were enriched, keep the rest
-  const enrichedIds = new Set(toEnrich.map((p) => p.id))
-  const notEnriched = people.filter((p) => !enrichedIds.has(p.id))
-  return [...enriched, ...notEnriched]
+  if (topOrgNames.length === 0) return []
+
+  const peopleResult = await searchPeople({
+    organization_names: topOrgNames,
+    person_titles: params.personTitles,
+    person_seniorities: params.personSeniorities,
+    per_page: 25,
+  })
+
+  return peopleResult.people
 }
 
 export async function runDiscoveryPipeline(
@@ -157,81 +171,60 @@ export async function runDiscoveryPipeline(
       `Suchstrategie: ${optimizedQuery.reasoning}`,
     )
 
-    // Step 3: Apollo People Search
+    // Step 3: Apollo (org search → people search) + Google Places in parallel
     await logAgentEvent(supabase, userId, 'lead_discovered', 'Suche Leads via Apollo.io...')
-    let apolloPeople: ApolloPerson[] = []
-    try {
-      // Note: organization_industry_tag_ids expects Apollo internal hex IDs, not
-      // plain strings. We omit it and rely on organization_keywords for industry
-      // intent instead, which accepts free-form text.
-      const apolloResult = await searchPeople({
-        person_titles: optimizedQuery.apolloParams.personTitles,
-        person_seniorities: optimizedQuery.apolloParams.personSeniorities,
-        organization_sizes: optimizedQuery.apolloParams.organizationSizes,
-        organization_locations: optimizedQuery.apolloParams.organizationLocations,
-        organization_keywords: [
-          ...optimizedQuery.apolloParams.organizationKeywords,
-          ...optimizedQuery.apolloParams.organizationIndustries,
-        ],
-        organization_technologies: optimizedQuery.apolloParams.organizationTechnologies,
-        per_page: 25,
-      })
-      apolloPeople = apolloResult.people
-      await logAgentEvent(
-        supabase,
-        userId,
-        'lead_discovered',
-        `${apolloPeople.length} Leads via Apollo gefunden`,
+
+    const [apolloPeople, placesLeadData] = await Promise.all([
+      // Apollo: org search then single people search for top orgs
+      runApolloSearch(
         {
-          count: apolloPeople.length,
+          // Merge industry names into keywords — org_industry_tag_ids requires
+          // Apollo internal hex IDs which we can't reliably generate via AI
+          keywords: [
+            ...optimizedQuery.apolloParams.organizationKeywords,
+            ...optimizedQuery.apolloParams.organizationIndustries,
+          ],
+          employeeRanges: optimizedQuery.apolloParams.organizationSizes,
+          locations: optimizedQuery.apolloParams.organizationLocations,
+          technologies: optimizedQuery.apolloParams.organizationTechnologies,
+          personTitles: optimizedQuery.apolloParams.personTitles,
+          personSeniorities: optimizedQuery.apolloParams.personSeniorities,
         },
-      )
-    } catch (error) {
-      console.error('[Discovery] Apollo search failed:', error)
-      await logAgentEvent(
-        supabase,
         userId,
-        'error',
-        'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort',
-      )
-    }
+      ).catch((error) => {
+        console.error('[Discovery] Apollo search failed:', error)
+        logAgentEvent(
+          supabase,
+          userId,
+          'error',
+          `Apollo-Suche fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
+        )
+        return [] as ApolloPerson[]
+      }),
 
-    // Step 4: Google Places Search
+      // Google Places: all queries in parallel
+      Promise.all(
+        optimizedQuery.googlePlacesQueries.map((q) =>
+          textSearch({ query: q.query, region: q.region }).catch((error) => {
+            console.error(`[Discovery] Google Places failed for "${q.query}":`, error)
+            return { places: [] }
+          }),
+        ),
+      ).then((results) =>
+        results.flatMap((r) => r.places.map((place) => placesToLeads(place, userId))),
+      ),
+    ])
+
     await logAgentEvent(
       supabase,
       userId,
       'lead_discovered',
-      'Suche lokale Unternehmen via Google Places...',
-    )
-    const placesLeadData: Omit<Lead, 'id' | 'created_at' | 'updated_at'>[] = []
-    for (const query of optimizedQuery.googlePlacesQueries) {
-      try {
-        const result = await textSearch({ query: query.query, region: query.region })
-        for (const place of result.places) {
-          placesLeadData.push(placesToLeads(place, userId))
-        }
-      } catch (error) {
-        console.error(`[Discovery] Google Places search failed for "${query.query}":`, error)
-      }
-    }
-    await logAgentEvent(
-      supabase,
-      userId,
-      'lead_discovered',
-      `${placesLeadData.length} lokale Unternehmen via Google Places gefunden`,
-      {
-        count: placesLeadData.length,
-      },
+      `${apolloPeople.length} Apollo-Kontakte, ${placesLeadData.length} Google Places Treffer`,
+      { apollo: apolloPeople.length, places: placesLeadData.length },
     )
 
-    // Step 5: Enrich top Apollo leads
-    if (apolloPeople.length > 0) {
-      await logAgentEvent(supabase, userId, 'lead_enriched', 'Reichere Top-Leads mit Details an...')
-      apolloPeople = await enrichTopLeads(apolloPeople)
-    }
-
-    // Step 6: Save all leads to database
-    const allLeadData = [
+    // Step 4: Save all leads
+    const allLeadData: Omit<Lead, 'id' | 'created_at' | 'updated_at'>[] = [
       ...apolloPeople.map((p) => apolloPersonToLead(p, userId)),
       ...placesLeadData,
     ]
@@ -251,14 +244,9 @@ export async function runDiscoveryPipeline(
       throw new Error(`Failed to save leads: ${saveError?.message}`)
     }
 
-    await logAgentEvent(
-      supabase,
-      userId,
-      'lead_discovered',
-      `${savedLeads.length} Leads gespeichert`,
-    )
+    await logAgentEvent(supabase, userId, 'lead_discovered', `${savedLeads.length} Leads gespeichert`)
 
-    // Step 7: Score all leads
+    // Step 5: Score all leads
     await logAgentEvent(supabase, userId, 'lead_scored', 'Bewerte und score Leads...')
     const icp: ICP = {
       target_industries: icpProfile.industries ?? [],
@@ -269,7 +257,7 @@ export async function runDiscoveryPipeline(
     }
     const scoringResult = await runScoringPipeline(supabase, savedLeads as Lead[], icp, userId)
 
-    // Step 8: Campaign completed
+    // Step 6: Campaign completed
     await setCampaignStatus(supabase, campaignId, 'completed')
     await logAgentEvent(
       supabase,

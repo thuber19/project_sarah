@@ -1,8 +1,19 @@
+export interface ApolloOrgSearchParams {
+  organization_num_employees_ranges?: string[] // e.g. "1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"
+  organization_locations?: string[]
+  organization_keywords?: string[] // free-form text; use for industry and topic filtering
+  organization_technologies?: string[]
+  organization_revenue_ranges?: string[]
+  organization_funding_stages?: string[]
+  per_page?: number
+  page?: number
+}
+
 export interface ApolloPersonSearchParams {
   person_titles?: string[]
   person_seniorities?: string[]
-  organization_sizes?: string[]
-  organization_industry_tag_ids?: string[]
+  organization_names?: string[] // filter contacts to specific companies
+  organization_num_employees_ranges?: string[]
   organization_locations?: string[]
   organization_technologies?: string[]
   organization_keywords?: string[]
@@ -64,6 +75,16 @@ export interface ApolloSearchResponse {
   }
 }
 
+export interface ApolloOrgSearchResponse {
+  organizations: ApolloOrganization[]
+  pagination: {
+    page: number
+    per_page: number
+    total_entries: number
+    total_pages: number
+  }
+}
+
 export interface ApolloEnrichmentParams {
   first_name?: string
   last_name?: string
@@ -76,26 +97,4 @@ export interface ApolloEnrichmentParams {
 
 export interface ApolloEnrichmentResponse {
   person: ApolloPerson | null
-}
-
-export interface ApolloOrgSearchParams {
-  organization_industry_tag_ids?: string[]
-  organization_sizes?: string[]
-  organization_locations?: string[]
-  organization_keywords?: string[]
-  organization_technologies?: string[]
-  organization_revenue_ranges?: string[]
-  organization_funding_stages?: string[]
-  per_page?: number
-  page?: number
-}
-
-export interface ApolloOrgSearchResponse {
-  organizations: ApolloOrganization[]
-  pagination: {
-    page: number
-    per_page: number
-    total_entries: number
-    total_pages: number
-  }
 }

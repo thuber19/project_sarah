@@ -38,10 +38,11 @@ export function createSearchLeads(ctx: ToolContext) {
         const result = await searchPeople({
           person_titles: params.personTitles,
           person_seniorities: params.personSeniorities,
-          organization_sizes: params.organizationSizes,
-          organization_industry_tag_ids: params.industries,
+          organization_num_employees_ranges: params.organizationSizes,
           organization_locations: params.locations,
-          organization_keywords: params.keywords,
+          // Merge industry names into keywords — organization_industry_tag_ids
+          // requires Apollo internal hex IDs which can't be generated via AI
+          organization_keywords: [...(params.keywords ?? []), ...(params.industries ?? [])],
           organization_technologies: params.technologies,
           per_page: params.perPage ?? 25,
         })

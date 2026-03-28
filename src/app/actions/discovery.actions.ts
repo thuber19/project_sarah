@@ -205,10 +205,13 @@ export async function startDiscoveryAction(
       const apolloResult = await searchPeople({
         person_titles: optimizedQuery.apolloParams.personTitles,
         person_seniorities: optimizedQuery.apolloParams.personSeniorities,
-        organization_sizes: optimizedQuery.apolloParams.organizationSizes,
-        organization_industry_tag_ids: optimizedQuery.apolloParams.organizationIndustries,
+        organization_num_employees_ranges: optimizedQuery.apolloParams.organizationSizes,
         organization_locations: optimizedQuery.apolloParams.organizationLocations,
-        organization_keywords: [...optimizedQuery.apolloParams.organizationKeywords, ...keywords],
+        organization_keywords: [
+          ...optimizedQuery.apolloParams.organizationKeywords,
+          ...optimizedQuery.apolloParams.organizationIndustries,
+          ...keywords,
+        ],
         organization_technologies:
           technologies.length > 0
             ? technologies
