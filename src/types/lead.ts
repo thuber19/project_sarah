@@ -77,6 +77,30 @@ export interface ExclusionCriteria {
   excluded_keywords: string[] // matched against company_name
 }
 
+/** User-defined contact preferences — asked before person scoring. */
+export interface ContactPreferences {
+  /** Ideale Jobtitel der Ansprechpartner */
+  ideal_titles: string[]
+  /** Gewünschte Seniority-Level */
+  ideal_seniority: string[]
+  /** Abteilungen / Fachbereiche die relevant sind */
+  ideal_departments: string[]
+  /** Bevorzugte Kontakt-Kanäle — Gewichtung beeinflusst den Erreichbarkeits-Score */
+  preferred_channels: ContactChannel[]
+}
+
+export type ContactChannel = 'email' | 'linkedin' | 'phone' | 'xing'
+
+export interface PersonScoreBreakdownV2 {
+  decision_power: number // max 30
+  budget_access: number // max 25
+  domain_relevance: number // max 25
+  reachability: number // max 20
+  persona_tag: PersonaTag | null
+}
+
+export type PersonaTag = 'entscheider' | 'budget_holder' | 'champion' | 'influencer'
+
 export interface LeadScore {
   id: string
   lead_id: string

@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/shared/empty-state'
 import { ScoreBadge } from '@/components/leads/score-badge'
 import { ScoringRulesToggle } from './scoring-rules-toggle'
 import { ScoringRescoreSection } from './scoring-rescore-section'
+import { PersonScoringSection } from '@/components/scoring/person-scoring-section'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
@@ -193,6 +194,11 @@ export default async function ScoringPage() {
               <span>Klicke auf einen Lead für eine detaillierte KI-Analyse</span>
             </div>
           </div>
+
+          {/* Person Scoring — nur für qualifizierte Companies */}
+          {hasScores && (
+            <PersonScoringSection qualifiedCount={gradeCounts.TOP_MATCH + gradeCounts.GOOD_FIT} />
+          )}
 
           <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
             <h2 className="text-base font-semibold text-foreground">Scoring Rules</h2>
