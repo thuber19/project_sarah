@@ -1,4 +1,4 @@
-import { Building2, Clock, TrendingUp, User } from "lucide-react";
+import { Building2, Clock, Sparkles, TrendingUp, User } from "lucide-react";
 import { ScoreBadge } from "@/components/leads/score-badge";
 import { AppTopbar } from "@/components/layout/app-topbar";
 import { ScoringRulesToggle } from "./scoring-rules-toggle";
@@ -221,9 +221,10 @@ export default async function ScoringPage() {
           <div className="mt-6 flex justify-end">
             <button
               type="button"
-              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
             >
-              Regeln aktualisieren
+              <Sparkles className="size-4" aria-hidden="true" />
+              Scoring starten
             </button>
           </div>
         </div>
