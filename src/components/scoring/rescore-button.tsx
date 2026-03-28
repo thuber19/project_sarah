@@ -68,7 +68,7 @@ export function RescoreButton({ leadIds, onComplete }: RescoreButtonProps) {
                   grade: data.grade,
                 })
               } else if (data.type === 'done') {
-                toast.success(`${data.scored} von ${data.total} Leads bewertet`)
+                toast.success(`${data.scored} Leads erfolgreich gescored`)
                 onComplete?.()
               }
             } catch {
@@ -78,7 +78,7 @@ export function RescoreButton({ leadIds, onComplete }: RescoreButtonProps) {
         }
       }
     } catch {
-      toast.error('Scoring fehlgeschlagen')
+      toast.error('Scoring fehlgeschlagen. Bitte erneut versuchen.')
     } finally {
       setIsScoring(false)
       setProgress(null)
@@ -86,32 +86,35 @@ export function RescoreButton({ leadIds, onComplete }: RescoreButtonProps) {
   }, [leadIds, onComplete])
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" aria-busy={isScoring}>
       <button
         onClick={handleRescore}
         disabled={isScoring || leadIds.length === 0}
+        aria-disabled={isScoring || leadIds.length === 0}
         className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
       >
         {isScoring ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
         {isScoring ? 'Bewertung läuft...' : 'Regeln aktualisieren'}
       </button>
 
-      {progress && (
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Lead {progress.current} von {progress.total}
-            </span>
-            <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+      <div role="status" aria-live="polite">
+        {progress && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                Lead {progress.current} von {progress.total}
+              </span>
+              <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${(progress.current / progress.total) * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

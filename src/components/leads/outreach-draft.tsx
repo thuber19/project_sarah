@@ -40,7 +40,7 @@ export function OutreachDraft({ leadId }: OutreachDraftProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-6">
+    <div className="rounded-xl border border-border bg-white p-6" aria-busy={isLoading}>
       <div className="mb-4 flex items-center gap-2">
         <Mail className="h-4 w-4 text-accent" />
         <h2 className="text-base font-semibold text-foreground">Outreach E-Mail</h2>
@@ -78,7 +78,11 @@ export function OutreachDraft({ leadId }: OutreachDraftProps) {
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2
+              className="h-4 w-4 animate-spin"
+              role="status"
+              aria-label="E-Mail wird generiert"
+            />
             Generiere E-Mail...
           </>
         ) : (
@@ -91,7 +95,7 @@ export function OutreachDraft({ leadId }: OutreachDraftProps) {
 
       {/* Draft display */}
       {completion && (
-        <div className="mt-4">
+        <div className="mt-4" aria-live="polite">
           <div className="relative">
             <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-secondary p-4 text-sm leading-relaxed text-foreground">
               {completion}

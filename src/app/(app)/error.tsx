@@ -12,7 +12,6 @@ interface ErrorProps {
 export default function AppError({ error, reset }: ErrorProps) {
   useEffect(() => {
     Sentry.captureException(error)
-    console.error(error)
   }, [error])
 
   return (

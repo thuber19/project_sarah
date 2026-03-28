@@ -21,13 +21,14 @@ export function useAgentLogs({ limit = 50 }: UseAgentLogsOptions = {}) {
 
   // Load historical logs
   useEffect(() => {
+    let cancelled = false
     const supabase = supabaseRef.current
 
     async function loadLogs() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || cancelled) return
 
       const { data } = await supabase
         .from('agent_logs')
@@ -36,13 +37,18 @@ export function useAgentLogs({ limit = 50 }: UseAgentLogsOptions = {}) {
         .order('created_at', { ascending: false })
         .limit(limit)
 
-      if (data) {
+      if (!cancelled && data) {
         setLogs(data as AgentLog[])
       }
-      setIsLoading(false)
+      if (!cancelled) {
+        setIsLoading(false)
+      }
     }
 
     loadLogs()
+    return () => {
+      cancelled = true
+    }
   }, [limit])
 
   // Realtime subscription

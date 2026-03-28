@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { AlertCircle, Compass, Sparkles, Target } from 'lucide-react'
+import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 
 type LogCategory = 'Alle' | 'Discovery' | 'Scoring' | 'Enrichment' | 'Errors'
 type LogStatus = 'Erfolg' | 'Fehler' | 'Info'
@@ -13,6 +14,7 @@ export interface AgentLogEntry {
   type: EventType
   message: string
   status: LogStatus
+  grade?: Grade
 }
 
 export interface AgentLogsStats {
@@ -132,8 +134,9 @@ export function AgentLogsClient({ logs, stats }: AgentLogsClientProps) {
               {getEventIcon(log.type)}
 
               {/* Content */}
-              <div className="flex-1">
+              <div className="flex flex-1 items-center gap-2">
                 <p className="text-sm text-foreground">{log.message}</p>
+                {log.grade && <ScoreBadge grade={log.grade} className="ml-1" />}
               </div>
 
               {/* Status badge */}

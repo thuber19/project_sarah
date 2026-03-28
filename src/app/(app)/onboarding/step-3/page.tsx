@@ -103,8 +103,10 @@ export default function OnboardingStep3() {
 
       <div className="flex flex-col gap-5">
         {/* Zielbranchen */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">Zielbranchen</label>
+        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="zielbranchen-label">
+          <label id="zielbranchen-label" className="text-sm font-medium text-foreground">
+            Zielbranchen
+          </label>
           <div className="flex flex-wrap items-center gap-2">
             {industries.map((industry) => (
               <TagPill
@@ -122,9 +124,11 @@ export default function OnboardingStep3() {
 
         {/* Unternehmensgröße */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">Unternehmensgröße</label>
+          <label id="company-size-label" className="text-sm font-medium text-foreground">
+            Unternehmensgröße
+          </label>
           <Select value={companySize} onValueChange={(v) => v && setCompanySize(v)}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-labelledby="company-size-label">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -154,8 +158,10 @@ export default function OnboardingStep3() {
         </div>
 
         {/* Technologie-Stack */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">Technologie-Stack</label>
+        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="tech-stack-label">
+          <label id="tech-stack-label" className="text-sm font-medium text-foreground">
+            Technologie-Stack
+          </label>
           <div className="flex flex-wrap items-center gap-2">
             {techStack.map((tech) => (
               <TagPill
@@ -174,7 +180,9 @@ export default function OnboardingStep3() {
         {/* Min. Score Threshold */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground">Min. Score Threshold</label>
+            <label id="score-threshold-label" className="text-sm font-medium text-foreground">
+              Min. Score Threshold
+            </label>
             <span className="text-sm font-medium text-foreground">{scoreThreshold}</span>
           </div>
           <Slider
@@ -182,6 +190,7 @@ export default function OnboardingStep3() {
             max={100}
             value={[scoreThreshold]}
             onValueChange={(value) => setScoreThreshold(Array.isArray(value) ? value[0] : value)}
+            aria-labelledby="score-threshold-label"
           />
         </div>
       </div>

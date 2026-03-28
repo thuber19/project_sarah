@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Compass, Play, Search, SlidersHorizontal } from 'lucide-react'
+import { Compass, Search, Settings, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import {
@@ -26,6 +26,7 @@ interface DiscoveryClientProps {
   latestLeads: DiscoveryLead[]
   totalLeadsFound: number
   hasDiscovery: boolean
+  hasIcp: boolean
 }
 
 export function DiscoveryClient({
@@ -33,6 +34,7 @@ export function DiscoveryClient({
   latestLeads,
   totalLeadsFound,
   hasDiscovery,
+  hasIcp,
 }: DiscoveryClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -98,7 +100,7 @@ export function DiscoveryClient({
         }
       />
 
-      {!hasDiscovery && latestLeads.length === 0 ? (
+      {!hasIcp && !hasDiscovery && latestLeads.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-8">
           <div className="flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-12">
             <div className="flex size-24 items-center justify-center rounded-full bg-accent-light">
@@ -253,6 +255,15 @@ export function DiscoveryClient({
                 </div>
               </div>
             </div>
+
+            {/* Settings link */}
+            <Link
+              href="/settings?tab=icp"
+              className="inline-flex items-center gap-2 self-start text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Settings className="size-4" aria-hidden="true" />
+              Einstellungen pruefen
+            </Link>
           </div>
 
           {/* Right column */}
@@ -309,7 +320,9 @@ export function DiscoveryClient({
                         colSpan={6}
                         className="py-12 text-center text-sm text-muted-foreground"
                       >
-                        Noch keine Ergebnisse. Starte eine Discovery um Leads zu finden.
+                        {!hasDiscovery
+                          ? 'Noch keine Discovery gestartet. Passe die Suchkriterien an und klicke auf "Leads finden".'
+                          : 'Keine Ergebnisse gefunden. Passe die Suchkriterien an und versuche es erneut.'}
                       </TableCell>
                     </TableRow>
                   ) : (

@@ -32,7 +32,7 @@ export function LeadResearch({ leadId, cachedReport }: LeadResearchProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-6">
+    <div className="rounded-xl border border-border bg-white p-6" aria-busy={isLoading}>
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold text-foreground">Lead-Recherche</h3>
         <button
@@ -41,7 +41,7 @@ export function LeadResearch({ leadId, cachedReport }: LeadResearchProps) {
           className="flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
         >
           {isLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin" role="status" aria-label="Recherche läuft" />
           ) : report ? (
             <RefreshCw className="size-3.5" />
           ) : (
@@ -56,7 +56,10 @@ export function LeadResearch({ leadId, cachedReport }: LeadResearchProps) {
       )}
 
       {displayText && (
-        <div className="mt-4 max-h-96 overflow-auto rounded-xl border border-border bg-muted/50 p-4">
+        <div
+          className="mt-4 max-h-96 overflow-auto rounded-xl border border-border bg-muted/50 p-4"
+          aria-live="polite"
+        >
           <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
             {displayText}
           </pre>

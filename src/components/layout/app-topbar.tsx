@@ -30,7 +30,7 @@ export function AppTopbar({ title, actions, initials = 'BG' }: AppTopbarProps) {
 
         <div
           className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-white"
-          aria-label="Benutzerprofil"
+          aria-label="Benutzermenü"
         >
           {initials}
         </div>

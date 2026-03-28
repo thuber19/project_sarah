@@ -23,6 +23,7 @@ pnpm format:check # prettier --check
 pnpm test         # vitest unit tests
 pnpm test:e2e     # playwright e2e tests
 pnpm db:types     # supabase gen types typescript --local > src/lib/database.types.ts
+pnpm db:seed      # supabase db reset (applies migrations + seed data)
 ```
 
 ## Architecture
@@ -36,7 +37,11 @@ pnpm db:types     # supabase gen types typescript --local > src/lib/database.typ
 - **Security** — `proxy.ts` handles CSP headers, rate limiting, auth redirects, AND onboarding guard. Next.js 16 does NOT allow both `proxy.ts` and `middleware.ts` — all logic is in `proxy.ts`.
 - **Toasts** — Sonner `<Toaster />` in root layout (`app/layout.tsx`). Use `toast.success/error/info` from `sonner`.
 - **Validation** — Shared Zod schemas in `src/lib/validation/schemas.ts`. Use client-side before server actions.
-- **Tests** — 273 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
+- **Tests** — 396 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
+- **Analytics** — Vercel Analytics + Speed Insights in root layout. Core Web Vitals tracked automatically.
+- **Seed Data** — `supabase/seed.sql` with 10 DACH-realistic leads, scores, ICP, business profile. Run `pnpm db:seed`.
+- **Streaming Scoring** — `streamObject()` + `useObject()` pattern for progressive AI analysis on lead detail page.
+- **Accessibility** — WCAG 2.1 AA quick wins: focus-visible, ARIA live regions, score badge contrast (4.5:1+), form labels.
 
 ## API Response Envelope
 All server actions use a canonical `ApiResponse<T>` envelope from `src/lib/api-response.ts`:

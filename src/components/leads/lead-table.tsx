@@ -95,13 +95,14 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
 
   return (
     <div className="rounded-xl border border-border bg-white">
-      <Table>
+      <Table aria-label="Lead-Übersicht">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-12">
+            <TableHead scope="col" className="w-12">
               <Checkbox aria-label="Alle auswählen" />
             </TableHead>
             <TableHead
+              scope="col"
               className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
               aria-sort={getAriaSortValue('company_name', sort, dir)}
             >
@@ -113,13 +114,20 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
                 <SortIcon field="company_name" currentSort={sort} currentDir={dir} />
               </Link>
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead
+              scope="col"
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            >
               Branche
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead
+              scope="col"
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            >
               Standort
             </TableHead>
             <TableHead
+              scope="col"
               className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
               aria-sort={getAriaSortValue('total_score', sort, dir)}
             >
@@ -131,10 +139,14 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
                 <SortIcon field="total_score" currentSort={sort} currentDir={dir} />
               </Link>
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead
+              scope="col"
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            >
               Status
             </TableHead>
             <TableHead
+              scope="col"
               className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
               aria-sort={getAriaSortValue('created_at', sort, dir)}
             >
@@ -146,7 +158,10 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
                 <SortIcon field="created_at" currentSort={sort} currentDir={dir} />
               </Link>
             </TableHead>
-            <TableHead className="w-12 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead
+              scope="col"
+              className="w-12 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            >
               {/* Actions */}
             </TableHead>
           </TableRow>

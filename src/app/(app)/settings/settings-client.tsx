@@ -210,8 +210,15 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
+                      aria-invalid={!!fieldErrors.description}
+                      aria-describedby={fieldErrors.description ? 'beschreibung-error' : undefined}
                       className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
+                    {fieldErrors.description && (
+                      <p id="beschreibung-error" role="alert" className="text-xs text-destructive">
+                        {fieldErrors.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>

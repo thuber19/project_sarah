@@ -27,11 +27,21 @@ export function ScoreBreakdown(props: ScoreBreakdownProps) {
                 {value}/{cat.max}
               </span>
             </div>
-            <div className="h-2.5 rounded-full bg-secondary">
+            <div
+              role="progressbar"
+              aria-label={cat.label}
+              aria-valuenow={value}
+              aria-valuemin={0}
+              aria-valuemax={cat.max}
+              className="h-2.5 rounded-full bg-secondary"
+            >
               <div
                 className={`h-2.5 rounded-full ${cat.color}`}
                 style={{ width: `${widthPercent}%` }}
               />
+              <span className="sr-only">
+                {cat.label}: {value} out of {cat.max}
+              </span>
             </div>
           </div>
         )
