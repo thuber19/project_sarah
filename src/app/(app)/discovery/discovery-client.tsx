@@ -12,7 +12,6 @@ import {
   type DiscoveryLead,
 } from '@/app/actions/discovery.actions'
 import { discoveryFormSchema } from '@/lib/validation/schemas'
-import { EmptyState } from '@/components/shared/empty-state'
 import {
   Table,
   TableBody,
@@ -101,21 +100,35 @@ export function DiscoveryClient({
 
       {!hasDiscovery && latestLeads.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-8">
-          <EmptyState
-            icon={Compass}
-            title="Keine Discovery gestartet"
-            description="Definiere deinen ICP und finde passende Unternehmen automatisch."
-            primaryAction={{
-              label: 'ICP konfigurieren',
-              href: '/settings?tab=icp',
-              icon: SlidersHorizontal,
-            }}
-            secondaryAction={{
-              label: 'Erste Discovery starten',
-              href: '/discovery',
-              icon: Play,
-            }}
-          />
+          <div className="flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-12">
+            <div className="flex size-24 items-center justify-center rounded-full bg-accent-light">
+              <Compass className="size-12 text-accent" aria-hidden="true" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <h3 className="text-xl font-bold text-foreground">Keine Discovery gestartet</h3>
+              <p className="max-w-[420px] text-center text-sm leading-relaxed text-muted-foreground">
+                Definiere deinen ICP und finde passende Unternehmen automatisch.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/settings?tab=icp"
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
+              >
+                <SlidersHorizontal className="size-4" aria-hidden="true" />
+                ICP konfigurieren
+              </Link>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={handleDiscovery}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              >
+                <Play className="size-4" aria-hidden="true" />
+                {isPending ? 'Suche läuft...' : 'Erste Discovery starten'}
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         /* Content area */
