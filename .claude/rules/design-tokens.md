@@ -49,9 +49,9 @@ Use for: agent log categories, data quality badges, threat levels, success/error
 
 ## Score Grade Colors (3-Grade System)
 Scoring uses 3 grades based on Company Score only (Person Score is a separate dimension):
-- TOP_MATCH (≥70) → `bg-score-hot-bg` / `text-score-hot-text` (#EF4444)
-- GOOD_FIT (40-69) → `bg-score-qualified-bg` / `text-score-qualified-text` (#F97316)
-- POOR_FIT (<40) → `bg-score-poor-fit-bg` / `text-score-poor-fit-text` (#94A3B8)
+- TOP_MATCH (≥60) → `bg-score-hot-bg` / `text-score-hot-text` (#EF4444)
+- GOOD_FIT (30-59) → `bg-score-qualified-bg` / `text-score-qualified-text` (#F97316)
+- POOR_FIT (<30) → `bg-score-poor-fit-bg` / `text-score-poor-fit-text` (#94A3B8)
 
 Legacy 5-grade values (HOT, QUALIFIED, ENGAGED, POTENTIAL) are mapped via `mapLegacyGrade()`.
 Use `ScoreBadge` component from `src/components/leads/score-badge.tsx` for display.

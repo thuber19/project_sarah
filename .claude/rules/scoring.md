@@ -17,9 +17,11 @@ The `lead_scores` table has these timestamp columns:
 
 ## Scoring Grades
 Three-grade system based on **Company Score only** (Person Score is separate):
-- `TOP_MATCH` — Company Score >= 70
-- `GOOD_FIT` — Company Score 40-69
-- `POOR_FIT` — Company Score < 40
+- `TOP_MATCH` — Company Score >= 60
+- `GOOD_FIT` — Company Score 30-59
+- `POOR_FIT` — Company Score < 30
+
+Note: Base-point scoring means empty leads get ~13 points (industry 5 + size 5 + geography 3).
 
 Use `getGradeForScore()` from `src/lib/scoring/grade.ts`. Never hardcode grade thresholds.
 
