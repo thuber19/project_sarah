@@ -2,13 +2,20 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Bell, Building2, CheckCircle2, Loader2, MapPin, Search } from 'lucide-react'
+import { Bell, Building2, CheckCircle2, ExternalLink, Loader2, MapPin, Plus, Search } from 'lucide-react'
 import {
   startDiscoveryAction,
   getDiscoveryLeadsAction,
   type IcpDefaults,
   type DiscoveryLead,
 } from '@/app/actions/discovery.actions'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface Props {
   initialIcp: IcpDefaults
@@ -25,6 +32,8 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
   const [leads, setLeads] = useState<DiscoveryLead[] | null>(null)
   const [leadsFound, setLeadsFound] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLead, setSelectedLead] = useState<DiscoveryLead | null>(null)
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
 
   const [industries, setIndustries] = useState(initialIcp.industries)
   const [companySize, setCompanySize] = useState(initialIcp.companySize)
@@ -65,7 +74,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
     <div className="flex h-full flex-1 flex-col">
       {/* Top bar */}
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Lead Discovery</span>
+        <h1 className="text-base font-semibold text-foreground">Lead Discovery</h1>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -98,7 +107,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
           >
             <Bell className="h-5 w-5" />
           </button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white" aria-hidden="true">
             {userInitials}
           </div>
         </div>
@@ -193,15 +202,15 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
 
           {/* Error */}
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
               {error}
             </div>
           )}
 
           {/* Loading */}
           {isPending && (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border bg-white py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-accent" />
+            <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-border bg-white py-16" role="status" aria-live="polite" aria-label="Discovery läuft">
+              <Loader2 className="h-8 w-8 animate-spin text-accent" aria-hidden="true" />
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">Discovery läuft...</p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -213,45 +222,77 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
 
           {/* Leads list */}
           {showResults && leads && leads.length > 0 && (
-            <div className="rounded-xl border border-border bg-white">
+            <div className="rounded-xl border border-border bg-white" aria-live="polite" aria-label="Discovery-Ergebnisse">
               {/* Success banner */}
-              <div className="flex items-center gap-3 border-b border-border bg-green-50 px-5 py-3 rounded-t-xl">
-                <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+              <div className="flex items-center gap-3 border-b border-border bg-green-50 px-5 py-3 rounded-t-xl" role="status">
+                <CheckCircle2 className="h-4 w-4 text-success shrink-0" aria-hidden="true" />
                 <p className="text-sm font-medium text-success">
                   {leadsFound} Leads erfolgreich gefunden und gespeichert
                 </p>
               </div>
               {/* Lead rows */}
               <div className="divide-y divide-border">
-                {leads.map((lead) => (
-                  <Link
-                    key={lead.id}
-                    href={`/leads/${lead.id}`}
-                    className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary/50"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-light">
-                      <Building2 className="h-4 w-4 text-accent" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {lead.company_name ?? lead.full_name ?? 'Unbekannt'}
-                      </p>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                        {lead.industry && <span>{lead.industry}</span>}
-                        {lead.industry && lead.location && <span>·</span>}
-                        {lead.location && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {lead.location}
-                          </span>
-                        )}
+                {leads.map((lead) => {
+                  const isAdded = addedIds.has(lead.id)
+                  return (
+                    <div
+                      key={lead.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedLead(lead)}
+                      onKeyDown={(e) => e.key === 'Enter' && setSelectedLead(lead)}
+                      className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-light">
+                        <Building2 className="h-4 w-4 text-accent" />
                       </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {lead.company_name ?? lead.full_name ?? 'Unbekannt'}
+                        </p>
+                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                          {lead.industry && <span>{lead.industry}</span>}
+                          {lead.industry && lead.location && <span>·</span>}
+                          {lead.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {lead.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                        {SOURCE_LABELS[lead.source ?? ''] ?? lead.source ?? '—'}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={isAdded ? 'Hinzugefügt' : 'Zu Leads hinzufügen'}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setAddedIds((prev) => new Set(prev).add(lead.id))
+                        }}
+                        disabled={isAdded}
+                        className={`flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          isAdded
+                            ? 'bg-green-100 text-green-700 cursor-default'
+                            : 'bg-accent-light text-accent hover:bg-accent hover:text-white'
+                        }`}
+                      >
+                        {isAdded ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3" />
+                            Hinzugefügt
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3 w-3" />
+                            Hinzufügen
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                      {SOURCE_LABELS[lead.source ?? ''] ?? lead.source ?? '—'}
-                    </span>
-                  </Link>
-                ))}
+                  )
+                })}
               </div>
               {leadsFound > leads.length && (
                 <div className="border-t border-border px-5 py-3 text-center text-xs text-muted-foreground">
@@ -289,6 +330,62 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
           )}
         </div>
       </div>
+
+      {/* Company detail dialog */}
+      <Dialog open={selectedLead !== null} onOpenChange={(open) => { if (!open) setSelectedLead(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-light">
+                <Building2 className="h-5 w-5 text-accent" />
+              </div>
+              <DialogTitle>
+                {selectedLead?.company_name ?? selectedLead?.full_name ?? 'Unbekannt'}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+
+          {selectedLead && (
+            <div className="flex flex-col gap-3 py-2">
+              {selectedLead.industry && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Branche</span>
+                  <span className="font-medium text-foreground">{selectedLead.industry}</span>
+                </div>
+              )}
+              {selectedLead.location && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Standort</span>
+                  <span className="flex items-center gap-1 font-medium text-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {selectedLead.location}
+                  </span>
+                </div>
+              )}
+              {selectedLead.source && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Quelle</span>
+                  <span className="font-medium text-foreground">
+                    {SOURCE_LABELS[selectedLead.source] ?? selectedLead.source}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            {selectedLead && (
+              <Link
+                href={`/leads/${selectedLead.id}`}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Zum Lead-Profil
+              </Link>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
