@@ -5,7 +5,7 @@
 |-----|-------|
 | Stack | Next.js 16, React 19, TypeScript strict, Tailwind CSS 4, shadcn/ui |
 | DB | Supabase (PostgreSQL + Auth + RLS) |
-| AI | Vercel AI SDK v6 + Anthropic Claude |
+| AI | Vercel AI SDK v6 + AI Gateway (Anthropic Claude) |
 | APIs | Apollo.io, Google Places, Cheerio (scraping) |
 | Hosting | Vercel |
 | PM | pnpm |
@@ -107,7 +107,7 @@ AI Outreach: `/leads/[id]/outreach` — standalone page with lead context + emai
 Lead bulk actions: Selection checkboxes in desktop table, bulk toolbar (score/export/delete). Filter sheet on mobile with extended filters (score range, industry, region, company size).
 
 ## Environment
-Copy `.env.example` to `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `APOLLO_API_KEY`, `GOOGLE_PLACES_API_KEY`.
+Copy `.env.example` to `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `AI_GATEWAY_API_KEY` (Vercel AI Gateway), `APOLLO_API_KEY`, `GOOGLE_PLACES_API_KEY`.
 
 ## Conventions
 - **Commits** — Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`).
