@@ -59,6 +59,7 @@ export function DiscoveryClient({
   const [isScoring, setIsScoring] = useState(false)
   const [scoringDone, setScoringDone] = useState(false)
   const [scoringProgress, setScoringProgress] = useState<{ current: number; total: number } | null>(null)
+  const [scoringLimit, setScoringLimit] = useState<number>(10)
 
   const { execute: runDiscovery, isPending } = useServerAction(startDiscoveryAction, {
     onSuccess: (data) => {
@@ -85,14 +86,17 @@ export function DiscoveryClient({
 
   const handleScore = useCallback(async () => {
     if (savedLeadIds.length === 0) return
+    const idsToScore = scoringLimit >= savedLeadIds.length
+      ? savedLeadIds
+      : savedLeadIds.slice(0, scoringLimit)
     setIsScoring(true)
-    setScoringProgress({ current: 0, total: savedLeadIds.length })
+    setScoringProgress({ current: 0, total: idsToScore.length })
 
     try {
       const response = await fetch('/api/scoring/batch-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadIds: savedLeadIds }),
+        body: JSON.stringify({ leadIds: idsToScore }),
       })
 
       if (!response.ok) throw new Error('Scoring fehlgeschlagen')
@@ -135,7 +139,7 @@ export function DiscoveryClient({
       setIsScoring(false)
       setScoringProgress(null)
     }
-  }, [savedLeadIds, router])
+  }, [savedLeadIds, scoringLimit, router])
 
   function handleSave() {
     if (!activeCampaignId) return
@@ -436,26 +440,48 @@ export function DiscoveryClient({
                   <Target className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {savedLeadIds.length} neue Leads bereit zum Scoren
+                      {isScoring
+                        ? `Scoring läuft — ${Math.min(scoringLimit, savedLeadIds.length)} von ${savedLeadIds.length} Leads werden bewertet`
+                        : `${savedLeadIds.length} neue Leads bereit zum Scoren`}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Starte das Company-Scoring, um die Leads zu klassifizieren (TOP MATCH / GOOD FIT / POOR FIT).
+                      {isScoring
+                        ? 'Die KI analysiert gerade deine Leads. Das kann einen Moment dauern.'
+                        : 'Wähle die Anzahl und starte das Company-Scoring (TOP MATCH / GOOD FIT / POOR FIT).'}
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleScore}
-                  disabled={isScoring}
-                  className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
-                >
-                  {isScoring ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Target className="h-4 w-4" />
+                <div className="flex shrink-0 items-center gap-2">
+                  {!isScoring && (
+                    <select
+                      value={scoringLimit >= savedLeadIds.length ? savedLeadIds.length : scoringLimit}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10)
+                        setScoringLimit(val)
+                      }}
+                      className="min-h-12 rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      aria-label="Anzahl Leads zum Scoren"
+                    >
+                      {[10, 20, 50].filter((n) => n < savedLeadIds.length).map((n) => (
+                        <option key={n} value={n}>{n} Leads</option>
+                      ))}
+                      <option value={savedLeadIds.length}>Alle ({savedLeadIds.length})</option>
+                    </select>
                   )}
-                  {isScoring ? 'Scoring läuft...' : 'Jetzt scoren'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleScore}
+                    disabled={isScoring}
+                    className="flex min-h-12 shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                  >
+                    {isScoring ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Target className="h-4 w-4" />
+                    )}
+                    {isScoring ? 'Scoring läuft...' : 'Jetzt scoren'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -536,8 +562,8 @@ export function DiscoveryClient({
               )}
             </div>
 
-            <div className="hidden overflow-hidden rounded-xl border border-border bg-white lg:block">
-              <Table>
+            <div className="hidden overflow-x-auto rounded-xl border border-border bg-white lg:block">
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     {showDiscovered && (
@@ -551,23 +577,23 @@ export function DiscoveryClient({
                         />
                       </TableHead>
                     )}
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                    <TableHead className="w-[30%] text-xs font-medium uppercase text-muted-foreground">
                       Unternehmen
                     </TableHead>
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                    <TableHead className="w-[10%] text-xs font-medium uppercase text-muted-foreground">
                       Kontakt
                     </TableHead>
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                    <TableHead className="w-[22%] text-xs font-medium uppercase text-muted-foreground">
                       Branche
                     </TableHead>
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                    <TableHead className="w-[24%] text-xs font-medium uppercase text-muted-foreground">
                       Standort
                     </TableHead>
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                    <TableHead className="w-[10%] text-xs font-medium uppercase text-muted-foreground">
                       Quelle
                     </TableHead>
                     {!showDiscovered && (
-                      <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                      <TableHead className="w-[8%] text-xs font-medium uppercase text-muted-foreground">
                         Aktion
                       </TableHead>
                     )}
@@ -590,16 +616,16 @@ export function DiscoveryClient({
                             className="h-4 w-4 cursor-pointer rounded border-border accent-accent"
                           />
                         </TableCell>
-                        <TableCell className="text-sm font-medium text-foreground">
+                        <TableCell className="truncate text-sm font-medium text-foreground" title={lead.company_name ?? undefined}>
                           {lead.company_name ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground">
                           {lead.full_name ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground">
                           {lead.industry ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground" title={lead.location ?? undefined}>
                           {lead.location ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -625,16 +651,16 @@ export function DiscoveryClient({
                   ) : (
                     latestLeads.map((lead) => (
                       <TableRow key={lead.id}>
-                        <TableCell className="text-sm font-medium text-foreground">
+                        <TableCell className="truncate text-sm font-medium text-foreground" title={lead.company_name ?? undefined}>
                           {lead.company_name ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground">
                           {lead.full_name ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground">
                           {lead.industry ?? '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="truncate text-sm text-muted-foreground" title={lead.location ?? undefined}>
                           {lead.location ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
