@@ -159,8 +159,19 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/datenschutz') ||
     pathname.startsWith('/api/')
 
-  // Gate 1: Auth — redirect unauthenticated users to login
-  if (!user && !isPublic) {
+  // Known protected routes — anything else falls through to Next.js (→ 404)
+  const isProtected =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/leads') ||
+    pathname.startsWith('/discovery') ||
+    pathname.startsWith('/scoring') ||
+    pathname.startsWith('/agent-logs') ||
+    pathname.startsWith('/export') ||
+    pathname.startsWith('/settings') ||
+    pathname.startsWith('/onboarding')
+
+  // Gate 1: Auth — redirect unauthenticated users to login (only for known protected routes)
+  if (!user && !isPublic && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
@@ -174,8 +185,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Gate 2: Onboarding completion — only for authenticated non-public routes
-  if (user && !isPublic && !pathname.startsWith('/onboarding')) {
+  // Gate 2: Onboarding completion — only for known protected routes (not onboarding itself)
+  if (user && isProtected && !pathname.startsWith('/onboarding')) {
     const { data: profile } = await supabase
       .from('business_profiles')
       .select('id')
