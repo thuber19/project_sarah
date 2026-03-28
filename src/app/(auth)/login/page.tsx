@@ -32,6 +32,7 @@ export default function LoginPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) {
+        console.error('[login] signInWithOtp error:', error)
         setError(error.message)
         toast.error('Magic Link konnte nicht gesendet werden.')
         return
