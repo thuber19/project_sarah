@@ -11,14 +11,6 @@ import {
 } from '@/app/actions/settings.actions'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 
-function TagPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
-      {children}
-    </span>
-  )
-}
-
 function PlaceholderContent() {
   return <p className="py-8 text-center text-sm text-muted-foreground">Demnächst verfügbar</p>
 }
@@ -32,6 +24,17 @@ const INTEGRATIONS = [
     connected: !!process.env.NEXT_PUBLIC_APOLLO_CONNECTED,
   },
 ] as const
+
+function toCommaStr(arr: string[] | null | undefined) {
+  return arr?.join(', ') ?? ''
+}
+
+function fromCommaStr(str: string): string[] {
+  return str
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
 
 interface SettingsClientProps {
   profile: BusinessProfile | null
@@ -50,15 +53,13 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [targetMarket, setTargetMarket] = useState(profile?.target_market ?? '')
   const [websiteUrl, setWebsiteUrl] = useState(profile?.website_url ?? '')
 
-  // ICP display data
-  const icpFields = [
-    { label: 'Branchen', tags: icp?.industries ?? [] },
-    { label: 'Größe', tags: icp?.company_sizes ?? [] },
-    { label: 'Region', tags: icp?.regions ?? [] },
-    { label: 'Technologien', tags: icp?.tech_stack ?? [] },
-    { label: 'Titel', tags: icp?.job_titles ?? [] },
-    { label: 'Seniority', tags: icp?.seniority_levels ?? [] },
-  ].filter((f) => f.tags.length > 0)
+  // ICP fields (comma-separated strings for easy editing)
+  const [icpIndustries, setIcpIndustries] = useState(toCommaStr(icp?.industries))
+  const [icpSizes, setIcpSizes] = useState(toCommaStr(icp?.company_sizes))
+  const [icpRegions, setIcpRegions] = useState(toCommaStr(icp?.regions))
+  const [icpJobTitles, setIcpJobTitles] = useState(toCommaStr(icp?.job_titles))
+  const [icpSeniority, setIcpSeniority] = useState(toCommaStr(icp?.seniority_levels))
+  const [icpTechStack, setIcpTechStack] = useState(toCommaStr(icp?.tech_stack))
 
   function handleSave() {
     setMessage(null)
@@ -78,12 +79,12 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
 
       if (icp) {
         const icpData: SettingsIcpData = {
-          industries: icp.industries ?? [],
-          company_sizes: icp.company_sizes ?? [],
-          regions: icp.regions ?? [],
-          job_titles: icp.job_titles ?? [],
-          seniority_levels: icp.seniority_levels ?? [],
-          tech_stack: icp.tech_stack ?? [],
+          industries: fromCommaStr(icpIndustries),
+          company_sizes: fromCommaStr(icpSizes),
+          regions: fromCommaStr(icpRegions),
+          job_titles: fromCommaStr(icpJobTitles),
+          seniority_levels: fromCommaStr(icpSeniority),
+          tech_stack: fromCommaStr(icpTechStack),
         }
         const icpResult = await updateIcpAction(icpData)
         if (icpResult.error) {
@@ -102,7 +103,9 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
         <span className="text-base font-semibold text-foreground">Einstellungen</span>
         <div className="flex items-center gap-3">
           {message && (
-            <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+            <span
+              className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}
+            >
               {message.text}
             </span>
           )}
@@ -110,7 +113,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
             type="button"
             onClick={handleSave}
             disabled={isPending}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {isPending ? 'Speichere...' : 'Speichern'}
           </button>
@@ -141,11 +144,19 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="unternehmen">Unternehmen</Label>
-                    <Input id="unternehmen" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+                    <Input
+                      id="unternehmen"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="branche">Branche</Label>
-                    <Input id="branche" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+                    <Input
+                      id="branche"
+                      value={industry}
+                      onChange={(e) => setIndustry(e.target.value)}
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="email">Email-Adresse</Label>
@@ -153,11 +164,19 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="website">Website</Label>
-                    <Input id="website" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} />
+                    <Input
+                      id="website"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                    />
                   </div>
                   <div className="col-span-2 flex flex-col gap-1.5">
                     <Label htmlFor="zielmarkt">Zielmarkt</Label>
-                    <Input id="zielmarkt" value={targetMarket} onChange={(e) => setTargetMarket(e.target.value)} />
+                    <Input
+                      id="zielmarkt"
+                      value={targetMarket}
+                      onChange={(e) => setTargetMarket(e.target.value)}
+                    />
                   </div>
                   <div className="col-span-2 flex flex-col gap-1.5">
                     <Label htmlFor="beschreibung">Beschreibung</Label>
@@ -172,33 +191,6 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 </div>
               </section>
 
-              {/* ICP Summary */}
-              {icpFields.length > 0 && (
-                <section>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-base font-semibold text-foreground">ICP-Konfiguration</h2>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        Basierend auf der Analyse deiner Website. Änderungen gelten für künftige Suchen.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-col gap-3">
-                    {icpFields.map((field) => (
-                      <div key={field.label} className="flex items-center">
-                        <span className="w-[120px] text-sm font-medium text-muted-foreground">{field.label}</span>
-                        <div className="flex flex-wrap gap-2">
-                          {field.tags.map((tag) => (
-                            <TagPill key={tag}>{tag}</TagPill>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               {/* Integrations */}
               <section>
                 <h2 className="text-base font-semibold text-foreground">Verbundene Integrationen</h2>
@@ -207,15 +199,26 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 </p>
 
                 {INTEGRATIONS.map((integration) => (
-                  <div key={integration.name} className="mt-4 flex items-center gap-4 rounded-lg border border-border p-4">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${integration.iconBg}`}>
+                  <div
+                    key={integration.name}
+                    className="mt-4 flex items-center gap-4 rounded-lg border border-border p-4"
+                  >
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${integration.iconBg}`}
+                    >
                       <span className="text-sm font-bold text-white">{integration.iconLetter}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground">{integration.name}</span>
-                      <span className="text-xs text-muted-foreground">{integration.description}</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {integration.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {integration.description}
+                      </span>
                     </div>
-                    <span className={`ml-auto rounded-lg px-4 py-1.5 text-xs font-medium ${integration.connected ? 'bg-accent text-white' : 'bg-muted text-muted-foreground'}`}>
+                    <span
+                      className={`ml-auto rounded-lg px-4 py-1.5 text-xs font-medium ${integration.connected ? 'bg-accent text-white' : 'bg-muted text-muted-foreground'}`}
+                    >
                       {integration.connected ? 'Verbunden' : 'Nicht verbunden'}
                     </span>
                   </div>
@@ -224,9 +227,88 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
             </div>
           </TabsContent>
 
+          {/* ICP Tab */}
           <TabsContent value="icp">
-            <PlaceholderContent />
+            {icp ? (
+              <div className="flex flex-col gap-6 pt-6">
+                <div>
+                  <h2 className="text-base font-semibold text-foreground">
+                    Ideal Customer Profile
+                  </h2>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    Mehrere Werte mit Komma trennen (z. B. „SaaS, FinTech"). Gilt für alle zukünftigen
+                    Discovery-Suchen.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  {[
+                    {
+                      id: 'icp-industries',
+                      label: 'Branchen',
+                      value: icpIndustries,
+                      onChange: setIcpIndustries,
+                      placeholder: 'z. B. SaaS, FinTech, E-Commerce',
+                    },
+                    {
+                      id: 'icp-sizes',
+                      label: 'Unternehmensgrößen',
+                      value: icpSizes,
+                      onChange: setIcpSizes,
+                      placeholder: 'z. B. 10-50, 51-200',
+                    },
+                    {
+                      id: 'icp-regions',
+                      label: 'Regionen',
+                      value: icpRegions,
+                      onChange: setIcpRegions,
+                      placeholder: 'z. B. Österreich, Deutschland, Schweiz',
+                    },
+                    {
+                      id: 'icp-job-titles',
+                      label: 'Job-Titel',
+                      value: icpJobTitles,
+                      onChange: setIcpJobTitles,
+                      placeholder: 'z. B. CEO, CTO, Head of Sales',
+                    },
+                    {
+                      id: 'icp-seniority',
+                      label: 'Seniority-Level',
+                      value: icpSeniority,
+                      onChange: setIcpSeniority,
+                      placeholder: 'z. B. c_suite, vp, director',
+                    },
+                    {
+                      id: 'icp-tech',
+                      label: 'Technologien',
+                      value: icpTechStack,
+                      onChange: setIcpTechStack,
+                      placeholder: 'z. B. React, Python, AWS',
+                    },
+                  ].map(({ id, label, value, onChange, placeholder }) => (
+                    <div key={id} className="flex flex-col gap-1.5">
+                      <Label htmlFor={id}>{label}</Label>
+                      <Input
+                        id={id}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Klicke „Speichern" oben rechts, um die ICP-Konfiguration zu übernehmen.
+                </p>
+              </div>
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Kein ICP-Profil gefunden. Schließe zuerst das Onboarding ab.
+              </p>
+            )}
           </TabsContent>
+
           <TabsContent value="integrationen">
             <PlaceholderContent />
           </TabsContent>
