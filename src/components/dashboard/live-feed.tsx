@@ -35,6 +35,20 @@ const categoryConfig: Record<ActionCategory, { icon: React.ElementType; bg: stri
   other: { icon: Search, bg: 'bg-gray-50', color: 'text-muted-foreground' },
 }
 
+function sanitizeMessage(message: string, category: ActionCategory): string {
+  // Raw JSON or Apollo error objects → user-friendly summary
+  if (message.trim().startsWith('{') || message.trim().startsWith('[')) {
+    if (category === 'error') return 'Apollo-Suche nicht verfügbar'
+    return 'Aktion abgeschlossen'
+  }
+  // Messages containing JSON fragments
+  if (message.includes('{"') || message.includes('"statusCode"') || message.includes('"error"')) {
+    if (category === 'error') return 'Apollo-Suche nicht verfügbar'
+    return 'Aktion abgeschlossen'
+  }
+  return message
+}
+
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr)
   return date.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })
@@ -56,18 +70,20 @@ export function LiveFeed() {
   return (
     <div className="flex flex-1 flex-col rounded-[--radius-card] border border-border bg-white">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <span className="text-[15px] font-semibold text-foreground">Letzte Aktivitäten</span>
+        <h3 className="text-[15px] font-semibold text-foreground">Letzte Aktivitäten</h3>
         <span
           className={cn(
             'rounded-lg px-2 py-0.5 text-xs font-medium',
             isLive ? 'bg-accent-light text-accent' : 'bg-muted text-muted-foreground',
           )}
+          role="status"
+          aria-label={isLive ? 'Verbindung aktiv' : 'Verbindung getrennt'}
         >
           {isLive ? 'Live' : 'Offline'}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col" aria-live="polite" aria-atomic="true" role="status">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -86,11 +102,11 @@ export function LiveFeed() {
                 key={log.id}
                 className={cn('flex items-center gap-3 px-5 py-3', !isLast && 'border-b border-border')}
               >
-                <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)}>
+                <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)} aria-hidden="true">
                   <Icon className={cn('h-4 w-4', config.color)} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-foreground">{log.message}</p>
+                  <p className="text-sm text-foreground">{sanitizeMessage(log.message, category)}</p>
                   <span className="text-xs text-muted-foreground">{timeAgo(log.created_at)}</span>
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
