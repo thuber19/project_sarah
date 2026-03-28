@@ -26,10 +26,32 @@ interface DiscoveryFormData {
   keywords?: string
 }
 
+// Leads found during discovery but not yet saved to the DB.
+// Passed back to the client for review/selection before saving.
+export interface DiscoveredLead {
+  tempId: string
+  company_name: string | null
+  full_name: string | null
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  linkedin_url: string | null
+  job_title: string | null
+  seniority: string | null
+  industry: string | null
+  company_size: string | null
+  company_domain: string | null
+  company_website: string | null
+  country: string | null
+  location: string | null
+  source: 'apollo' | 'google_places'
+  apollo_id: string | null
+  raw_data: Record<string, unknown> | null
+}
+
 interface DiscoveryResult {
   campaignId: string
-  leadsFound: number
-  leadsScored: number
+  leads: DiscoveredLead[]
 }
 
 async function logAgent(
@@ -49,10 +71,9 @@ async function logAgent(
   })
 }
 
-function apolloOrgToLead(org: ApolloOrganization, userId: string, campaignId: string): LeadInsert {
+function apolloOrgToDiscovered(org: ApolloOrganization): DiscoveredLead {
   return {
-    user_id: userId,
-    campaign_id: campaignId,
+    tempId: crypto.randomUUID(),
     first_name: null,
     last_name: null,
     full_name: null,
@@ -62,6 +83,7 @@ function apolloOrgToLead(org: ApolloOrganization, userId: string, campaignId: st
     seniority: null,
     company_name: org.name ?? null,
     company_domain: org.website_url ?? null,
+    company_website: org.website_url ?? null,
     industry: org.industry ?? null,
     company_size: org.estimated_num_employees ? categorizeSize(org.estimated_num_employees) : null,
     country: org.country ?? null,
@@ -143,17 +165,25 @@ function mapPlaceTypesToIndustry(types: string[]): string | null {
   return null
 }
 
-function placeToLead(place: Place, userId: string, campaignId: string): LeadInsert {
+function placeToDiscovered(place: Place): DiscoveredLead {
   return {
-    user_id: userId,
-    campaign_id: campaignId,
+    tempId: crypto.randomUUID(),
     company_name: place.displayName,
+    full_name: null,
+    first_name: null,
+    last_name: null,
+    email: null,
+    linkedin_url: null,
+    job_title: null,
+    seniority: null,
     company_domain: place.websiteUri,
     company_website: place.websiteUri,
     location: place.formattedAddress,
     country: extractCountryFromAddress(place.formattedAddress),
     industry: mapPlaceTypesToIndustry(place.types),
+    company_size: null,
     source: 'google_places',
+    apollo_id: null,
     raw_data: {
       place_id: place.id,
       rating: place.rating,
@@ -285,10 +315,9 @@ export async function startDiscoveryAction(
       `Suchstrategie: ${optimizedQuery.reasoning}`,
     )
 
-    const allLeads: LeadInsert[] = []
+    const allLeads: DiscoveredLead[] = []
 
-    // Step 2: Apollo Organization Search (free plan compatible)
-    // mixed_people/search requires a paid plan — mixed_companies/search is available on free
+    // Step 2: Apollo Organization Search
     timer.start('apollo_search_ms')
     await logAgent(
       supabase,
@@ -314,7 +343,7 @@ export async function startDiscoveryAction(
       })
 
       for (const org of apolloResult.organizations) {
-        allLeads.push(apolloOrgToLead(org, user.id, campaign.id))
+        allLeads.push(apolloOrgToDiscovered(org))
       }
 
       await logAgent(
@@ -350,7 +379,7 @@ export async function startDiscoveryAction(
       try {
         const result = await textSearch({ query: query.query, region: query.region })
         for (const place of result.places) {
-          allLeads.push(placeToLead(place, user.id, campaign.id))
+          allLeads.push(placeToDiscovered(place))
         }
       } catch (error) {
         console.error(`[Discovery] Google Places failed for "${query.query}":`, error)
@@ -358,8 +387,8 @@ export async function startDiscoveryAction(
     }
     timer.stop('google_places_ms')
 
-    // Step 4: Deduplicate and save leads
-    const dedupedLeads = deduplicateLeads(allLeads)
+    // Step 4: Deduplicate (by company name + domain, client-side tempIds are unique)
+    const dedupedLeads = deduplicateDiscoveredLeads(allLeads)
     const dupsRemoved = allLeads.length - dedupedLeads.length
 
     await logAgent(
@@ -367,88 +396,22 @@ export async function startDiscoveryAction(
       user.id,
       campaign.id,
       'leads_discovered',
-      `${allLeads.length} Leads gefunden${dupsRemoved > 0 ? `, ${dupsRemoved} Duplikate entfernt` : ''}`,
+      `${dedupedLeads.length} Leads gefunden${dupsRemoved > 0 ? `, ${dupsRemoved} Duplikate entfernt` : ''} — warte auf Auswahl`,
     )
-    let savedLeads: Lead[] = []
-    if (dedupedLeads.length > 0) {
-      const { data: inserted, error: insertError } = await supabase
-        .from('leads')
-        .insert(dedupedLeads)
-        .select()
-      if (insertError) {
-        console.error('[Discovery] Failed to save leads:', insertError)
-        throw new Error('Leads konnten nicht gespeichert werden')
-      }
-      savedLeads = (inserted ?? []) as Lead[]
-    }
 
-    // Step 5: Score all leads
-    let leadsScored = 0
-    if (savedLeads.length > 0) {
-      timer.start('scoring_ms')
-      await logAgent(
-        supabase,
-        user.id,
-        campaign.id,
-        'lead_scored',
-        `Bewerte ${savedLeads.length} Leads...`,
-      )
-
-      const icp: ICP = {
-        target_industries: effectiveIcp.industries ?? [],
-        target_company_sizes: effectiveIcp.company_sizes ?? [],
-        target_countries: effectiveIcp.regions ?? [],
-        target_seniorities: effectiveIcp.seniority_levels ?? [],
-        target_titles: effectiveIcp.job_titles ?? [],
-      }
-
-      try {
-        const scoringResult = await runScoringPipeline(supabase, savedLeads, icp, user.id)
-        leadsScored = scoringResult.scored
-      } catch (scoringError) {
-        console.error('[Discovery] Scoring failed (non-fatal):', scoringError)
-        await logAgent(
-          supabase,
-          user.id,
-          campaign.id,
-          'campaign_failed',
-          'Scoring fehlgeschlagen — Leads wurden trotzdem gespeichert',
-        )
-      }
-
-      timer.stop('scoring_ms')
-    }
-
-    // Step 6: Update campaign
+    // Mark campaign as completed (search phase done; leads saved separately)
     await supabase
       .from('search_campaigns')
       .update({
         status: 'completed',
-        leads_found: savedLeads.length,
-        leads_scored: leadsScored,
+        leads_found: dedupedLeads.length,
         completed_at: new Date().toISOString(),
       })
       .eq('id', campaign.id)
 
     timer.stop('total_pipeline_ms')
 
-    await logAgent(
-      supabase,
-      user.id,
-      campaign.id,
-      'campaign_completed',
-      `Fertig! ${savedLeads.length} Leads gefunden, ${leadsScored} bewertet.`,
-      { leads_found: savedLeads.length, leads_scored: leadsScored, pipeline_timing: timer.getMetrics() },
-    )
-
-    // Step 7: Trigger async enrichment (fire-and-forget)
-    if (savedLeads.length > 0) {
-      triggerEnrichment(campaign.id).catch((err) =>
-        console.error('[Discovery] Failed to trigger enrichment:', err),
-      )
-    }
-
-    return ok({ campaignId: campaign.id, leadsFound: savedLeads.length, leadsScored })
+    return ok({ campaignId: campaign.id, leads: dedupedLeads })
   } catch (error) {
     console.error('[Discovery] Pipeline failed:', error)
     const internalMessage = error instanceof Error ? error.message : 'Unbekannter Fehler'
