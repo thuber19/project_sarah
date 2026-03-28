@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Lead, LeadScore } from '@/types/lead'
 import { getGradeForScore } from '@/lib/scoring/grade'
-import { calculateRuleScore, totalFromBreakdown, type ICP } from './rule-engine'
+import { calculateTwoPhaseScore, combinedScore, calculateRuleScore, totalFromBreakdown, type ICP } from './rule-engine'
+import type { ExclusionCriteria } from '@/types/lead'
 import { getAIScoring } from './ai-scoring'
 import { logAgentAction } from '@/lib/agent-log'
 import type { TokenUsage } from '@/lib/ai/usage-tracker'
@@ -20,11 +21,15 @@ async function scoreOneLead(
   lead: Lead,
   icp: ICP,
   userId: string,
+  exclusions?: ExclusionCriteria,
 ): Promise<LeadScore | null> {
-  // Step 1: Rule-based scoring
-  const breakdown = calculateRuleScore(lead, icp)
-  const totalScore = totalFromBreakdown(breakdown)
+  // Step 1: Two-phase scoring (Company → Person)
+  const twoPhase = calculateTwoPhaseScore(lead, icp, exclusions)
+  const totalScore = combinedScore(twoPhase)
   const grade = getGradeForScore(totalScore)
+
+  // Legacy breakdown for backward compatibility
+  const breakdown = calculateRuleScore(lead, icp)
 
   // Step 2: AI scoring (with fallback)
   let aiReasoning: string | null = null
@@ -52,6 +57,9 @@ async function scoreOneLead(
         contact_fit_score: breakdown.contact_fit,
         buying_signals_score: breakdown.buying_signals,
         timing_score: breakdown.timing,
+        company_score: twoPhase.company_score,
+        person_score: twoPhase.person_score,
+        company_qualified: twoPhase.company_qualified,
         grade,
         ai_reasoning: aiReasoning,
         recommended_action: aiRecommendation,
@@ -101,6 +109,7 @@ export async function runScoringPipeline(
   leads: Lead[],
   icp: ICP,
   userId: string,
+  exclusions?: ExclusionCriteria,
 ): Promise<ScoringPipelineResult> {
   const timer = new PipelineTimer()
   timer.start('total_scoring_ms')
@@ -113,7 +122,7 @@ export async function runScoringPipeline(
 
   timer.start('batch_processing_ms')
   const rawResults = await processInBatches(leads, CONCURRENCY_LIMIT, (lead) =>
-    scoreOneLead(supabase, lead, icp, userId),
+    scoreOneLead(supabase, lead, icp, userId, exclusions),
   )
   timer.stop('batch_processing_ms')
 

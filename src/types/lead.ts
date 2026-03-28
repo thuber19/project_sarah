@@ -35,6 +35,45 @@ export interface ScoreBreakdown {
   timing: number // max 15
 }
 
+/** Two-phase scoring: Company first, then Person (only if company qualifies). */
+export interface TwoPhaseScore {
+  company_score: number // 0-100
+  company_breakdown: CompanyScoreBreakdown
+  person_score: number | null // 0-100, null if company_score <= 50
+  person_breakdown: PersonScoreBreakdown | null
+  exclusion_penalties: ExclusionPenalty[]
+  company_qualified: boolean // company_score > 50
+}
+
+export interface CompanyScoreBreakdown {
+  industry: number // max 25
+  company_size: number // max 20
+  geography: number // max 20
+  signals: number // max 20 (funding, hiring, tech, social)
+  timing: number // max 15
+  exclusion_penalty: number // negative, reduces score
+}
+
+export interface PersonScoreBreakdown {
+  decision_maker: number // max 30 — seniority / Entscheidungsträger
+  budget_authority: number // max 25 — budget holder signals
+  champion_potential: number // max 25 — internal advocate
+  title_match: number // max 20 — ICP title match
+}
+
+export interface ExclusionPenalty {
+  rule: string // e.g. "Excluded industry: Government"
+  penalty: number // negative value applied
+}
+
+/** User-defined exclusion criteria that reduce the company score. */
+export interface ExclusionCriteria {
+  excluded_industries: string[]
+  excluded_company_sizes: string[]
+  excluded_countries: string[]
+  excluded_keywords: string[] // matched against company_name
+}
+
 export interface LeadScore {
   id: string
   lead_id: string

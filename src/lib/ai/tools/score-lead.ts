@@ -1,6 +1,6 @@
 import { tool } from 'ai'
 import { z } from 'zod'
-import { calculateRuleScore, totalFromBreakdown } from '@/lib/scoring/rule-engine'
+import { calculateTwoPhaseScore, combinedScore } from '@/lib/scoring/rule-engine'
 import type { Lead } from '@/types/lead'
 import { getGradeForScore } from '@/lib/scoring/grade'
 import type { ICP } from '@/lib/scoring/rule-engine'
@@ -73,17 +73,20 @@ export function createScoreLead(ctx: ToolContext) {
           target_titles: params.icp.targetTitles,
         }
 
-        const breakdown = calculateRuleScore(lead, icp)
-        const totalScore = totalFromBreakdown(breakdown)
+        const twoPhase = calculateTwoPhaseScore(lead, icp)
+        const totalScore = combinedScore(twoPhase)
         const grade = getGradeForScore(totalScore)
 
         await logToolAction(
           ctx,
           'lead_scored',
-          `Score: ${params.firstName} ${params.lastName} = ${totalScore} (${grade})`,
+          `Score: ${params.firstName} ${params.lastName} = ${totalScore} (${grade}) | Company: ${twoPhase.company_score}${twoPhase.company_qualified ? ` → Person: ${twoPhase.person_score}` : ' (nicht qualifiziert)'}`,
           {
             totalScore,
             grade,
+            companyScore: twoPhase.company_score,
+            personScore: twoPhase.person_score,
+            companyQualified: twoPhase.company_qualified,
           },
         )
 
@@ -91,12 +94,12 @@ export function createScoreLead(ctx: ToolContext) {
           success: true as const,
           totalScore,
           grade,
-          breakdown: {
-            companyFit: breakdown.company_fit,
-            contactFit: breakdown.contact_fit,
-            buyingSignals: breakdown.buying_signals,
-            timing: breakdown.timing,
-          },
+          companyScore: twoPhase.company_score,
+          personScore: twoPhase.person_score,
+          companyQualified: twoPhase.company_qualified,
+          companyBreakdown: twoPhase.company_breakdown,
+          personBreakdown: twoPhase.person_breakdown,
+          exclusionPenalties: twoPhase.exclusion_penalties,
         }
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Scoring fehlgeschlagen'

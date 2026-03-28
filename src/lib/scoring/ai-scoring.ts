@@ -50,11 +50,13 @@ export async function getAIScoring(
 - Land: ${lead.country ?? 'Unbekannt'}
 - Stadt: ${lead.location ?? 'Unbekannt'}
 
-## Regel-basierter Score: ${totalScore}/100
-- Company Fit: ${breakdown.company_fit}/40
-- Contact Fit: ${breakdown.contact_fit}/20
+## Zwei-Phasen-Score: ${totalScore}/100
+- Company Fit: ${breakdown.company_fit}/45 (Branche, Größe, Region)
+- Contact Fit: ${breakdown.contact_fit}/20 (Entscheidungsträger, Budget, Champion)
 - Buying Signals: ${breakdown.buying_signals}/25
 - Timing: ${breakdown.timing}/15
+
+Das Scoring folgt einem 2-Phasen-Modell: Erst wird die Firma bewertet (Company Score). Nur wenn die Firma >50% erreicht, wird der Ansprechpartner bewertet (Person Score: Entscheidungsträger, Budgetverantwortung, Champion-Potenzial).
 
 Gib eine kurze, prägnante Begründung warum dieser Lead gut oder schlecht passt, und eine klare Handlungsempfehlung.`,
     })
