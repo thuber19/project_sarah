@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertCircle, Bell, Compass, Loader2, Search, Sparkles, Target } from 'lucide-react'
+import { AlertCircle, Compass, Loader2, Search, Sparkles, Target } from 'lucide-react'
+import { AppTopbar } from '@/components/layout/app-topbar'
 import { useAgentLogs } from '@/hooks/use-agent-logs'
 import type { AgentLog } from '@/types/database'
 
@@ -75,29 +76,22 @@ export default function AgentLogsPage() {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Agent-Aktivitäten</span>
-        <div className="flex items-center gap-4">
+      <AppTopbar
+        title="Agent-Aktivitäten"
+        actions={
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Suchen..."
+              placeholder="Logs durchsuchen..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
+              aria-label="Logs durchsuchen"
             />
           </div>
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
         {/* Stats row */}
@@ -159,8 +153,8 @@ export default function AgentLogsPage() {
                       {formatTime(log.created_at)}
                     </span>
                     {getEventIcon(category)}
-                    <div className="flex-1">
-                      <p className="text-sm text-foreground">{log.message}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="break-words whitespace-pre-wrap text-sm text-foreground">{log.message}</p>
                     </div>
                     <span className={`shrink-0 text-xs font-medium ${isFailed ? 'text-destructive' : 'text-success'}`}>
                       {isFailed ? 'Fehler' : 'Erfolg'}
