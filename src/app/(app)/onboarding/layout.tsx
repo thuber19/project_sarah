@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Bot } from 'lucide-react'
+import { Logo } from '@/components/shared/logo'
 
 const TOTAL_STEPS = 4
 
@@ -26,10 +26,7 @@ export default function OnboardingLayout({
     <div className="flex min-h-screen flex-col items-center justify-between bg-muted pb-8 pt-10">
       {/* Header */}
       <div className="flex flex-col items-center">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-accent" />
-          <span className="text-lg font-bold text-foreground">Sarah</span>
-        </div>
+        <Logo size="sm" textClassName="font-bold text-foreground" />
 
         <div className="mt-4 flex items-center gap-3">
           <span className="text-sm text-muted-foreground">

@@ -1,24 +1,40 @@
-import { Bot } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import Image from 'next/image'
+
+type LogoSize = 'sm' | 'md' | 'lg' | 'xl'
+
+const sizeConfig: Record<LogoSize, { icon: number; text: string }> = {
+  sm: { icon: 20, text: 'text-lg' },
+  md: { icon: 24, text: 'text-xl' },
+  lg: { icon: 28, text: 'text-2xl' },
+  xl: { icon: 36, text: 'text-3xl' },
+}
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+  size?: LogoSize
+  showText?: boolean
   textClassName?: string
+  className?: string
 }
 
-const sizes = {
-  sm: { icon: 'size-5', text: 'text-base' },
-  md: { icon: 'size-6', text: 'text-lg' },
-  lg: { icon: 'size-8', text: 'text-2xl' },
-}
+export function Logo({
+  size = 'md',
+  showText = true,
+  textClassName = 'font-bold text-foreground',
+  className,
+}: LogoProps) {
+  const { icon, text } = sizeConfig[size]
 
-export function Logo({ size = 'md', className, textClassName }: LogoProps) {
-  const s = sizes[size]
   return (
-    <div className={cn('flex items-center gap-2', className)}>
-      <Bot className={cn(s.icon, 'text-accent')} aria-hidden="true" />
-      <span className={cn(s.text, 'font-semibold tracking-tight', textClassName)}>Sarah</span>
+    <div className={`flex items-center gap-2 ${className ?? ''}`}>
+      <Image
+        src="/logo.png"
+        alt="Sarah Logo"
+        width={icon}
+        height={icon}
+        className="shrink-0"
+        priority
+      />
+      {showText && <span className={`${text} ${textClassName}`}>Sarah</span>}
     </div>
   )
 }

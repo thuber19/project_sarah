@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from '@/components/shared/logo'
 
 const navLinks = [
   { href: '#features', label: 'Features' },
@@ -9,8 +10,8 @@ const navLinks = [
 export function MarketingNavbar() {
   return (
     <nav className="flex h-[72px] w-full items-center justify-between border-b border-border bg-white px-20">
-      <Link href="/" className="text-2xl font-bold text-foreground">
-        Sarah
+      <Link href="/" className="flex items-center">
+        <Logo size="lg" textClassName="font-bold text-foreground" />
       </Link>
 
       <div className="flex items-center gap-8">

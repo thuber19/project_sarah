@@ -16,8 +16,14 @@ export const metadata: Metadata = {
   description:
     'Sarah findet automatisch die besten Leads für dein Unternehmen. KI-gestützte Website-Analyse, Lead-Discovery und intelligentes Scoring.',
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
   },
+  manifest: '/manifest.webmanifest',
   openGraph: {
     title: 'Sarah — AI Sales Agent für den DACH-Markt',
     description:

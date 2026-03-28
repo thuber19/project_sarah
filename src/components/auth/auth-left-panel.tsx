@@ -1,3 +1,5 @@
+import { Logo } from '@/components/shared/logo'
+
 export function AuthLeftPanel() {
   return (
     <div className="hidden w-1/2 bg-primary lg:flex">
@@ -6,7 +8,7 @@ export function AuthLeftPanel() {
         <div className="w-12 h-1 rounded-full bg-accent" />
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold text-primary-foreground">Sarah</h1>
+          <Logo size="xl" textClassName="font-bold text-primary-foreground" />
           <p className="text-lg text-sidebar-muted">Dein AI Sales Agent f&uuml;r den DACH-Markt</p>
         </div>
 
