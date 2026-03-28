@@ -240,7 +240,6 @@ describe('discovery.actions', () => {
         updated_at: '2026-01-01',
       })
       const logChain = createQueryChain(null)
-      const updateChain = createQueryChain(null)
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
