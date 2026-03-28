@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, Bell, ExternalLink, Mail, Search, User } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
+import { OutreachVoice } from '@/components/leads/outreach-voice'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
@@ -121,6 +122,7 @@ export default async function LeadDetailPage({ params }: Props) {
         <div className="mt-8 flex gap-8">
           {/* Left column */}
           <div className="flex flex-1 flex-col gap-8">
+            <OutreachVoice leadId={id} companyName={lead.company_name ?? null} />
             {score && (
               <div className="rounded-xl border border-border bg-white p-6">
                 <h2 className="mb-4 text-base font-semibold text-foreground">Score Breakdown</h2>
