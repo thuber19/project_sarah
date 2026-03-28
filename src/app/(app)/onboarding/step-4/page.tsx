@@ -20,17 +20,17 @@ export default function OnboardingStep4() {
     )
   }
 
-  function handleComplete() {
+  function handleComplete(destination: '/dashboard' | '/discovery' = '/dashboard') {
     if (!profile || !icp) return
     setError(null)
 
     startTransition(async () => {
-      const result = await saveOnboardingAction(profile, icp)
+      const result = await saveOnboardingAction(profile, icp, destination)
       if (result && 'error' in result) {
         setError(result.error)
         return
       }
-      // saveOnboardingAction redirects to /dashboard on success
+      // saveOnboardingAction redirects on success
       resetOnboarding()
     })
   }
@@ -40,7 +40,7 @@ export default function OnboardingStep4() {
   }
 
   return (
-    <div className="flex w-full max-w-[560px] flex-col items-center gap-7 rounded-xl border border-border bg-white p-12 pt-12 pb-10">
+    <div className="flex w-full max-w-[560px] flex-col items-center gap-7 rounded-xl border border-border bg-white p-6 pt-8 pb-8 md:p-12 md:pt-12 md:pb-10">
       <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-green-50">
         <CheckCircle className="text-success" size={36} />
       </div>
@@ -64,7 +64,23 @@ export default function OnboardingStep4() {
 
       <button
         type="button"
-        onClick={handleComplete}
+        onClick={() => handleComplete('/discovery')}
+        disabled={isPending}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {isPending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Speichere...
+          </>
+        ) : (
+          'Erste Discovery starten'
+        )}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleComplete('/dashboard')}
         disabled={isPending}
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >

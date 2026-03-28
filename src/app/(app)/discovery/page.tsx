@@ -2,9 +2,10 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
-import { Bell, CheckCircle, Loader2, Search, Square, XCircle } from 'lucide-react'
+import { CheckCircle, Loader2, Search, Square, XCircle } from 'lucide-react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
+import { AppTopbar } from '@/components/layout/app-topbar'
 
 interface ToolPart {
   type: string
@@ -90,11 +91,10 @@ Nutze zuerst getIcpProfile um mein ICP zu laden, dann searchLeads um Leads zu fi
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Lead Discovery</span>
-        <div className="flex items-center gap-3">
-          {isLoading ? (
+      <AppTopbar
+        title="Lead Discovery"
+        actions={
+          isLoading ? (
             <button
               type="button"
               onClick={stop}
@@ -111,32 +111,14 @@ Nutze zuerst getIcpProfile um mein ICP zu laden, dann searchLeads um Leads zu fi
             >
               Discovery starten
             </button>
-          )}
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
-            />
-          </div>
-
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+          )
+        }
+      />
 
       {/* Content area */}
-      <div className="flex flex-1 gap-8 overflow-y-auto p-8">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 md:flex-row md:gap-8 md:p-8">
         {/* Left column — Search criteria */}
-        <div className="flex w-[320px] shrink-0 flex-col gap-6">
+        <div className="flex w-full shrink-0 flex-col gap-6 md:w-[320px]">
           <div className="flex flex-col gap-5 rounded-xl border border-border bg-white p-6">
             <div className="flex items-center gap-3">
               <h2 className="text-base font-semibold text-foreground">Suchkriterien</h2>
@@ -211,7 +193,7 @@ Nutze zuerst getIcpProfile um mein ICP zu laden, dann searchLeads um Leads zu fi
 
           {/* Tool execution timeline */}
           {toolParts.length > 0 && (
-            <div className="flex flex-col gap-2 rounded-xl border border-border bg-white p-4">
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-white p-4" aria-live="polite">
               {toolParts.map((t, i) => {
                 const isComplete = t.state === 'result'
                 const isFailed = isComplete && typeof t.result === 'object' && t.result !== null && 'success' in t.result && !(t.result as Record<string, unknown>).success
@@ -219,11 +201,11 @@ Nutze zuerst getIcpProfile um mein ICP zu laden, dann searchLeads um Leads zu fi
                 return (
                   <div key={`${t.toolName}-${i}`} className="flex items-center gap-3 py-1">
                     {!isComplete ? (
-                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" />
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" aria-hidden="true" />
                     ) : isFailed ? (
-                      <XCircle className="h-4 w-4 shrink-0 text-destructive" />
+                      <XCircle className="h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
                     ) : (
-                      <CheckCircle className="h-4 w-4 shrink-0 text-success" />
+                      <CheckCircle className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
                     )}
                     <span className="text-sm text-foreground">
                       {TOOL_LABELS[t.toolName] ?? t.toolName}
@@ -241,7 +223,7 @@ Nutze zuerst getIcpProfile um mein ICP zu laden, dann searchLeads um Leads zu fi
 
           {/* Agent text response */}
           {textContent && (
-            <div className="rounded-xl border border-border bg-white p-6">
+            <div className="rounded-xl border border-border bg-white p-6" aria-live="polite">
               <p className="whitespace-pre-wrap text-sm text-foreground">{textContent}</p>
             </div>
           )}

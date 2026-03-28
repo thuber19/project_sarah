@@ -84,7 +84,7 @@ export function AgentChat() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg transition-transform hover:scale-105 md:bottom-6 md:right-6 md:z-50"
         aria-label="Chat mit Sarah öffnen"
       >
         <MessageCircle className="h-6 w-6" />
@@ -93,22 +93,22 @@ export function AgentChat() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-2xl">
+    <div className="fixed inset-x-0 bottom-16 z-40 mx-2 flex h-[420px] flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-2xl md:inset-auto md:bottom-6 md:right-6 md:z-50 md:mx-0 md:h-[520px] md:w-[380px]" role="dialog" aria-label="Chat mit Sarah" aria-modal="false">
       {/* Header */}
       <div className="flex items-center justify-between bg-primary px-4 py-3">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-accent" />
           <span className="text-sm font-semibold text-white">Sarah</span>
           {isLoading && (
-            <span className="flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white">
-              <Loader2 className="h-2.5 w-2.5 animate-spin" /> Live
+            <span className="flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 text-[10px] font-medium text-white" aria-label="Antwort wird generiert">
+              <Loader2 className="h-2.5 w-2.5 animate-spin" aria-hidden="true" /> Live
             </span>
           )}
         </div>
         <button
           type="button"
           onClick={() => setIsOpen(false)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex h-10 w-10 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           aria-label="Chat schließen"
         >
           <X className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function AgentChat() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4" aria-live="polite" aria-atomic="false" role="region" aria-label="Chat-Nachrichten">
         {messages.length === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
             <Bot className="h-8 w-8 text-muted-foreground" />
@@ -163,11 +163,11 @@ export function AgentChat() {
                       return (
                         <div key={`${t.toolName}-${i}`} className="flex items-center gap-2 py-0.5">
                           {!isComplete ? (
-                            <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent" />
+                            <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent" aria-hidden="true" />
                           ) : isFailed ? (
-                            <XCircle className="h-3 w-3 shrink-0 text-destructive" />
+                            <XCircle className="h-3 w-3 shrink-0 text-destructive" aria-hidden="true" />
                           ) : (
-                            <CheckCircle className="h-3 w-3 shrink-0 text-success" />
+                            <CheckCircle className="h-3 w-3 shrink-0 text-success" aria-hidden="true" />
                           )}
                           <span className="text-xs text-muted-foreground">
                             {TOOL_LABELS[t.toolName] ?? t.toolName}

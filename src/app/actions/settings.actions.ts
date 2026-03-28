@@ -20,8 +20,21 @@ const icpSchema = z.object({
   tech_stack: z.array(z.string()),
 })
 
+const commStyleSchema = z.object({
+  example_email: z.string().optional(),
+  email_signature: z.string().optional(),
+  writing_style: z.string().optional(),
+  formality: z.enum(['du', 'sie']).optional(),
+  example_voice_script: z.string().optional(),
+  speaking_style: z.string().optional(),
+  opening_phrase: z.string().optional(),
+  call_to_action: z.string().optional(),
+  additional_notes: z.string().optional(),
+})
+
 export type SettingsProfileData = z.infer<typeof profileSchema>
 export type SettingsIcpData = z.infer<typeof icpSchema>
+export type CommunicationStyleData = z.infer<typeof commStyleSchema>
 
 export async function loadSettingsData() {
   const { user, supabase } = await requireAuth()
@@ -35,6 +48,7 @@ export async function loadSettingsData() {
     profile: profileResult.data,
     icp: icpResult.data,
     email: user.email ?? '',
+    communicationStyle: (profileResult.data?.communication_style as CommunicationStyleData | null) ?? null,
   }
 }
 
@@ -80,5 +94,23 @@ export async function updateIcpAction(data: SettingsIcpData): Promise<{ error?: 
     .eq('user_id', user.id)
 
   if (error) return { error: 'ICP konnte nicht gespeichert werden' }
+  return {}
+}
+
+export async function updateCommunicationStyleAction(data: CommunicationStyleData): Promise<{ error?: string }> {
+  const { user, supabase } = await requireAuth()
+
+  const parsed = commStyleSchema.safeParse(data)
+  if (!parsed.success) return { error: 'Ungültige Daten' }
+
+  const { error } = await supabase
+    .from('business_profiles')
+    .update({
+      communication_style: parsed.data,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', user.id)
+
+  if (error) return { error: 'Kommunikationsstil konnte nicht gespeichert werden' }
   return {}
 }

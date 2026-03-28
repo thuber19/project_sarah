@@ -1,4 +1,5 @@
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
 import { ScoringProgressBanner } from '@/components/layout/scoring-progress-banner'
@@ -34,11 +35,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         Zum Hauptinhalt springen
       </a>
-      <AppSidebar displayName={rawName} email={email} initials={initials} />
+      {/* Desktop sidebar — hidden on mobile */}
+      <div className="hidden md:block">
+        <AppSidebar displayName={rawName} email={email} initials={initials} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <ScoringProgressBanner initialRun={activeRun} />
-        <main id="main-content" className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex flex-1 flex-col overflow-y-auto pb-16 md:pb-0">{children}</main>
       </div>
+      {/* Mobile bottom tab bar — hidden on desktop */}
+      <MobileTabBar />
       <AgentChat />
       <Toaster position="bottom-right" richColors />
     </div>

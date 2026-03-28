@@ -1,11 +1,13 @@
 import { streamText } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
-import { scrapeWebsite } from '@/lib/scraper'
+import { scrapeWebsite, type TechSignals } from '@/lib/scraper'
+import { detectTechStack, type TechStackResult } from '@/lib/ai/tools/detect-tech-stack'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import type { Lead } from '@/types/lead'
 
 interface ResearchReport {
   tech_stack: string[]
+  detected_technologies: TechStackResult | null
   hiring_activity: string
   growth_signals: string
   dach_data: {
@@ -30,15 +32,22 @@ export async function researchLead(
 
   // Scrape the website
   let scrapedContent = ''
+  let techSignals: TechSignals | null = null
   try {
     const scraped = await scrapeWebsite(websiteUrl)
     scrapedContent = [scraped.title, scraped.metaDescription, scraped.bodyText]
       .filter(Boolean)
       .join('\n\n')
+    techSignals = scraped.techSignals
   } catch (error) {
     console.warn(`Failed to scrape ${websiteUrl}:`, error)
     scrapedContent = `Website nicht erreichbar: ${websiteUrl}`
   }
+
+  // Pattern-based tech detection from HTML signals
+  const rawData = lead.raw_data as Record<string, unknown> | null
+  const apolloTech = rawData?.technologies as string[] | undefined
+  const detectedTech = techSignals ? detectTechStack(techSignals, apolloTech) : null
 
   const systemPrompt = buildSystemPrompt('ein Lead Research Specialist für B2B SaaS', {})
 
@@ -55,6 +64,9 @@ export async function researchLead(
 
 ## Gescrapte Website-Inhalte
 ${scrapedContent.substring(0, 3000)}
+
+## Automatisch erkannte Technologien (HTML-Analyse)
+${detectedTech ? detectedTech.summary.join(', ') || 'Keine erkannt' : 'Website nicht erreichbar'}
 
 ## Deine Aufgabe
 
@@ -99,8 +111,15 @@ Antworte mit klarem Markdown-Formatting.`
     }
 
     // Parse the report into structured data
+    // Merge AI-extracted tech with pattern-detected tech
+    const aiTech = extractTechStack(fullText)
+    const mergedTech = detectedTech
+      ? [...new Set([...detectedTech.summary, ...aiTech])]
+      : aiTech
+
     const report: ResearchReport = {
-      tech_stack: extractTechStack(fullText),
+      tech_stack: mergedTech,
+      detected_technologies: detectedTech,
       hiring_activity: extractSection(fullText, 'Hiring-Aktivität'),
       growth_signals: extractSection(fullText, 'Growth Signals'),
       dach_data: extractDACHData(fullText),

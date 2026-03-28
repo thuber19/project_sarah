@@ -25,6 +25,31 @@ const SENIORITY_SCORES: Record<string, number> = {
   entry: 2,
 }
 
+// DACH-specific German seniority title mappings
+const GERMAN_SENIORITY_MAP: Record<string, number> = {
+  'geschäftsführer': 18,    // Managing Director (= CEO)
+  'geschäftsführerin': 18,
+  'vorstand': 18,           // Board member
+  'vorständin': 18,
+  'prokurist': 14,          // Authorized signatory (≈ Director)
+  'prokuristin': 14,
+  'inhaber': 20,            // Owner
+  'inhaberin': 20,
+  'gesellschafter': 20,     // Shareholder/Partner
+  'gesellschafterin': 20,
+  'gründer': 20,            // Founder
+  'gründerin': 20,
+  'abteilungsleiter': 12,   // Department head
+  'abteilungsleiterin': 12,
+  'bereichsleiter': 14,     // Division head (≈ Director)
+  'bereichsleiterin': 14,
+  'teamleiter': 10,         // Team lead (≈ Manager)
+  'teamleiterin': 10,
+}
+
+// DACH company type indicators (signals established, registered business)
+const DACH_COMPANY_TYPES = ['gmbh', 'ag', 'kg', 'ohg', 'eg', 'se', 'e.v.', 'gbr', 'ug']
+
 export interface ICP {
   target_industries: string[]
   target_company_sizes: string[]
@@ -63,6 +88,14 @@ function scoreCompanyFit(lead: Lead, icp: ICP): number {
     }
   }
 
+  // DACH company type bonus (0-3) — registered entities signal established businesses
+  if (lead.company_name) {
+    const companyLower = lead.company_name.toLowerCase()
+    if (DACH_COMPANY_TYPES.some((type) => companyLower.includes(type))) {
+      score += 3
+    }
+  }
+
   // Has domain / web presence (0-5)
   if (lead.company_domain) {
     score += 5
@@ -74,7 +107,7 @@ function scoreCompanyFit(lead: Lead, icp: ICP): number {
 function scoreContactFit(lead: Lead, icp: ICP): number {
   let score = 0
 
-  // Seniority (0-12)
+  // Seniority (0-12) — check structured seniority field first, then fall back to German title mapping
   if (lead.seniority) {
     const seniority = lead.seniority.toLowerCase()
     const seniorityScore = SENIORITY_SCORES[seniority]
@@ -83,12 +116,27 @@ function scoreContactFit(lead: Lead, icp: ICP): number {
     }
   }
 
+  // If no seniority score yet, try to derive from German job title
+  if (score === 0 && lead.title) {
+    const titleLower = lead.title.toLowerCase()
+    for (const [germanTitle, germanScore] of Object.entries(GERMAN_SENIORITY_MAP)) {
+      if (titleLower.includes(germanTitle)) {
+        score += Math.min(germanScore, 12)
+        break
+      }
+    }
+  }
+
   // Title match (0-8)
   if (lead.title) {
     const title = lead.title.toLowerCase()
     if (icp.target_titles.some((t) => title.includes(t.toLowerCase()))) {
       score += 8
-    } else if (['ceo', 'cto', 'cfo', 'head', 'director', 'vp', 'geschäftsführer'].some((t) => title.includes(t))) {
+    } else if (
+      ['ceo', 'cto', 'cfo', 'head', 'director', 'vp',
+       'geschäftsführer', 'vorstand', 'prokurist', 'inhaber', 'bereichsleiter'
+      ].some((t) => title.includes(t))
+    ) {
       score += 5
     }
   }
@@ -111,6 +159,11 @@ function scoreBuyingSignals(lead: Lead): number {
 
   // Has social presence (engaged company)
   if (raw.linkedin_url || raw.twitter_url) score += 5
+
+  // Competitor user bonus — uses a competing tool → higher switching probability
+  if (raw.competitor_matches && Array.isArray(raw.competitor_matches) && raw.competitor_matches.length > 0) {
+    score += 5
+  }
 
   return Math.min(score, 25)
 }

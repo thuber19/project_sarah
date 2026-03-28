@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { CheckSquare2, Download, Mail, Trash2, Zap } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
@@ -16,7 +14,7 @@ import { ScoreBadge } from '@/components/leads/score-badge'
 
 type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR_FIT'
 
-interface Lead {
+export interface LeadRow {
   id: string
   company: string
   industry: string
@@ -26,7 +24,13 @@ interface Lead {
   updated: string
 }
 
-const mockLeads: Lead[] = [
+interface LeadTableProps {
+  leads?: LeadRow[]
+  selectedIds: Set<string>
+  onSelectionChange: (ids: Set<string>) => void
+}
+
+const mockLeads: LeadRow[] = [
   { id: '1', company: 'TechVentures GmbH', industry: 'SaaS', location: 'Wien', score: 97, status: 'HOT', updated: '24.03.2026' },
   { id: '2', company: 'DataFlow AG', industry: 'Analytics', location: 'München', score: 92, status: 'HOT', updated: '22.03.2026' },
   { id: '3', company: 'AlpenTech Solutions', industry: 'IT', location: 'Zürich', score: 85, status: 'QUALIFIED', updated: '24.03.2026' },
@@ -36,83 +40,31 @@ const mockLeads: Lead[] = [
   { id: '7', company: 'BavariaConnect', industry: 'Logistik', location: 'Nürnberg', score: 42, status: 'POOR_FIT', updated: '15.02.2026' },
 ]
 
-export function LeadTable() {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+export function LeadTable({ leads, selectedIds, onSelectionChange }: LeadTableProps) {
+  const data = leads ?? mockLeads
 
-  const allSelected = selectedIds.size === mockLeads.length
+  const allSelected = data.length > 0 && selectedIds.size === data.length
   const someSelected = selectedIds.size > 0 && !allSelected
 
   function toggleAll() {
     if (allSelected) {
-      setSelectedIds(new Set())
+      onSelectionChange(new Set())
     } else {
-      setSelectedIds(new Set(mockLeads.map((l) => l.id)))
+      onSelectionChange(new Set(data.map((l) => l.id)))
     }
   }
 
   function toggleOne(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    onSelectionChange(next)
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Bulk-Action-Toolbar */}
-      {selectedIds.size > 0 && (
-        <div
-          role="toolbar"
-          aria-label="Bulk-Aktionen"
-          className="flex items-center gap-3 rounded-lg border border-accent bg-accent-light px-4 py-2.5"
-        >
-          <span className="text-sm font-semibold text-accent">
-            {selectedIds.size} {selectedIds.size === 1 ? 'Lead' : 'Leads'} ausgewählt
-          </span>
-          <div className="mx-2 h-4 w-px bg-border" />
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
-          >
-            <Zap className="h-3.5 w-3.5" />
-            Scoring starten
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-            <Mail className="h-3.5 w-3.5" />
-            Als kontaktiert markieren
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Exportieren
-          </button>
-          <button
-            type="button"
-            className="ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Löschen
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedIds(new Set())}
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary"
-            aria-label="Auswahl aufheben"
-          >
-            <CheckSquare2 className="h-3.5 w-3.5" />
-            Aufheben
-          </button>
-        </div>
-      )}
-
-      <div className="overflow-hidden rounded-xl border border-border bg-white">
+    <>
+      {/* Desktop table */}
+      <div className="hidden overflow-hidden rounded-xl border border-border bg-white md:block">
         <div className="max-h-[600px] overflow-y-auto">
           <Table>
             <TableHeader>
@@ -143,13 +95,10 @@ export function LeadTable() {
                 <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Aktualisiert
                 </TableHead>
-                <TableHead className="sticky top-0 z-10 w-12 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {/* Actions */}
-                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockLeads.map((lead) => (
+              {data.map((lead) => (
                 <TableRow
                   key={lead.id}
                   className={selectedIds.has(lead.id) ? 'bg-accent-light/40 hover:bg-accent-light/60' : 'hover:bg-muted/50'}
@@ -178,21 +127,67 @@ export function LeadTable() {
                     <ScoreBadge grade={lead.status} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{lead.updated}</TableCell>
-                  <TableCell>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={`Aktionen für ${lead.company}`}
-                    >
-                      ...
-                    </button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       </div>
-    </div>
+
+      {/* Mobile card layout */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {/* Mobile select all */}
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-white px-4 py-3">
+          <Checkbox
+            aria-label="Alle auswählen"
+            checked={allSelected}
+            indeterminate={someSelected}
+            onCheckedChange={toggleAll}
+          />
+          <span className="text-sm font-medium text-muted-foreground">
+            {allSelected ? 'Alle abwählen' : 'Alle auswählen'}
+          </span>
+          {selectedIds.size > 0 && (
+            <span className="ml-auto text-xs font-medium text-accent">
+              {selectedIds.size} ausgewählt
+            </span>
+          )}
+        </div>
+
+        {data.map((lead) => {
+          const isSelected = selectedIds.has(lead.id)
+          return (
+            <div
+              key={lead.id}
+              className={`flex items-start gap-3 rounded-xl border bg-white p-4 ${
+                isSelected ? 'border-accent bg-accent-light/30' : 'border-border'
+              }`}
+            >
+              <Checkbox
+                aria-label={`${lead.company} auswählen`}
+                checked={isSelected}
+                onCheckedChange={() => toggleOne(lead.id)}
+                className="mt-0.5"
+              />
+              <Link href={`/leads/${lead.id}`} className="flex flex-1 flex-col gap-1.5 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-sm font-semibold text-foreground">{lead.company}</span>
+                  <ScoreBadge grade={lead.status} />
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{lead.industry}</span>
+                  <span>·</span>
+                  <span>{lead.location}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-foreground">{lead.score}</span>
+                  <span className="text-xs text-muted-foreground">{lead.updated}</span>
+                </div>
+              </Link>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }

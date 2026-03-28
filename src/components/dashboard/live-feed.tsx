@@ -88,31 +88,33 @@ export function LiveFeed() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : logs.length === 0 ? (
+        ) : logs.filter((l) => categorize(l.action_type) !== 'error').length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Aktivitäten</p>
         ) : (
-          logs.map((log, index) => {
-            const category = categorize(log.action_type)
-            const config = categoryConfig[category]
-            const Icon = config.icon
-            const isLast = index === logs.length - 1
+          logs
+            .filter((l) => categorize(l.action_type) !== 'error')
+            .map((log, index, filtered) => {
+              const category = categorize(log.action_type)
+              const config = categoryConfig[category]
+              const Icon = config.icon
+              const isLast = index === filtered.length - 1
 
-            return (
-              <div
-                key={log.id}
-                className={cn('flex items-center gap-3 px-5 py-3', !isLast && 'border-b border-border')}
-              >
-                <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)} aria-hidden="true">
-                  <Icon className={cn('h-4 w-4', config.color)} />
+              return (
+                <div
+                  key={log.id}
+                  className={cn('flex items-center gap-3 px-5 py-3', !isLast && 'border-b border-border')}
+                >
+                  <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)} aria-hidden="true">
+                    <Icon className={cn('h-4 w-4', config.color)} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-foreground">{sanitizeMessage(log.message, category)}</p>
+                    <span className="text-xs text-muted-foreground">{timeAgo(log.created_at)}</span>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">{sanitizeMessage(log.message, category)}</p>
-                  <span className="text-xs text-muted-foreground">{timeAgo(log.created_at)}</span>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
-              </div>
-            )
-          })
+              )
+            })
         )}
       </div>
     </div>

@@ -4,6 +4,7 @@ import { StatCard } from '@/components/dashboard/stat-card'
 import { LiveFeed } from '@/components/dashboard/live-feed'
 import { ScoreDistribution } from '@/components/dashboard/score-distribution'
 import { PipelineStatus } from '@/components/dashboard/pipeline-status'
+import { IcpRefinementWidget } from '@/components/dashboard/icp-refinement-widget'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
@@ -67,8 +68,8 @@ export default async function DashboardPage() {
       {totalLeads === 0 ? (
         <DashboardEmptyState />
       ) : (
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
+          <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
             <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" changeBgColor="#DBEAFE" />
             <StatCard label="Qualifizierte Leads" value={String(qualifiedLeads)} changeType="positive" />
             <StatCard
@@ -92,6 +93,9 @@ export default async function DashboardPage() {
             <LiveFeed />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
+
+          {/* ICP Refinement Widget */}
+          <IcpRefinementWidget />
         </div>
       )}
     </div>
@@ -124,9 +128,9 @@ const hintCards = [
 
 function DashboardEmptyState() {
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-8">
       {/* Welcome */}
-      <div className="rounded-xl border border-border bg-white p-8 text-center">
+      <div className="rounded-xl border border-border bg-white p-6 text-center md:p-8">
         <h2 className="text-xl font-bold text-foreground">Willkommen bei Sarah</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit Daten zu füllen.

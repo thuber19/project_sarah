@@ -9,6 +9,7 @@ import {
   Users,
   Compass,
   Target,
+  Swords,
   Activity,
   Settings,
   LogOut,
@@ -20,6 +21,7 @@ const navItems = [
   { label: "Leads", href: "/leads", icon: Users },
   { label: "Discovery", href: "/discovery", icon: Compass },
   { label: "Scoring", href: "/scoring", icon: Target },
+  { label: "Competitors", href: "/competitor-analysis", icon: Swords },
   { label: "Agent Logs", href: "/agent-logs", icon: Activity },
   { label: "Settings", href: "/settings", icon: Settings },
 ] as const;
@@ -41,7 +43,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
   }
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col justify-between bg-sidebar px-4 py-6">
+    <aside className="flex h-full w-60 shrink-0 flex-col justify-between bg-sidebar px-4 py-6" aria-label="Seitenleiste">
       {/* Top: Logo + Navigation */}
       <div>
         <div className="flex items-center gap-2.5 px-3 pb-8">
@@ -95,7 +97,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
           type="button"
           onClick={handleSignOut}
           disabled={isPending}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
+          className="flex size-11 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
           aria-label="Abmelden"
           title="Abmelden"
         >

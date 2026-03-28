@@ -1,17 +1,19 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { useState } from 'react'
+import { Info, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { useOnboarding } from '@/contexts/onboarding-context'
+
+const COMPANY_SIZE_OPTIONS = [
+  { value: '1-10', label: '1–10 Mitarbeiter' },
+  { value: '11-50', label: '11–50 Mitarbeiter' },
+  { value: '51-200', label: '51–200 Mitarbeiter' },
+  { value: '201-500', label: '201–500 Mitarbeiter' },
+  { value: '501-1000', label: '501–1.000 Mitarbeiter' },
+]
 
 function TagPill({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
@@ -41,8 +43,10 @@ function deriveRegions(icpRegions: string[]): Record<string, boolean> {
 
 export default function OnboardingStep3() {
   const router = useRouter()
-  const context = useOnboarding()
-  const { icp, scoreThreshold, setIcp, setScoreThreshold } = context
+  const { icp, scoreThreshold, setIcp, setScoreThreshold } = useOnboarding()
+
+  const [newIndustry, setNewIndustry] = useState('')
+  const [showTooltip, setShowTooltip] = useState(false)
 
   if (!icp) {
     return (
@@ -52,7 +56,6 @@ export default function OnboardingStep3() {
     )
   }
 
-  const [companySize] = icp.company_sizes
   const regions = deriveRegions(icp.regions)
 
   function handleNext() {
@@ -70,18 +73,42 @@ export default function OnboardingStep3() {
     router.push('/onboarding/step-4')
   }
 
-  const handleCompanySizeChange = (value: string | null) => {
-    if (!value) return
+  function handleIndustryAdd() {
+    const trimmed = newIndustry.trim()
+    if (!trimmed || icp!.industries.includes(trimmed)) return
     setIcp({
       job_titles: icp!.job_titles,
       seniority_levels: icp!.seniority_levels,
-      industries: icp!.industries,
-      company_sizes: [value],
+      industries: [...icp!.industries, trimmed],
+      company_sizes: icp!.company_sizes,
+      regions: icp!.regions,
+    })
+    setNewIndustry('')
+  }
+
+  function handleIndustryRemove(industryToRemove: string) {
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries.filter((i) => i !== industryToRemove),
+      company_sizes: icp!.company_sizes,
       regions: icp!.regions,
     })
   }
 
-  const handleRegionChange = (region: string, checked: boolean) => {
+  function handleCompanySizeToggle(value: string, checked: boolean) {
+    const sizes = icp!.company_sizes
+    const newSizes = checked ? [...sizes, value] : sizes.filter((s) => s !== value)
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries,
+      company_sizes: newSizes,
+      regions: icp!.regions,
+    })
+  }
+
+  function handleRegionChange(region: string, checked: boolean) {
     const newRegions = checked
       ? [...icp!.regions, region]
       : icp!.regions.filter((r) => r !== region)
@@ -94,22 +121,8 @@ export default function OnboardingStep3() {
     })
   }
 
-  const handleIndustryRemove = (industryToRemove: string) => {
-    setIcp({
-      job_titles: icp!.job_titles,
-      seniority_levels: icp!.seniority_levels,
-      industries: icp!.industries.filter((i) => i !== industryToRemove),
-      company_sizes: icp!.company_sizes,
-      regions: icp!.regions,
-    })
-  }
-
-  const handleBack = () => {
-    router.push('/onboarding/step-2')
-  }
-
   return (
-    <div className="flex w-full max-w-[700px] flex-col gap-7 rounded-xl border border-border bg-white p-9">
+    <div className="flex w-full max-w-[700px] flex-col gap-7 rounded-xl border border-border bg-white p-4 md:p-9">
       <div className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold text-foreground">Definiere dein ideales Kundenprofil</h1>
         <p className="text-sm text-muted-foreground">
@@ -128,23 +141,42 @@ export default function OnboardingStep3() {
               </TagPill>
             ))}
           </div>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="text"
+              value={newIndustry}
+              onChange={(e) => setNewIndustry(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleIndustryAdd() } }}
+              placeholder="Branche eingeben..."
+              className="h-8 flex-1 rounded-lg border border-border bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Neue Branche eingeben"
+            />
+            <button
+              type="button"
+              onClick={handleIndustryAdd}
+              disabled={!newIndustry.trim()}
+              className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-40"
+            >
+              <Plus size={12} />
+              Hinzufügen
+            </button>
+          </div>
         </div>
 
-        {/* Unternehmensgröße */}
+        {/* Unternehmensgröße — Multi-Select via Checkboxen */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-foreground">Unternehmensgröße</label>
-          <Select value={companySize} onValueChange={handleCompanySizeChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1-10">1-10 Mitarbeiter</SelectItem>
-              <SelectItem value="10-100">10-100 Mitarbeiter</SelectItem>
-              <SelectItem value="100-250">100-250 Mitarbeiter</SelectItem>
-              <SelectItem value="250-1000">250-1000 Mitarbeiter</SelectItem>
-              <SelectItem value="1000+">1000+ Mitarbeiter</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {COMPANY_SIZE_OPTIONS.map(({ value, label }) => (
+              <label key={value} className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  checked={icp.company_sizes.includes(value)}
+                  onCheckedChange={(v) => handleCompanySizeToggle(value, v === true)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Region */}
@@ -163,11 +195,32 @@ export default function OnboardingStep3() {
           </div>
         </div>
 
-        {/* Min. Score Threshold */}
+        {/* Mindest-Relevanzscore */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground">Min. Score Threshold</label>
-            <span className="text-sm font-medium text-foreground">{scoreThreshold}</span>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-foreground">Mindest-Relevanzscore</label>
+            <div className="relative">
+              <button
+                type="button"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onFocus={() => setShowTooltip(true)}
+                onBlur={() => setShowTooltip(false)}
+                aria-label="Erklärung zum Mindest-Relevanzscore"
+                className="flex items-center text-muted-foreground hover:text-foreground"
+              >
+                <Info size={14} />
+              </button>
+              {showTooltip && (
+                <div
+                  role="tooltip"
+                  className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 rounded-lg border border-border bg-white p-3 text-xs text-foreground shadow-md"
+                >
+                  Nur Unternehmen mit einem KI-Relevanzscore über diesem Wert werden dir vorgeschlagen. Ein höherer Wert bedeutet strengere Filterung.
+                </div>
+              )}
+            </div>
+            <span className="ml-auto text-sm font-medium text-foreground">{scoreThreshold}</span>
           </div>
           <Slider
             min={0}
@@ -181,7 +234,7 @@ export default function OnboardingStep3() {
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          onClick={handleBack}
+          onClick={() => router.push('/onboarding/step-2')}
           className="rounded-lg border border-border px-5 py-2 text-sm font-medium text-foreground"
         >
           Zurück

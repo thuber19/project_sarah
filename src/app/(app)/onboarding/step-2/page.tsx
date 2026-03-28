@@ -25,8 +25,8 @@ function FieldRow({
   onChange?: (value: string) => void
 }) {
   return (
-    <div className="flex items-start gap-4">
-      <span className="w-[140px] shrink-0 text-sm font-medium text-foreground">{label}</span>
+    <div className="flex flex-col gap-1.5 md:flex-row md:items-start md:gap-4">
+      <span className="text-sm font-medium text-foreground md:w-[140px] md:shrink-0">{label}</span>
       {isEditing ? (
         <Input
           value={value}
@@ -68,7 +68,7 @@ export default function OnboardingStep2() {
   }
 
   return (
-    <div className="flex w-full max-w-[700px] flex-col gap-6 rounded-xl border border-border bg-white p-8">
+    <div className="flex w-full max-w-[700px] flex-col gap-6 rounded-xl border border-border bg-white p-4 md:p-8">
       <div className="flex items-center gap-2.5">
         <CheckCircle className="text-success" size={24} />
         <h1 className="text-xl font-bold text-foreground">Dein Business-Profil</h1>
@@ -101,7 +101,7 @@ export default function OnboardingStep2() {
         />
 
         <FieldRow
-          label="Produkt"
+          label="Produkte/Services"
           isEditing
           value={profile.product_summary}
           onChange={(value) => handleUpdate('product_summary', value)}
