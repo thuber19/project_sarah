@@ -31,7 +31,7 @@ export function LeadFilters() {
   }
 
   return (
-    <div role="group" aria-label="Leads nach Score-Grad filtern" className="flex flex-wrap gap-2">
+    <div role="group" aria-label="Leads nach Score-Grad filtern" className="flex flex-nowrap gap-2 overflow-x-auto lg:flex-wrap">
       {GRADES.map((grade) => (
         <button
           key={grade}
@@ -39,7 +39,7 @@ export function LeadFilters() {
           onClick={() => handleFilter(grade)}
           aria-pressed={active === grade}
           className={cn(
-            'cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors',
+            'shrink-0 cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium transition-colors lg:py-1.5',
             active === grade
               ? 'bg-primary text-primary-foreground'
               : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',

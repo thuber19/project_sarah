@@ -38,31 +38,29 @@ const chartBarHeights = [
 export default function MarketingPage() {
   return (
     <>
-      {/* Hero Section */}
-      <section className="w-full bg-white px-20 py-16">
-        <div className="flex items-center gap-12">
-          {/* Left column */}
-          <div className="flex flex-1 flex-col gap-5">
+      <section className="w-full bg-white px-4 py-10 lg:px-20 lg:py-16">
+        <div className="flex flex-col items-center gap-8 text-center lg:flex-row lg:items-center lg:gap-12 lg:text-left">
+          <div className="flex flex-1 flex-col items-center gap-5 lg:items-start">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-light px-3.5 py-1.5 text-xs font-semibold text-accent">
               <Sparkles className="h-3.5 w-3.5" />
               KI-gestützter Vertrieb
             </span>
 
-            <h1 className="text-5xl font-extrabold leading-[1.1] text-foreground">
+            <h1 className="text-3xl font-extrabold leading-[1.1] text-foreground sm:text-4xl lg:text-5xl">
               Dein AI Sales Agent
               <br />
               für den DACH-Markt
             </h1>
 
-            <p className="text-lg leading-relaxed text-muted-foreground">
+            <p className="text-base leading-relaxed text-muted-foreground lg:text-lg">
               Sarah findet automatisch die besten Leads für dein Unternehmen. KI-gestützte
               Website-Analyse, Lead-Discovery und intelligentes Scoring — alles in einem Tool.
             </p>
 
-            <div className="mt-2 flex gap-4">
+            <div className="mt-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:gap-4">
               <Link
                 href="/login"
-                className="rounded-lg bg-primary px-7 py-3.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+                className="rounded-lg bg-primary px-7 py-3.5 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
               >
                 Jetzt starten — kostenlos
               </Link>
@@ -75,19 +73,15 @@ export default function MarketingPage() {
             </div>
           </div>
 
-          {/* Right column — Dashboard preview mock */}
-          <div className="flex-1">
+          <div className="hidden flex-1 lg:block">
             <div className="overflow-hidden rounded-xl border bg-secondary">
-              {/* Window header bar */}
               <div className="flex h-9 items-center gap-1.5 rounded-t-xl bg-primary px-3">
                 <span className="h-2 w-2 rounded-full bg-red-500" />
                 <span className="h-2 w-2 rounded-full bg-yellow-500" />
                 <span className="h-2 w-2 rounded-full bg-green-500" />
               </div>
 
-              {/* Dashboard content */}
               <div className="flex flex-col gap-3 p-4">
-                {/* Stats row */}
                 <div className="flex gap-2">
                   <div className="flex-1 rounded-lg border bg-white p-3">
                     <p className="text-[10px] text-muted-foreground">Neue Leads</p>
@@ -103,7 +97,6 @@ export default function MarketingPage() {
                   </div>
                 </div>
 
-                {/* Chart area */}
                 <div className="flex h-[200px] items-end gap-1.5 rounded-lg border bg-white p-3">
                   {chartBarHeights.map((height, index) => (
                     <div
@@ -120,18 +113,17 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="w-full bg-muted p-20">
-        <div className="mb-12 flex flex-col items-center gap-4 text-center">
-          <h2 className="text-3xl font-bold text-foreground">So funktioniert Sarah</h2>
+      <section className="w-full bg-muted px-4 py-10 lg:p-20">
+        <div className="mb-8 flex flex-col items-center gap-4 text-center lg:mb-12">
+          <h2 className="text-2xl font-bold text-foreground lg:text-3xl">So funktioniert Sarah</h2>
           <p className="text-base text-muted-foreground">
             In drei einfachen Schritten zu qualifizierten Leads
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {featureCards.map((card) => (
-            <div key={card.title} className="flex flex-col gap-4 rounded-xl border bg-white p-8">
+            <div key={card.title} className="flex flex-col gap-4 rounded-xl border bg-white p-6 lg:p-8">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-light">
                 <card.icon className="h-6 w-6 text-accent" />
               </div>
@@ -142,16 +134,15 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="flex w-full flex-col items-center gap-6 bg-white px-20 py-12 text-center">
+      <section className="flex w-full flex-col items-center gap-6 bg-white px-4 py-10 text-center lg:px-20 lg:py-12">
         <p className="text-base font-medium text-muted-foreground">
           Vertraut von 200+ Unternehmen im DACH-Raum
         </p>
-        <div className="flex items-center justify-center gap-12">
+        <div className="flex flex-wrap items-center justify-center gap-6 lg:gap-12">
           {companyLogos.map((name) => (
             <span
               key={name}
-              className="text-lg font-bold uppercase tracking-wider text-muted-foreground/40"
+              className="text-sm font-bold uppercase tracking-wider text-muted-foreground/40 lg:text-lg"
             >
               {name}
             </span>

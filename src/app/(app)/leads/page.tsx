@@ -66,7 +66,7 @@ export default async function LeadsPage({ searchParams }: Props) {
 
       {hasLeads ? (
         /* Content area */
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 lg:gap-5 lg:px-8 lg:pt-6">
           <Suspense>
             <LeadFilters />
           </Suspense>
@@ -83,7 +83,7 @@ export default async function LeadsPage({ searchParams }: Props) {
           </Suspense>
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center p-8">
+        <div className="flex flex-1 items-center justify-center p-4 lg:p-8">
           <EmptyState
             icon={Users}
             title="Noch keine Leads"

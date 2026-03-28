@@ -123,7 +123,7 @@ export default async function ScoringPage() {
       <AppTopbar title="Scoring-Übersicht" />
 
       {!hasLeads ? (
-        <div className="flex flex-1 items-center justify-center p-8">
+        <div className="flex flex-1 items-center justify-center px-4 py-8 lg:p-8">
           <EmptyState
             icon={Star}
             title="Noch keine Leads"
@@ -136,9 +136,7 @@ export default async function ScoringPage() {
           />
         </div>
       ) : (
-        /* Content area */
-        <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-8">
-          {/* Header */}
+        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-5 lg:gap-8 lg:px-8 lg:py-8">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Scoring-Übersicht</h1>
             <p className="text-sm text-muted-foreground">
@@ -146,9 +144,8 @@ export default async function ScoringPage() {
             </p>
           </div>
 
-          {/* Unscored leads banner */}
           {!hasScores && (
-            <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent-light p-6">
+            <div className="flex flex-col gap-4 rounded-xl border border-accent/30 bg-accent-light p-4 lg:flex-row lg:items-center lg:justify-between lg:p-6">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   {leadIds.length} Leads noch nicht bewertet
@@ -161,8 +158,7 @@ export default async function ScoringPage() {
             </div>
           )}
 
-          {/* Score Distribution card */}
-          <div className="rounded-xl border border-border bg-white p-6">
+          <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
             <h2 className="text-base font-semibold text-foreground">Score Distribution</h2>
             <p className="mb-6 text-sm text-muted-foreground">
               Verteilung der Lead-Scores über alle aktiven Leads
@@ -173,17 +169,16 @@ export default async function ScoringPage() {
                 <Link
                   key={item.grade}
                   href={`/leads?grade=${item.displayGrade}`}
-                  className="flex items-center gap-4 rounded-lg py-2 transition-colors hover:bg-muted"
+                  className="flex min-h-12 items-center gap-2 rounded-lg py-2 transition-colors hover:bg-muted lg:gap-4"
                 >
-                  {/* Grade badge */}
-                  <div className="w-[100px]">
+                  <div className="w-[80px] shrink-0 lg:w-[100px]">
                     <ScoreBadge grade={item.displayGrade} />
                   </div>
 
-                  {/* Range text */}
-                  <span className="w-12 text-xs text-muted-foreground">{item.range}</span>
+                  <span className="hidden w-12 text-xs text-muted-foreground lg:inline">
+                    {item.range}
+                  </span>
 
-                  {/* Bar */}
                   <div className="h-4 flex-1 rounded-full bg-secondary">
                     <div
                       className={`h-full rounded-full ${item.barColor}`}
@@ -191,13 +186,11 @@ export default async function ScoringPage() {
                     />
                   </div>
 
-                  {/* Count */}
-                  <span className="w-20 text-right text-sm text-foreground">
+                  <span className="w-14 text-right text-xs text-foreground lg:w-20 lg:text-sm">
                     {item.count} Leads
                   </span>
 
-                  {/* Percent */}
-                  <span className="w-10 text-right text-sm text-muted-foreground">
+                  <span className="w-8 text-right text-xs text-muted-foreground lg:w-10 lg:text-sm">
                     {item.percent}%
                   </span>
                 </Link>
@@ -210,8 +203,7 @@ export default async function ScoringPage() {
             </div>
           </div>
 
-          {/* Scoring Rules card */}
-          <div className="rounded-xl border border-border bg-white p-6">
+          <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
             <h2 className="text-base font-semibold text-foreground">Scoring Rules</h2>
             <p className="text-sm text-muted-foreground">
               Gewichtete Bewertungskriterien für die Lead-Qualifizierung
@@ -224,21 +216,19 @@ export default async function ScoringPage() {
                 return (
                   <div
                     key={rule.name}
-                    className="flex items-center justify-between rounded-lg border border-border p-4"
+                    className="flex flex-col gap-3 rounded-lg border border-border p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4"
                   >
-                    {/* Left side */}
                     <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-light">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-light">
                         <Icon className="h-5 w-5 text-accent" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground">{rule.name}</p>
                         <p className="text-xs text-muted-foreground">{rule.description}</p>
                       </div>
                     </div>
 
-                    {/* Right side */}
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 pl-14 lg:shrink-0 lg:pl-0">
                       <span className="text-sm font-semibold text-foreground">{rule.weight}</span>
                       <ScoringRulesToggle />
                     </div>

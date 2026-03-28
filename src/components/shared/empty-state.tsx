@@ -31,7 +31,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-12',
+        'flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-6 lg:p-12',
         className,
       )}
     >
@@ -48,11 +48,10 @@ export function EmptyState({
         </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
         <Link
           href={primaryAction.href}
-          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 sm:w-auto"
         >
           {PrimaryIcon && <PrimaryIcon className="size-4" aria-hidden="true" />}
           {primaryAction.label}
@@ -60,7 +59,7 @@ export function EmptyState({
         {secondaryAction && (
           <Link
             href={secondaryAction.href}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary sm:w-auto"
           >
             {SecondaryIcon && <SecondaryIcon className="size-4" aria-hidden="true" />}
             {secondaryAction.label}

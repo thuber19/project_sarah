@@ -66,16 +66,15 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Export &amp; CRM</h1>
           <p className="text-sm text-muted-foreground">
             Exportiere deine Leads als CSV oder verbinde dein CRM
           </p>
         </div>
-        <Button className="gap-2" onClick={() => handleExport()} disabled={isExporting}>
+        <Button className="w-full gap-2 sm:w-auto" onClick={() => handleExport()} disabled={isExporting}>
           {isExporting ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
@@ -86,26 +85,26 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-white p-6">
-          <p className="text-2xl font-bold text-foreground">{totalLeads}</p>
-          <p className="text-sm text-muted-foreground">Leads gesamt</p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+          <p className="text-xl font-bold text-foreground lg:text-2xl">{totalLeads}</p>
+          <p className="text-xs text-muted-foreground lg:text-sm">Leads gesamt</p>
         </div>
-        <div className="rounded-xl border border-border bg-white p-6">
-          <p className="text-2xl font-bold text-foreground">{scoredLeads}</p>
-          <p className="text-sm text-muted-foreground">Bewertete Leads</p>
+        <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+          <p className="text-xl font-bold text-foreground lg:text-2xl">{scoredLeads}</p>
+          <p className="text-xs text-muted-foreground lg:text-sm">Bewertete Leads</p>
         </div>
-        <div className="rounded-xl border border-border bg-white p-6">
-          <p className="text-2xl font-bold text-foreground">{totalLeads - scoredLeads}</p>
-          <p className="text-sm text-muted-foreground">Unbewertete Leads</p>
+        <div className="col-span-2 rounded-xl border border-border bg-white p-4 lg:col-span-1 lg:p-6">
+          <p className="text-xl font-bold text-foreground lg:text-2xl">{totalLeads - scoredLeads}</p>
+          <p className="text-xs text-muted-foreground lg:text-sm">Unbewertete Leads</p>
         </div>
       </div>
 
       {/* Grade distribution + filtered export */}
       {scoredLeads > 0 && (
-        <div className="rounded-xl border border-border bg-white p-6">
+        <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
           <h2 className="text-base font-semibold text-foreground">Export nach Score-Kategorie</h2>
-          <p className="mb-6 text-sm text-muted-foreground">
+          <p className="mb-4 text-sm text-muted-foreground lg:mb-6">
             Exportiere Leads gefiltert nach Score-Bewertung
           </p>
 
@@ -115,9 +114,9 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
               return (
                 <div
                   key={grade}
-                  className="flex items-center justify-between rounded-lg border border-border p-4"
+                  className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     <ScoreBadge grade={grade} />
                     <span className="text-sm text-muted-foreground">
                       {count} {count === 1 ? 'Lead' : 'Leads'}
@@ -126,7 +125,7 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-2"
+                    className="w-full gap-2 sm:w-auto"
                     onClick={() => handleExport(grade)}
                     disabled={isExporting || count === 0}
                   >
@@ -141,9 +140,9 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
       )}
 
       {/* HubSpot CRM — Coming Soon */}
-      <div className="rounded-xl border border-dashed border-border bg-white p-6">
+      <div className="rounded-xl border border-dashed border-border bg-white p-4 lg:p-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-orange-100 text-lg font-bold text-orange-500">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-lg font-bold text-orange-500">
             H
           </div>
           <div>
@@ -151,8 +150,8 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
             <p className="text-sm text-muted-foreground">Demnächst verfügbar</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <Link2 className="size-4 text-muted-foreground" />
+        <div className="mt-4 flex items-start gap-3">
+          <Link2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             Synchronisiere Leads automatisch mit HubSpot. Diese Funktion wird bald freigeschaltet.
           </p>

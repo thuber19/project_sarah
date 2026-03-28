@@ -80,7 +80,7 @@ export default async function DashboardPage() {
       {totalLeads === 0 ? (
         <DashboardEmptyState />
       ) : (
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" />
             <StatCard
@@ -139,10 +139,10 @@ const hintCards = [
 
 function DashboardEmptyState() {
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-5 lg:gap-6 lg:px-8 lg:py-8">
       {/* Welcome */}
-      <div className="rounded-xl border border-border bg-white p-8 text-center">
-        <h2 className="text-xl font-bold text-foreground">Willkommen bei Sarah</h2>
+      <div className="rounded-xl border border-border bg-white p-5 text-center lg:p-8">
+        <h2 className="text-lg font-bold text-foreground lg:text-xl">Willkommen bei Sarah</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit
           Daten zu füllen.
@@ -169,7 +169,7 @@ function DashboardEmptyState() {
           <Link
             key={card.href}
             href={card.href}
-            className="group rounded-xl border border-border bg-white p-6 transition-colors hover:border-accent"
+            className="group rounded-xl border border-border bg-white p-4 transition-colors hover:border-accent lg:p-6"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-light">
               <card.icon className="h-5 w-5 text-accent" />

@@ -97,9 +97,7 @@ export default function LeadImportPage() {
         }
       />
 
-      {/* Content */}
-      <div className="flex flex-1 gap-8 overflow-y-auto p-8">
-        {/* Left column */}
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-5 lg:flex-row lg:gap-8 lg:px-8 lg:py-8">
         <div className="flex flex-1 flex-col gap-6">
           {/* Header */}
           <div>
@@ -124,7 +122,7 @@ export default function LeadImportPage() {
                 fileInputRef.current?.click()
               }
             }}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-12 transition-colors ${
+            className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 transition-colors lg:p-12 ${
               isDragOver ? 'border-accent bg-accent-light/60' : 'border-accent bg-accent-light/40'
             }`}
             aria-label="CSV-Datei hochladen"
@@ -175,7 +173,7 @@ export default function LeadImportPage() {
               <Badge className="bg-accent-light text-accent">127 Leads erkannt</Badge>
             </div>
 
-            <div className="rounded-xl border border-border bg-white">
+            <div className="overflow-x-auto rounded-xl border border-border bg-white">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -202,8 +200,7 @@ export default function LeadImportPage() {
           </div>
         </div>
 
-        {/* Right column */}
-        <div className="flex w-[320px] shrink-0 flex-col gap-6">
+        <div className="flex w-full shrink-0 flex-col gap-6 lg:w-[320px]">
           {/* Field mapping card */}
           <div className="rounded-xl border border-border bg-white p-6">
             <h2 className="text-sm font-semibold text-foreground">Feld-Mapping</h2>
