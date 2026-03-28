@@ -1,5 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { calculateRuleScore, totalFromBreakdown, type ICP } from '@/lib/scoring/rule-engine'
+import {
+  calculateTwoPhaseScore,
+  combinedScore,
+  calculateRuleScore,
+  totalFromBreakdown,
+  type ICP,
+} from '@/lib/scoring/rule-engine'
 import type { Lead } from '@/types/lead'
 import { getGradeForScore } from '@/lib/scoring/grade'
 import { getAIScoring } from '@/lib/scoring/ai-scoring'
@@ -67,49 +73,49 @@ export async function POST(req: Request) {
       let scored = 0
 
       for (const lead of leads) {
-        // Check if client disconnected
         if (req.signal.aborted) {
           controller.close()
           return
         }
 
         try {
-          // Calculate rule-based score
-          const breakdown = calculateRuleScore(lead as unknown as Lead, icp)
-          const totalScore = totalFromBreakdown(breakdown)
-          const grade = getGradeForScore(totalScore)
+          // Two-phase scoring: Company → (optional) Person
+          const twoPhase = calculateTwoPhaseScore(lead as unknown as Lead, icp)
+          const total_score = combinedScore(twoPhase)
+          // Grade basiert NUR auf Company Score
+          const grade = getGradeForScore(twoPhase.company_score)
 
-          // Attempt AI scoring (non-blocking on failure)
+          // Legacy breakdown for backward compat
+          const breakdown = calculateRuleScore(lead as unknown as Lead, icp)
+
+          // AI scoring (optional)
           let aiReasoning: string | null = null
           let aiRecommendation: string | null = null
-          const confidence: number | null = null
-          const dachNotes: string | null = null
-          const keyInsights: string[] | null = null
 
           try {
-            const aiResult = await getAIScoring(lead as unknown as Lead, breakdown, totalScore, icp)
+            const aiResult = await getAIScoring(lead as unknown as Lead, breakdown, total_score, icp)
             aiReasoning = aiResult.reasoning
             aiRecommendation = aiResult.recommendation_text
           } catch {
-            // AI scoring is optional — rule score is sufficient
+            // AI scoring is optional
           }
 
-          // Upsert score to database
+          // Upsert score
           await supabase.from('lead_scores').upsert(
             {
               lead_id: lead.id,
               user_id: user.id,
-              total_score: totalScore,
+              total_score,
               company_fit_score: breakdown.company_fit,
               contact_fit_score: breakdown.contact_fit,
               buying_signals_score: breakdown.buying_signals,
               timing_score: breakdown.timing,
+              company_score: twoPhase.company_score,
+              person_score: twoPhase.person_score,
+              company_qualified: twoPhase.company_qualified,
               grade,
               ai_reasoning: aiReasoning,
               recommended_action: aiRecommendation,
-              confidence,
-              dach_notes: dachNotes,
-              key_insights: keyInsights,
             },
             { onConflict: 'lead_id' },
           )
@@ -121,7 +127,8 @@ export async function POST(req: Request) {
             total,
             leadId: lead.id,
             companyName: lead.company_name,
-            score: totalScore,
+            score: total_score,
+            companyScore: twoPhase.company_score,
             grade,
           })}\n\n`
           controller.enqueue(encoder.encode(event))
