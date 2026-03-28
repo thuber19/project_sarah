@@ -107,7 +107,7 @@ export function LeadBulkToolbar({ selectedIds, onClearSelection }: LeadBulkToolb
         type="button"
         onClick={handleDelete}
         disabled={isPending}
-        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 md:ml-auto"
+        className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-status-error-bg disabled:opacity-50 md:ml-auto"
       >
         <Trash2 className="h-3.5 w-3.5" />
         <span className="hidden sm:inline">Löschen</span>

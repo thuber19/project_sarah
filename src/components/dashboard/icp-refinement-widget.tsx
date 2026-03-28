@@ -140,8 +140,8 @@ export function IcpRefinementWidget() {
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${impactColors[suggestion.impact]}`}>
                   {suggestion.impact}
                 </span>
-                {suggestion.action === 'add' && <ArrowUpRight className="h-3 w-3 text-green-600" />}
-                {suggestion.action === 'remove' && <ArrowDownRight className="h-3 w-3 text-red-500" />}
+                {suggestion.action === 'add' && <ArrowUpRight className="h-3 w-3 text-status-success-text" />}
+                {suggestion.action === 'remove' && <ArrowDownRight className="h-3 w-3 text-status-error-text" />}
               </div>
               <p className="mt-1 break-words text-xs text-muted-foreground">
                 {actionLabels[suggestion.action]}: <span className="font-medium text-foreground">{suggestion.suggested_value}</span>
@@ -160,8 +160,8 @@ export function IcpRefinementWidget() {
             >
               {appliedIndices.has(i) ? (
                 <>
-                  <Check className="h-3 w-3 text-green-600" />
-                  <span className="text-green-600">Übernommen</span>
+                  <Check className="h-3 w-3 text-status-success-text" />
+                  <span className="text-status-success-text">Übernommen</span>
                 </>
               ) : applyingIndex === i ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

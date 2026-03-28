@@ -40,6 +40,18 @@ vi.mock('@/lib/scoring/pipeline', () => ({
   runScoringPipeline: vi.fn().mockResolvedValue({ scored: 0, failed: 0, results: [] }),
 }))
 
+vi.mock('@/lib/pipeline/dedup', () => ({
+  normalizeDomain: vi.fn((d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase()),
+}))
+
+vi.mock('@/lib/pipeline/timer', () => {
+  class MockPipelineTimer {
+    start = vi.fn()
+    stop = vi.fn()
+  }
+  return { PipelineTimer: MockPipelineTimer }
+})
+
 // Mock 'next/navigation' to prevent real redirects
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(() => {
@@ -63,6 +75,7 @@ import { requireAuth } from '@/lib/supabase/server'
 import { searchOrganizations } from '@/lib/apollo/client'
 import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
+import type { DiscoveredLead } from './discovery.actions'
 import {
   startDiscoveryAction,
   getIcpDefaultsAction,
@@ -176,48 +189,6 @@ function createQueryChain(data: unknown = null, error: unknown = null) {
   return chain
 }
 
-/**
- * Creates an insert chain that captures inserted data and returns it with mock IDs.
- * Used for leads table where insert().select() needs to return the saved records.
- */
-function createLeadsInsertChain(error?: { message: string }) {
-  const chain: Record<string, ReturnType<typeof vi.fn>> = {}
-  let resolvedResult: { data: unknown; error: unknown } = { data: [], error: error ?? null }
-
-  const methods = [
-    'select', 'update', 'delete', 'eq', 'neq', 'in', 'is',
-    'order', 'limit', 'single', 'maybeSingle',
-  ]
-
-  for (const method of methods) {
-    chain[method] = vi.fn().mockReturnValue(chain)
-  }
-
-  chain['insert'] = vi.fn((data: unknown) => {
-    if (!error && Array.isArray(data)) {
-      resolvedResult = {
-        data: data.map((d: Record<string, unknown>, i: number) => ({
-          ...d,
-          id: `mock-lead-${i + 1}`,
-          created_at: '2026-01-01T00:00:00Z',
-          updated_at: '2026-01-01T00:00:00Z',
-        })),
-        error: null,
-      }
-    }
-    return chain
-  })
-
-  Object.defineProperty(chain, 'then', {
-    get() {
-      return (resolve: (v: unknown) => void) => Promise.resolve(resolvedResult).then(resolve)
-    },
-    configurable: true,
-  })
-
-  return chain
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -228,227 +199,12 @@ describe('discovery.actions', () => {
   })
 
   // =========================================================================
-  // categorizeSize (tested indirectly via apolloPersonToLead)
-  // =========================================================================
-
-  describe('categorizeSize (via apolloPersonToLead)', () => {
-    /**
-     * categorizeSize is a module-private function, so we test it indirectly
-     * by running startDiscoveryAction and inspecting the lead's company_size.
-     * This is simpler than extracting the function just for testing.
-     *
-     * However, we can also test the boundaries by checking the lead
-     * transformation output in the startDiscoveryAction flow.
-     */
-
-    const sizeTestCases: [number, string][] = [
-      [1, '1-10'],
-      [10, '1-10'],
-      [11, '11-50'],
-      [50, '11-50'],
-      [51, '51-200'],
-      [200, '51-200'],
-      [201, '201-500'],
-      [500, '201-500'],
-      [501, '501-1000'],
-      [1000, '501-1000'],
-      [1001, '1001-5000'],
-      [5000, '1001-5000'],
-      [5001, '5001+'],
-      [100000, '5001+'],
-    ]
-
-    it.each(sizeTestCases)('maps %d employees to "%s"', async (employeeCount, expectedSize) => {
-      const org = makeApolloOrg({ estimated_num_employees: employeeCount })
-
-      // Set up the full pipeline mocks needed by startDiscoveryAction
-      const campaignChain = createQueryChain({ id: 'camp-1' })
-      const profileChain = createQueryChain(null)
-      const icpChain = createQueryChain(null)
-      const insertChain = createLeadsInsertChain()
-      const logChain = createQueryChain(null)
-      const scoreChain = createQueryChain(null)
-
-      mockFrom.mockImplementation((table: string) => {
-        switch (table) {
-          case 'business_profiles':
-            return profileChain
-          case 'icp_profiles':
-            return icpChain
-          case 'search_campaigns':
-            return campaignChain
-          case 'leads':
-            return insertChain
-          case 'agent_logs':
-            return logChain
-          case 'lead_scores':
-            return scoreChain
-          default:
-            return createQueryChain(null)
-        }
-      })
-
-      vi.mocked(optimizeSearchQuery).mockResolvedValue(
-        makeOptimizedQuery({ googlePlacesQueries: [] }),
-      )
-      vi.mocked(searchOrganizations).mockResolvedValue({
-        organizations: [org],
-        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-      })
-      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
-
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
-
-      // The leads.insert() call receives the transformed leads
-      const insertCall = insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-      expect(insertCall).toBeDefined()
-      expect(insertCall[0]?.company_size).toBe(expectedSize)
-    })
-  })
-
-  // =========================================================================
-  // apolloOrgToLead (tested indirectly via startDiscoveryAction)
-  // =========================================================================
-
-  describe('apolloOrgToLead (via startDiscoveryAction)', () => {
-    async function runWithOrg(org: ApolloOrganization) {
-      const campaignChain = createQueryChain({ id: 'camp-1' })
-      const profileChain = createQueryChain(null)
-      const icpChain = createQueryChain(null)
-      const insertChain = createLeadsInsertChain()
-      const logChain = createQueryChain(null)
-      const scoreChain = createQueryChain(null)
-
-      mockFrom.mockImplementation((table: string) => {
-        switch (table) {
-          case 'business_profiles':
-            return profileChain
-          case 'icp_profiles':
-            return icpChain
-          case 'search_campaigns':
-            return campaignChain
-          case 'leads':
-            return insertChain
-          case 'agent_logs':
-            return logChain
-          case 'lead_scores':
-            return scoreChain
-          default:
-            return createQueryChain(null)
-        }
-      })
-
-      vi.mocked(optimizeSearchQuery).mockResolvedValue(
-        makeOptimizedQuery({ googlePlacesQueries: [] }),
-      )
-      vi.mocked(searchOrganizations).mockResolvedValue({
-        organizations: [org],
-        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-      })
-      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
-
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
-
-      return insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-    }
-
-    it('maps all Apollo org fields to lead format', async () => {
-      const org = makeApolloOrg()
-      const leads = await runWithOrg(org)
-
-      expect(leads).toHaveLength(1)
-      const lead = leads[0]!
-      expect(lead).toMatchObject({
-        user_id: 'user-1',
-        campaign_id: 'camp-1',
-        first_name: null,
-        last_name: null,
-        full_name: null,
-        email: null,
-        linkedin_url: 'https://linkedin.com/company/techcorp',
-        job_title: null,
-        seniority: null,
-        company_name: 'TechCorp GmbH',
-        company_domain: 'https://techcorp.at',
-        industry: 'Software',
-        company_size: '51-200',
-        country: 'Austria',
-        location: 'Wien, Austria',
-        source: 'apollo',
-        apollo_id: 'org-1',
-      })
-    })
-
-    it('sets person fields to null for org-only leads', async () => {
-      const leads = await runWithOrg(makeApolloOrg())
-      const lead = leads[0]!
-      expect(lead.first_name).toBeNull()
-      expect(lead.last_name).toBeNull()
-      expect(lead.full_name).toBeNull()
-      expect(lead.email).toBeNull()
-      expect(lead.job_title).toBeNull()
-      expect(lead.seniority).toBeNull()
-    })
-
-    it('handles org with null name', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ name: null }))
-      expect(leads[0]?.company_name).toBeNull()
-    })
-
-    it('handles org with null website_url', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ website_url: null }))
-      expect(leads[0]?.company_domain).toBeNull()
-    })
-
-    it('handles org with null industry', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ industry: null }))
-      expect(leads[0]?.industry).toBeNull()
-    })
-
-    it('includes raw_data with org metadata', async () => {
-      const org = makeApolloOrg()
-      const leads = await runWithOrg(org)
-      const raw = leads[0]?.raw_data as Record<string, unknown>
-
-      expect(raw).toMatchObject({
-        twitter_url: 'https://twitter.com/techcorp',
-        technologies: ['React', 'TypeScript'],
-        total_funding: '5M',
-        latest_funding_round: 'Series A',
-        founded_year: 2018,
-      })
-    })
-
-    it('handles null company_size when estimated_num_employees is null', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ estimated_num_employees: null }))
-      expect(leads[0]?.company_size).toBeNull()
-    })
-
-    it('builds location from city and country', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ city: 'Graz', country: 'Austria' }))
-      expect(leads[0]?.location).toBe('Graz, Austria')
-    })
-
-    it('handles location with city but no country', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ city: 'Graz', country: null }))
-      expect(leads[0]?.location).toBe('Graz,')
-    })
-
-    it('returns null location when city is null', async () => {
-      const leads = await runWithOrg(makeApolloOrg({ city: null, country: 'Austria' }))
-      expect(leads[0]?.location).toBeNull()
-    })
-  })
-
-  // =========================================================================
-  // startDiscoveryAction
+  // startDiscoveryAction — returns DiscoveredLead[] for client review
   // =========================================================================
 
   describe('startDiscoveryAction', () => {
     function setupFullPipelineMocks(options?: {
       campaignError?: boolean
-      apolloError?: boolean
-      insertError?: boolean
     }) {
       const campaignChain = options?.campaignError
         ? createQueryChain(null, { message: 'DB error' })
@@ -483,11 +239,8 @@ describe('discovery.actions', () => {
         created_at: '2026-01-01',
         updated_at: '2026-01-01',
       })
-      const insertChain = options?.insertError
-        ? createLeadsInsertChain({ message: 'Insert failed' })
-        : createLeadsInsertChain()
       const logChain = createQueryChain(null)
-      const scoreChain = createQueryChain(null)
+      const updateChain = createQueryChain(null)
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
@@ -496,19 +249,16 @@ describe('discovery.actions', () => {
           case 'icp_profiles':
             return icpChain
           case 'search_campaigns':
+            // Return campaignChain for insert, updateChain for update
             return campaignChain
-          case 'leads':
-            return insertChain
           case 'agent_logs':
             return logChain
-          case 'lead_scores':
-            return scoreChain
           default:
             return createQueryChain(null)
         }
       })
 
-      return { campaignChain, profileChain, icpChain, insertChain, logChain }
+      return { campaignChain, profileChain, icpChain, logChain }
     }
 
     it('returns error when campaign creation fails', async () => {
@@ -536,7 +286,7 @@ describe('discovery.actions', () => {
       expect(requireAuth).toHaveBeenCalledOnce()
     })
 
-    it('returns campaignId and leadsFound on success', async () => {
+    it('returns campaignId and discovered leads on success', async () => {
       setupFullPipelineMocks()
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
@@ -549,7 +299,14 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 1, leadsScored: 0 } })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.campaignId).toBe('camp-1')
+        expect(result.data.leads).toHaveLength(1)
+        expect(result.data.leads[0]!.company_name).toBe('TechCorp GmbH')
+        expect(result.data.leads[0]!.source).toBe('apollo')
+        expect(result.data.leads[0]!.tempId).toBeDefined()
+      }
     })
 
     it('parses comma-separated form inputs correctly', async () => {
@@ -602,13 +359,16 @@ describe('discovery.actions', () => {
 
       // Should still succeed with Google Places leads
       expect(result).toEqual(expect.objectContaining({ success: true }))
-      expect(result.success && result.data.campaignId).toBe('camp-1')
+      if (result.success) {
+        expect(result.data.campaignId).toBe('camp-1')
+        expect(result.data.leads.length).toBeGreaterThanOrEqual(1)
+      }
       // Apollo failure should be logged
       expect(logChain['insert']).toHaveBeenCalled()
     })
 
     it('handles Google Places leads with correct format', async () => {
-      const { insertChain } = setupFullPipelineMocks()
+      setupFullPipelineMocks()
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({
           apolloParams: {
@@ -645,38 +405,35 @@ describe('discovery.actions', () => {
         nextPageToken: null,
       })
 
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
+      const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
-        Record<string, unknown>
-      >
-      expect(insertedLeads).toBeDefined()
-
-      const placeLead = insertedLeads.find((l) => l.source === 'google_places')
-      expect(placeLead).toMatchObject({
-        user_id: 'user-1',
-        campaign_id: 'camp-1',
-        company_name: 'Wiener SaaS GmbH',
-        company_domain: 'https://wienersaas.at',
-        company_website: 'https://wienersaas.at',
-        location: 'Kärntner Str. 1, 1010 Wien',
-        country: null, // Address doesn't end with a DACH country name
-        industry: null, // 'establishment' type doesn't map to an industry
-        source: 'google_places',
-        raw_data: {
-          place_id: 'place-1',
-          rating: 4.5,
-          user_rating_count: 10,
-          phone: '+4312345678',
-          international_phone: null,
-          business_status: 'OPERATIONAL',
-          types: ['establishment'],
-        },
-      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        const placeLead = result.data.leads.find((l) => l.source === 'google_places')
+        expect(placeLead).toBeDefined()
+        expect(placeLead).toMatchObject({
+          company_name: 'Wiener SaaS GmbH',
+          company_domain: 'https://wienersaas.at',
+          company_website: 'https://wienersaas.at',
+          location: 'Kärntner Str. 1, 1010 Wien',
+          country: null, // Address doesn't end with a DACH country name
+          industry: null, // 'establishment' type doesn't map to an industry
+          source: 'google_places',
+          raw_data: {
+            place_id: 'place-1',
+            rating: 4.5,
+            user_rating_count: 10,
+            phone: '+4312345678',
+            international_phone: null,
+            business_status: 'OPERATIONAL',
+            types: ['establishment'],
+          },
+        })
+      }
     })
 
     it('handles multiple Apollo organizations', async () => {
-      const { insertChain } = setupFullPipelineMocks()
+      setupFullPipelineMocks()
       const org1 = makeApolloOrg({ id: 'org-1', name: 'TechCorp GmbH', website_url: 'https://techcorp.at' })
       const org2 = makeApolloOrg({ id: 'org-2', name: 'DataHub AG', website_url: 'https://datahub.de' })
 
@@ -691,17 +448,17 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 2, leadsScored: 0 } })
-      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
-        Record<string, unknown>
-      >
-      expect(insertedLeads).toHaveLength(2)
-      expect(insertedLeads[0]?.company_name).toBe('TechCorp GmbH')
-      expect(insertedLeads[1]?.company_name).toBe('DataHub AG')
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.campaignId).toBe('camp-1')
+        expect(result.data.leads).toHaveLength(2)
+        expect(result.data.leads[0]!.company_name).toBe('TechCorp GmbH')
+        expect(result.data.leads[1]!.company_name).toBe('DataHub AG')
+      }
     })
 
     it('sets apollo_id from organization id', async () => {
-      const { insertChain } = setupFullPipelineMocks()
+      setupFullPipelineMocks()
 
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
@@ -712,16 +469,16 @@ describe('discovery.actions', () => {
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
 
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
+      const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
-        Record<string, unknown>
-      >
-      expect(insertedLeads[0]?.apollo_id).toBe('unique-org-id')
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.leads[0]!.apollo_id).toBe('unique-org-id')
+      }
     })
 
     it('maps linkedin_url from organization', async () => {
-      const { insertChain } = setupFullPipelineMocks()
+      setupFullPipelineMocks()
 
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
@@ -732,16 +489,16 @@ describe('discovery.actions', () => {
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
 
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
+      const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
-        Record<string, unknown>
-      >
-      expect(insertedLeads[0]?.linkedin_url).toBe('https://linkedin.com/company/test')
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.leads[0]!.linkedin_url).toBe('https://linkedin.com/company/test')
+      }
     })
 
-    it('does not insert leads when none are found', async () => {
-      const { insertChain } = setupFullPipelineMocks()
+    it('returns empty leads array when none are found', async () => {
+      setupFullPipelineMocks()
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
@@ -753,28 +510,11 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0, leadsScored: 0 } })
-      // leads.insert should not have been called
-      expect(insertChain['insert']).not.toHaveBeenCalled()
-    })
-
-    it('returns error and marks campaign as failed on insert failure', async () => {
-      setupFullPipelineMocks({ insertError: true })
-      vi.mocked(optimizeSearchQuery).mockResolvedValue(
-        makeOptimizedQuery({ googlePlacesQueries: [] }),
-      )
-      vi.mocked(searchOrganizations).mockResolvedValue({
-        organizations: [makeApolloOrg()],
-        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-      })
-      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
-
-      const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
-
-      expect(result).toEqual({
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Lead Discovery fehlgeschlagen. Bitte versuchen Sie es erneut.' },
-      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.campaignId).toBe('camp-1')
+        expect(result.data.leads).toEqual([])
+      }
     })
 
     it('updates campaign status to completed on success', async () => {
@@ -791,7 +531,6 @@ describe('discovery.actions', () => {
       await startDiscoveryAction(DEFAULT_FORM_DATA)
 
       // Verify the campaign was updated to 'completed'
-      // The update call is on search_campaigns table
       expect(mockFrom).toHaveBeenCalledWith('search_campaigns')
     })
 
@@ -813,7 +552,206 @@ describe('discovery.actions', () => {
         // technologies and keywords omitted
       })
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0, leadsScored: 0 } })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.campaignId).toBe('camp-1')
+        expect(result.data.leads).toEqual([])
+      }
+    })
+  })
+
+  // =========================================================================
+  // apolloOrgToDiscovered (tested indirectly via startDiscoveryAction)
+  // =========================================================================
+
+  describe('apolloOrgToDiscovered (via startDiscoveryAction)', () => {
+    function setupAndRunWithOrg(org: ApolloOrganization) {
+      const campaignChain = createQueryChain({ id: 'camp-1' })
+      const profileChain = createQueryChain(null)
+      const icpChain = createQueryChain(null)
+      const logChain = createQueryChain(null)
+
+      mockFrom.mockImplementation((table: string) => {
+        switch (table) {
+          case 'business_profiles':
+            return profileChain
+          case 'icp_profiles':
+            return icpChain
+          case 'search_campaigns':
+            return campaignChain
+          case 'agent_logs':
+            return logChain
+          default:
+            return createQueryChain(null)
+        }
+      })
+
+      vi.mocked(optimizeSearchQuery).mockResolvedValue(
+        makeOptimizedQuery({ googlePlacesQueries: [] }),
+      )
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [org],
+        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
+      })
+      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
+
+      return startDiscoveryAction(DEFAULT_FORM_DATA)
+    }
+
+    async function getFirstLead(org: ApolloOrganization): Promise<DiscoveredLead> {
+      const result = await setupAndRunWithOrg(org)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.leads).toHaveLength(1)
+      return result.data.leads[0]!
+    }
+
+    it('maps all Apollo org fields to discovered lead format', async () => {
+      const lead = await getFirstLead(makeApolloOrg())
+
+      expect(lead).toMatchObject({
+        first_name: null,
+        last_name: null,
+        full_name: null,
+        email: null,
+        linkedin_url: 'https://linkedin.com/company/techcorp',
+        job_title: null,
+        seniority: null,
+        company_name: 'TechCorp GmbH',
+        company_domain: 'https://techcorp.at',
+        industry: 'Software',
+        company_size: '51-200',
+        country: 'Austria',
+        location: 'Wien, Austria',
+        source: 'apollo',
+        apollo_id: 'org-1',
+      })
+      expect(lead.tempId).toBeDefined()
+    })
+
+    it('sets person fields to null for org-only leads', async () => {
+      const lead = await getFirstLead(makeApolloOrg())
+      expect(lead.first_name).toBeNull()
+      expect(lead.last_name).toBeNull()
+      expect(lead.full_name).toBeNull()
+      expect(lead.email).toBeNull()
+      expect(lead.job_title).toBeNull()
+      expect(lead.seniority).toBeNull()
+    })
+
+    it('handles org with null name', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ name: null }))
+      expect(lead.company_name).toBeNull()
+    })
+
+    it('handles org with null website_url', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ website_url: null }))
+      expect(lead.company_domain).toBeNull()
+    })
+
+    it('handles org with null industry', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ industry: null }))
+      expect(lead.industry).toBeNull()
+    })
+
+    it('includes raw_data with org metadata', async () => {
+      const lead = await getFirstLead(makeApolloOrg())
+      const raw = lead.raw_data as Record<string, unknown>
+
+      expect(raw).toMatchObject({
+        twitter_url: 'https://twitter.com/techcorp',
+        technologies: ['React', 'TypeScript'],
+        total_funding: '5M',
+        latest_funding_round: 'Series A',
+        founded_year: 2018,
+      })
+    })
+
+    it('handles null company_size when estimated_num_employees is null', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ estimated_num_employees: null }))
+      expect(lead.company_size).toBeNull()
+    })
+
+    it('builds location from city and country', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ city: 'Graz', country: 'Austria' }))
+      expect(lead.location).toBe('Graz, Austria')
+    })
+
+    it('handles location with city but no country', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ city: 'Graz', country: null }))
+      expect(lead.location).toBe('Graz,')
+    })
+
+    it('returns null location when city is null', async () => {
+      const lead = await getFirstLead(makeApolloOrg({ city: null, country: 'Austria' }))
+      expect(lead.location).toBeNull()
+    })
+  })
+
+  // =========================================================================
+  // categorizeSize (tested indirectly via apolloOrgToDiscovered)
+  // =========================================================================
+
+  describe('categorizeSize (via apolloOrgToDiscovered)', () => {
+    function setupAndRunWithEmployeeCount(employeeCount: number) {
+      const org = makeApolloOrg({ estimated_num_employees: employeeCount })
+
+      const campaignChain = createQueryChain({ id: 'camp-1' })
+      const profileChain = createQueryChain(null)
+      const icpChain = createQueryChain(null)
+      const logChain = createQueryChain(null)
+
+      mockFrom.mockImplementation((table: string) => {
+        switch (table) {
+          case 'business_profiles':
+            return profileChain
+          case 'icp_profiles':
+            return icpChain
+          case 'search_campaigns':
+            return campaignChain
+          case 'agent_logs':
+            return logChain
+          default:
+            return createQueryChain(null)
+        }
+      })
+
+      vi.mocked(optimizeSearchQuery).mockResolvedValue(
+        makeOptimizedQuery({ googlePlacesQueries: [] }),
+      )
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [org],
+        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
+      })
+      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
+
+      return startDiscoveryAction(DEFAULT_FORM_DATA)
+    }
+
+    const sizeTestCases: [number, string][] = [
+      [1, '1-10'],
+      [10, '1-10'],
+      [11, '11-50'],
+      [50, '11-50'],
+      [51, '51-200'],
+      [200, '51-200'],
+      [201, '201-500'],
+      [500, '201-500'],
+      [501, '501-1000'],
+      [1000, '501-1000'],
+      [1001, '1001-5000'],
+      [5000, '1001-5000'],
+      [5001, '5001+'],
+      [100000, '5001+'],
+    ]
+
+    it.each(sizeTestCases)('maps %d employees to "%s"', async (employeeCount, expectedSize) => {
+      const result = await setupAndRunWithEmployeeCount(employeeCount)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.leads).toHaveLength(1)
+        expect(result.data.leads[0]!.company_size).toBe(expectedSize)
+      }
     })
   })
 

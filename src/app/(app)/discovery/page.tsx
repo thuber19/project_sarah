@@ -244,7 +244,7 @@ export default function DiscoveryPage() {
             <div className="flex flex-col gap-2">
               {/* Apollo.io */}
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
                   A
                 </div>
                 <span className="text-sm font-medium text-foreground">
@@ -255,7 +255,7 @@ export default function DiscoveryPage() {
 
               {/* Google Places */}
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive text-xs font-bold text-white">
                   G
                 </div>
                 <span className="text-sm font-medium text-foreground">

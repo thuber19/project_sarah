@@ -5,11 +5,8 @@ import { toast } from 'sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  updateProfileAction,
-  updateIcpAction,
-  type SettingsIcpData,
-} from '@/app/actions/settings.actions'
+import { updateProfileAction, updateIcpAction } from '@/app/actions/settings.actions'
+import type { SettingsIcpData } from '@/lib/validation/schemas'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 import { profileSchema } from '@/schemas/settings.schema'
 
@@ -22,7 +19,7 @@ const INTEGRATIONS = [
     name: 'Apollo.io',
     description: 'Lead-Recherche & Kontaktdaten',
     iconLetter: 'A',
-    iconBg: 'bg-blue-600',
+    iconBg: 'bg-accent',
     connected: !!process.env.NEXT_PUBLIC_APOLLO_CONNECTED,
   },
 ] as const
@@ -92,8 +89,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
         website_url: websiteUrl || undefined,
       })
 
-      if (profileResult.error) {
-        toast.error(profileResult.error)
+      if (!profileResult.success) {
+        toast.error(profileResult.error.message)
         return
       }
 
@@ -107,8 +104,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
           tech_stack: fromCommaStr(icpTechStack),
         }
         const icpResult = await updateIcpAction(icpData)
-        if (icpResult.error) {
-          toast.error(icpResult.error)
+        if (!icpResult.success) {
+          toast.error(icpResult.error.message)
           return
         }
       }

@@ -33,8 +33,8 @@ export default function OnboardingStep4() {
 
     startTransition(async () => {
       const result = await saveOnboardingAction(profile, icp)
-      if (result && 'error' in result) {
-        toast.error(result.error)
+      if (result && !result.success) {
+        toast.error(result.error.message)
         return
       }
       // saveOnboardingAction redirects to /dashboard on success
@@ -67,12 +67,6 @@ export default function OnboardingStep4() {
         </span>
         <span className="text-sm text-muted-foreground">Min. Score: {scoreThreshold}</span>
       </div>
-
-      {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
 
       <button
         type="button"

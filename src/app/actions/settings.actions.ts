@@ -87,6 +87,7 @@ export async function updateIcpAction(data: SettingsIcpData): Promise<ApiRespons
       regions: parsed.data.regions,
       job_titles: parsed.data.job_titles,
       seniority_levels: parsed.data.seniority_levels,
+      tech_stack: parsed.data.tech_stack ?? [],
       additional_info: parsed.data.additional_info ?? null,
       updated_at: new Date().toISOString(),
     })

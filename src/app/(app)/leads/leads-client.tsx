@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SlidersHorizontal } from 'lucide-react'
-import { toast } from 'sonner'
 import { LeadFilters } from '@/components/leads/lead-filters'
 import { LeadTable } from '@/components/leads/lead-table'
 import { LeadPagination } from '@/components/leads/lead-pagination'
@@ -106,20 +105,6 @@ export function LeadsClient({
     setSelectedIds(new Set())
   }, [])
 
-  function handleBulkScore() {
-    toast.info(`${selectedIds.size} Leads werden bewertet...`)
-    setSelectedIds(new Set())
-  }
-
-  function handleBulkExport() {
-    toast.info(`${selectedIds.size} Leads werden exportiert...`)
-    setSelectedIds(new Set())
-  }
-
-  function handleBulkDelete() {
-    toast.info(`${selectedIds.size} Leads werden gelöscht...`)
-    setSelectedIds(new Set())
-  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 lg:gap-5 lg:px-8 lg:pt-6">
@@ -140,10 +125,7 @@ export function LeadsClient({
 
       {/* Bulk actions toolbar */}
       <LeadBulkToolbar
-        selectedCount={selectedIds.size}
-        onScore={handleBulkScore}
-        onExport={handleBulkExport}
-        onDelete={handleBulkDelete}
+        selectedIds={selectedIds}
         onClearSelection={handleClearSelection}
       />
 

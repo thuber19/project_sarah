@@ -210,28 +210,42 @@ describe('getLeadsAction', () => {
       expect(query.eq).toHaveBeenCalledWith('lead_scores.grade', 'HOT')
     })
 
-    it('should map POOR_FIT to POOR for DB query', async () => {
+    it('should map POOR_FIT to in-filter with POOR and POOR_FIT for DB query', async () => {
       const { query } = mockAuth()
       await getLeadsAction({ grade: 'POOR_FIT' })
 
-      expect(query.eq).toHaveBeenCalledWith('lead_scores.grade', 'POOR')
+      expect(query.in).toHaveBeenCalledWith('lead_scores.grade', ['POOR', 'POOR_FIT'])
     })
 
-    it('should pass through QUALIFIED grade unchanged', async () => {
+    it('should map TOP_MATCH to in-filter with HOT, QUALIFIED, and TOP_MATCH', async () => {
+      const { query } = mockAuth()
+      await getLeadsAction({ grade: 'TOP_MATCH' })
+
+      expect(query.in).toHaveBeenCalledWith('lead_scores.grade', ['HOT', 'QUALIFIED', 'TOP_MATCH'])
+    })
+
+    it('should map GOOD_FIT to in-filter with ENGAGED, POTENTIAL, and GOOD_FIT', async () => {
+      const { query } = mockAuth()
+      await getLeadsAction({ grade: 'GOOD_FIT' })
+
+      expect(query.in).toHaveBeenCalledWith('lead_scores.grade', ['ENGAGED', 'POTENTIAL', 'GOOD_FIT'])
+    })
+
+    it('should pass through legacy QUALIFIED grade unchanged via eq', async () => {
       const { query } = mockAuth()
       await getLeadsAction({ grade: 'QUALIFIED' })
 
       expect(query.eq).toHaveBeenCalledWith('lead_scores.grade', 'QUALIFIED')
     })
 
-    it('should pass through ENGAGED grade unchanged', async () => {
+    it('should pass through legacy ENGAGED grade unchanged via eq', async () => {
       const { query } = mockAuth()
       await getLeadsAction({ grade: 'ENGAGED' })
 
       expect(query.eq).toHaveBeenCalledWith('lead_scores.grade', 'ENGAGED')
     })
 
-    it('should pass through POTENTIAL grade unchanged', async () => {
+    it('should pass through legacy POTENTIAL grade unchanged via eq', async () => {
       const { query } = mockAuth()
       await getLeadsAction({ grade: 'POTENTIAL' })
 

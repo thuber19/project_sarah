@@ -26,13 +26,13 @@ export default function OnboardingStep1() {
     startTransition(async () => {
       const result = await analyzeWebsiteAction(url)
 
-      if ('error' in result) {
-        toast.error(result.error)
+      if (!result.success) {
+        toast.error(result.error.message)
         return
       }
 
-      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.profile))
-      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.icp))
+      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.data.profile))
+      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.data.icp))
       router.push('/onboarding/step-2')
     })
   }

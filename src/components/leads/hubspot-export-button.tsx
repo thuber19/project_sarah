@@ -33,7 +33,7 @@ export function HubSpotExportButton({ leadId, alreadySynced, syncedAt }: HubSpot
 
   if (synced) {
     return (
-      <div className="flex items-center gap-2 text-xs text-green-600">
+      <div className="flex items-center gap-2 text-xs text-success">
         <Check className="h-3.5 w-3.5" />
         <span>
           In HubSpot

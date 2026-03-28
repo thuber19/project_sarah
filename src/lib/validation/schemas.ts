@@ -52,6 +52,7 @@ export const settingsIcpSchema = z.object({
   regions: z.array(z.string()),
   job_titles: z.array(z.string()),
   seniority_levels: z.array(z.string()),
+  tech_stack: z.array(z.string()).optional().default([]),
   additional_info: z.string().optional(),
 })
 
@@ -76,6 +77,7 @@ export type DiscoveryFormData = z.infer<typeof discoveryFormSchema>
 export type OnboardingProfileData = z.infer<typeof onboardingProfileSchema>
 export type OnboardingIcpData = z.infer<typeof onboardingIcpSchema>
 export type SettingsProfileData = ProfileFormData
-export type SettingsIcpData = z.infer<typeof settingsIcpSchema>
+/** Input type — tech_stack is optional (before Zod defaults are applied). */
+export type SettingsIcpData = z.input<typeof settingsIcpSchema>
 /** Input type — fields are optional (before Zod defaults are applied). */
 export type CommunicationStyleData = z.input<typeof communicationStyleSchema>
