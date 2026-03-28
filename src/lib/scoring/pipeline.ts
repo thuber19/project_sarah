@@ -26,7 +26,8 @@ async function scoreOneLead(
   // Step 1: Two-phase scoring (Company → Person)
   const twoPhase = calculateTwoPhaseScore(lead, icp, exclusions)
   const totalScore = combinedScore(twoPhase)
-  const grade = getGradeForScore(totalScore)
+  // Grade basiert NUR auf Company Score, nicht auf dem kombinierten Score
+  const grade = getGradeForScore(twoPhase.company_score)
 
   // Legacy breakdown for backward compatibility
   const breakdown = calculateRuleScore(lead, icp)

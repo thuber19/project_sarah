@@ -75,7 +75,8 @@ export function createScoreLead(ctx: ToolContext) {
 
         const twoPhase = calculateTwoPhaseScore(lead, icp)
         const totalScore = combinedScore(twoPhase)
-        const grade = getGradeForScore(totalScore)
+        // Grade basiert NUR auf Company Score
+        const grade = getGradeForScore(twoPhase.company_score)
 
         await logToolAction(
           ctx,

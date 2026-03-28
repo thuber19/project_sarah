@@ -1,14 +1,16 @@
 import type { ScoreGrade } from '@/types/lead'
 
 /**
- * Three-grade system based on two-phase scoring:
- * - TOP MATCH: Company qualifiziert + starker Ansprechpartner (combined >= 70)
- * - GOOD FIT:  Company qualifiziert, Person ok (combined 40-69)
- * - POOR FIT:  Company nicht qualifiziert oder schwacher Gesamtscore (< 40)
+ * Grade basiert NUR auf dem Company Score:
+ * - TOP MATCH: Company Score >= 70 (starker Firmen-Fit)
+ * - GOOD FIT:  Company Score 40-69 (akzeptabler Firmen-Fit)
+ * - POOR FIT:  Company Score < 40 (Firma passt nicht)
+ *
+ * Der Person Score ist eine separate Dimension und beeinflusst das Grade NICHT.
  */
-export function getGradeForScore(score: number): ScoreGrade {
-  if (score >= 70) return 'TOP_MATCH'
-  if (score >= 40) return 'GOOD_FIT'
+export function getGradeForScore(companyScore: number): ScoreGrade {
+  if (companyScore >= 70) return 'TOP_MATCH'
+  if (companyScore >= 40) return 'GOOD_FIT'
   return 'POOR_FIT'
 }
 
