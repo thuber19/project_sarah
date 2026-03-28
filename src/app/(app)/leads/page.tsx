@@ -1,22 +1,47 @@
-import { Bell, Compass, Search, Upload, Users, ChevronLeft, ChevronRight } from "lucide-react";
-import { LeadFilters } from "@/components/leads/lead-filters";
-import { LeadTable } from "@/components/leads/lead-table";
-import { EmptyState } from "@/components/shared/empty-state";
+import { Bell, Compass, Upload, Users } from 'lucide-react'
+import { Suspense } from 'react'
+import { LeadFilters } from '@/components/leads/lead-filters'
+import { LeadTable } from '@/components/leads/lead-table'
+import { LeadsPagination } from '@/components/leads/leads-pagination'
+import { LeadsSearch } from '@/components/leads/leads-search'
+import { EmptyState } from '@/components/shared/empty-state'
+import { getLeadsAction } from '@/app/actions/leads.actions'
+import { createClient } from '@/lib/supabase/server'
 
-// TODO: Replace with real data check from Supabase
-const hasLeads = true;
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
-export default function LeadsPage() {
+export default async function LeadsPage({ searchParams }: Props) {
+  const params = await searchParams
+  const page = Number(params.page) || 1
+  const grade = typeof params.grade === 'string' ? params.grade : undefined
+  const search = typeof params.search === 'string' ? params.search : undefined
+  const sort = typeof params.sort === 'string' ? params.sort : undefined
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'US'
+
+  const result = await getLeadsAction({ page, grade, search, sort })
+  const { leads, total, pageCount } = 'error' in result
+    ? { leads: [], total: 0, pageCount: 1 }
+    : result
+
+  // Show empty state only when no leads exist at all (no active filter/search)
+  const isFiltered = Boolean(grade || search)
+  const showEmptyState = !isFiltered && total === 0 && !('error' in result)
+
   return (
     <div className="flex h-full flex-1 flex-col">
       {/* Top bar */}
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">
-          Lead-Liste
-        </span>
+        <span className="text-base font-semibold text-foreground">Lead-Liste</span>
 
         <div className="flex items-center gap-4">
-          {/* Export button */}
           <button
             type="button"
             className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
@@ -25,18 +50,10 @@ export default function LeadsPage() {
             Export
           </button>
 
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Leads durchsuchen"
-            />
-          </div>
+          <Suspense>
+            <LeadsSearch />
+          </Suspense>
 
-          {/* Bell icon */}
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -45,79 +62,50 @@ export default function LeadsPage() {
             <Bell className="h-5 w-5" />
           </button>
 
-          {/* Avatar */}
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
+            {initials}
           </div>
         </div>
       </div>
 
-      {hasLeads ? (
-        /* Content area */
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
-          <LeadFilters />
-          <LeadTable />
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between pb-6">
-            <span className="text-sm text-muted-foreground">
-              127 Leads total
-            </span>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
-                aria-label="Vorherige Seite"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-
-              {[1, 2, 3, 4, 5].map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
-                    page === 1
-                      ? "bg-primary text-white"
-                      : "border border-border text-foreground hover:bg-secondary"
-                  }`}
-                  aria-label={`Seite ${page}`}
-                  aria-current={page === 1 ? "page" : undefined}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
-                aria-label="Nächste Seite"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
+      {showEmptyState ? (
         <div className="flex flex-1 items-center justify-center p-8">
           <EmptyState
             icon={Users}
             title="Noch keine Leads"
             description="Starte eine Lead Discovery oder importiere Leads manuell."
             primaryAction={{
-              label: "Discovery starten",
-              href: "/discovery",
+              label: 'Discovery starten',
+              href: '/discovery',
               icon: Compass,
             }}
             secondaryAction={{
-              label: "Leads importieren",
-              href: "/leads/import",
+              label: 'Leads importieren',
+              href: '/leads/import',
               icon: Upload,
             }}
           />
         </div>
+      ) : (
+        /* Content area */
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
+          <Suspense>
+            <LeadFilters />
+          </Suspense>
+
+          {'error' in result ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              Leads konnten nicht geladen werden.
+            </div>
+          ) : (
+            <LeadTable leads={leads} />
+          )}
+
+          <Suspense>
+            <LeadsPagination page={page} pageCount={pageCount} total={total} />
+          </Suspense>
+        </div>
       )}
     </div>
-  );
+  )
 }

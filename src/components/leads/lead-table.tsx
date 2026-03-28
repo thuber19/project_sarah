@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
+import Link from 'next/link'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableHeader,
@@ -7,88 +7,34 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table";
-import { ScoreBadge } from "@/components/leads/score-badge";
+} from '@/components/ui/table'
+import { ScoreBadge } from '@/components/leads/score-badge'
+import type { LeadWithScore } from '@/app/actions/leads.actions'
 
-type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
-
-interface Lead {
-  id: string;
-  company: string;
-  industry: string;
-  location: string;
-  score: number;
-  status: Grade;
-  updated: string;
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('de-AT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
 }
 
-const mockLeads: Lead[] = [
-  {
-    id: "1",
-    company: "TechVentures GmbH",
-    industry: "SaaS",
-    location: "Wien",
-    score: 97,
-    status: "HOT",
-    updated: "24.03.2026",
-  },
-  {
-    id: "2",
-    company: "DataFlow AG",
-    industry: "Analytics",
-    location: "München",
-    score: 92,
-    status: "HOT",
-    updated: "22.03.2026",
-  },
-  {
-    id: "3",
-    company: "AlpenTech Solutions",
-    industry: "IT",
-    location: "Zürich",
-    score: 85,
-    status: "QUALIFIED",
-    updated: "24.03.2026",
-  },
-  {
-    id: "4",
-    company: "NextCloud Systems",
-    industry: "Cloud",
-    location: "Hamburg",
-    score: 73,
-    status: "POTENTIAL",
-    updated: "10.01.2026",
-  },
-  {
-    id: "5",
-    company: "WindSoft GmbH",
-    industry: "Security",
-    location: "Wien",
-    score: 68,
-    status: "ENGAGED",
-    updated: "22.02.2026",
-  },
-  {
-    id: "6",
-    company: "Helvetia Digital",
-    industry: "FinTech",
-    location: "Bern",
-    score: 55,
-    status: "POTENTIAL",
-    updated: "18.01.2026",
-  },
-  {
-    id: "7",
-    company: "BavariaConnect",
-    industry: "Logistik",
-    location: "Nürnberg",
-    score: 42,
-    status: "POOR_FIT",
-    updated: "15.02.2026",
-  },
-];
+interface Props {
+  leads: LeadWithScore[]
+}
 
-export function LeadTable() {
+export function LeadTable({ leads }: Props) {
+  if (leads.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-white py-16 text-center">
+        <p className="text-sm font-semibold text-foreground">Keine Leads gefunden</p>
+        <p className="text-sm text-muted-foreground">
+          Passe die Filter an oder starte eine neue Discovery.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-xl border border-border bg-white">
       <Table>
@@ -113,7 +59,7 @@ export function LeadTable() {
               Status
             </TableHead>
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Aktualisiert
+              Hinzugefügt
             </TableHead>
             <TableHead className="w-12 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {/* Actions */}
@@ -121,39 +67,47 @@ export function LeadTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockLeads.map((lead) => (
+          {leads.map((lead) => (
             <TableRow key={lead.id} className="hover:bg-muted/50">
               <TableCell>
-                <Checkbox aria-label={`${lead.company} auswählen`} />
+                <Checkbox aria-label={`${lead.company_name ?? lead.full_name} auswählen`} />
               </TableCell>
               <TableCell>
                 <Link
                   href={`/leads/${lead.id}`}
                   className="font-medium text-foreground hover:text-accent hover:underline"
                 >
-                  {lead.company}
+                  {lead.company_name ?? lead.full_name ?? '—'}
                 </Link>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {lead.industry}
+                {lead.industry ?? '—'}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {lead.location}
+                {lead.location ?? '—'}
               </TableCell>
               <TableCell>
-                <span className="text-base font-bold">{lead.score}</span>
+                {lead.total_score !== null ? (
+                  <span className="text-base font-bold">{lead.total_score}</span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">–</span>
+                )}
               </TableCell>
               <TableCell>
-                <ScoreBadge grade={lead.status} />
+                {lead.grade ? (
+                  <ScoreBadge grade={lead.grade} />
+                ) : (
+                  <span className="text-xs text-muted-foreground">Nicht bewertet</span>
+                )}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {lead.updated}
+                {formatDate(lead.created_at)}
               </TableCell>
               <TableCell>
                 <button
                   type="button"
                   className="text-muted-foreground hover:text-foreground"
-                  aria-label={`Aktionen für ${lead.company}`}
+                  aria-label={`Aktionen für ${lead.company_name ?? lead.full_name}`}
                 >
                   ...
                 </button>
@@ -163,5 +117,5 @@ export function LeadTable() {
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }
