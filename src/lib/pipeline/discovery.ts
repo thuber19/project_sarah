@@ -161,13 +161,18 @@ export async function runDiscoveryPipeline(
     await logAgentEvent(supabase, userId, 'lead_discovered', 'Suche Leads via Apollo.io...')
     let apolloPeople: ApolloPerson[] = []
     try {
+      // Note: organization_industry_tag_ids expects Apollo internal hex IDs, not
+      // plain strings. We omit it and rely on organization_keywords for industry
+      // intent instead, which accepts free-form text.
       const apolloResult = await searchPeople({
         person_titles: optimizedQuery.apolloParams.personTitles,
         person_seniorities: optimizedQuery.apolloParams.personSeniorities,
         organization_sizes: optimizedQuery.apolloParams.organizationSizes,
-        organization_industry_tag_ids: optimizedQuery.apolloParams.organizationIndustries,
         organization_locations: optimizedQuery.apolloParams.organizationLocations,
-        organization_keywords: optimizedQuery.apolloParams.organizationKeywords,
+        organization_keywords: [
+          ...optimizedQuery.apolloParams.organizationKeywords,
+          ...optimizedQuery.apolloParams.organizationIndustries,
+        ],
         organization_technologies: optimizedQuery.apolloParams.organizationTechnologies,
         per_page: 25,
       })
