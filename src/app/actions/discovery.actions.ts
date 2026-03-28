@@ -250,13 +250,14 @@ export async function startDiscoveryAction(
         `${apolloResult.people.length} Leads via Apollo gefunden`,
       )
     } catch (error) {
-      console.error('[Discovery] Apollo search failed:', error)
+      const apolloErrMsg = error instanceof Error ? error.message : String(error)
+      console.error('[Discovery] Apollo search failed:', apolloErrMsg)
       await logAgent(
         supabase,
         user.id,
         campaign.id,
         'campaign_failed',
-        'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort',
+        `Apollo-Suche fehlgeschlagen: ${apolloErrMsg}`,
       )
     }
 
