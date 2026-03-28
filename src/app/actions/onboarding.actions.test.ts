@@ -8,21 +8,52 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const mockUser = { id: 'test-user-id', email: 'test@example.com' }
 
 // Supabase query builder mock with full chaining support
+// The production code now:
+// 1. Checks if profile exists: from('business_profiles').select('id').eq('user_id', ...).maybeSingle()
+// 2. Inserts profile: from('business_profiles').insert(...).select('id').single()
+// 3. Inserts ICP: from('icp_profiles').insert(...)
 function createMockSupabaseClient(overrides?: {
-  upsertResult?: { data: unknown; error: unknown }
+  insertResult?: { data: unknown; error: unknown }
+  existingProfile?: { data: unknown; error: unknown }
 }) {
-  const defaultResult = { data: { id: 'biz-profile-id' }, error: null }
-  const upsertResult = overrides?.upsertResult ?? defaultResult
+  const defaultInsertResult = { data: { id: 'biz-profile-id' }, error: null }
+  const insertResult = overrides?.insertResult ?? defaultInsertResult
+  const existingProfileResult = overrides?.existingProfile ?? { data: null, error: null }
 
-  const chainable = {
-    upsert: vi.fn().mockReturnThis(),
+  // Chain for the existence check: select().eq().maybeSingle()
+  const existenceChainable = {
     select: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue(upsertResult),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue(existingProfileResult),
   }
 
+  // Chain for the insert: insert().select().single()
+  const insertChainable = {
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue(insertResult),
+  }
+
+  // ICP insert chain
+  const icpChainable = {
+    insert: vi.fn().mockResolvedValue({ data: {}, error: null }),
+  }
+
+  let businessProfileCallCount = 0
+
   return {
-    from: vi.fn().mockReturnValue(chainable),
-    _chainable: chainable,
+    from: vi.fn((table: string) => {
+      if (table === 'business_profiles') {
+        businessProfileCallCount++
+        // First call is the existence check, second is the insert
+        if (businessProfileCallCount === 1) return existenceChainable
+        return insertChainable
+      }
+      return icpChainable
+    }),
+    _existenceChainable: existenceChainable,
+    _insertChainable: insertChainable,
+    _icpChainable: icpChainable,
   } as unknown as SupabaseClient
 }
 
@@ -582,9 +613,9 @@ describe('onboarding.actions', () => {
 
     // -- Supabase interaction -------------------------------------------------
 
-    it('upserts profile and ICP then redirects on success', async () => {
-      const upsertResult = { data: { id: 'biz-profile-id' }, error: null }
-      mockSupabase = createMockSupabaseClient({ upsertResult })
+    it('inserts profile and ICP then redirects on success', async () => {
+      const insertResult = { data: { id: 'biz-profile-id' }, error: null }
+      mockSupabase = createMockSupabaseClient({ insertResult })
 
       // redirect throws to halt execution (Next.js behavior)
       vi.mocked(redirect).mockImplementation(() => {
@@ -601,9 +632,9 @@ describe('onboarding.actions', () => {
       expect(fromMock).toHaveBeenCalledWith('icp_profiles')
     })
 
-    it('returns error when business_profiles upsert fails', async () => {
+    it('returns error when business_profiles insert fails', async () => {
       mockSupabase = createMockSupabaseClient({
-        upsertResult: { data: null, error: { message: 'DB error' } },
+        insertResult: { data: null, error: { message: 'DB error' } },
       })
 
       const result = await saveOnboardingAction(validProfile, validIcp)
@@ -615,9 +646,9 @@ describe('onboarding.actions', () => {
       expect(redirect).not.toHaveBeenCalled()
     })
 
-    it('returns error when business_profiles upsert returns null data', async () => {
+    it('returns error when business_profiles insert returns null data', async () => {
       mockSupabase = createMockSupabaseClient({
-        upsertResult: { data: null, error: null },
+        insertResult: { data: null, error: null },
       })
 
       const result = await saveOnboardingAction(validProfile, validIcp)
@@ -628,29 +659,34 @@ describe('onboarding.actions', () => {
       })
     })
 
-    it('returns error when icp_profiles upsert fails', async () => {
-      // First call (business_profiles) succeeds, second call (icp_profiles) fails
-      const chainable = {
-        upsert: vi.fn().mockReturnThis(),
+    it('returns error when icp_profiles insert fails', async () => {
+      // Existence check: no existing profile
+      const existenceChainable = {
         select: vi.fn().mockReturnThis(),
-        single: vi.fn(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       }
 
-      chainable.single
-        // business_profiles upsert -> success
-        .mockImplementationOnce(() =>
-          Promise.resolve({ data: { id: 'biz-profile-id' }, error: null }),
-        )
+      // business_profiles insert -> success
+      const insertChainable = {
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'biz-profile-id' }, error: null }),
+      }
 
+      // icp_profiles insert -> fails
       const icpChainable = {
-        upsert: vi.fn().mockResolvedValue({ data: null, error: { message: 'ICP error' } }),
-        select: vi.fn().mockReturnThis(),
-        single: vi.fn(),
+        insert: vi.fn().mockResolvedValue({ data: null, error: { message: 'ICP error' } }),
       }
 
+      let businessProfileCallCount = 0
       mockSupabase = {
         from: vi.fn((table: string) => {
-          if (table === 'business_profiles') return chainable
+          if (table === 'business_profiles') {
+            businessProfileCallCount++
+            if (businessProfileCallCount === 1) return existenceChainable
+            return insertChainable
+          }
           return icpChainable
         }),
       } as unknown as SupabaseClient
@@ -664,47 +700,54 @@ describe('onboarding.actions', () => {
       expect(redirect).not.toHaveBeenCalled()
     })
 
-    it('passes user.id to upsert calls', async () => {
+    it('passes user.id to insert calls', async () => {
       vi.mocked(redirect).mockImplementation(() => {
         throw new Error('NEXT_REDIRECT')
       })
 
-      const upsertSpy = vi.fn().mockReturnThis()
+      // Existence check: no existing profile
+      const existenceChainable = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }
+
+      const insertSpy = vi.fn().mockReturnThis()
       const selectSpy = vi.fn().mockReturnThis()
       const singleSpy = vi.fn().mockResolvedValue({
         data: { id: 'biz-123' },
         error: null,
       })
 
-      const icpUpsertSpy = vi.fn().mockResolvedValue({ data: {}, error: null })
+      const icpInsertSpy = vi.fn().mockResolvedValue({ data: {}, error: null })
 
+      let businessProfileCallCount = 0
       mockSupabase = {
         from: vi.fn((table: string) => {
           if (table === 'business_profiles') {
-            return { upsert: upsertSpy, select: selectSpy, single: singleSpy }
+            businessProfileCallCount++
+            if (businessProfileCallCount === 1) return existenceChainable
+            return { insert: insertSpy, select: selectSpy, single: singleSpy }
           }
-          return { upsert: icpUpsertSpy }
+          return { insert: icpInsertSpy }
         }),
       } as unknown as SupabaseClient
 
-      // The chain: from().upsert().select().single()
-      upsertSpy.mockReturnValue({ select: selectSpy })
+      // The chain: from().insert().select().single()
+      insertSpy.mockReturnValue({ select: selectSpy })
       selectSpy.mockReturnValue({ single: singleSpy })
 
       await expect(saveOnboardingAction(validProfile, validIcp)).rejects.toThrow('NEXT_REDIRECT')
 
-      // Verify user_id is passed in business_profiles upsert
-      expect(upsertSpy).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'test-user-id' }), {
-        onConflict: 'user_id',
-      })
+      // Verify user_id is passed in business_profiles insert
+      expect(insertSpy).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'test-user-id' }))
 
-      // Verify user_id and business_profile_id in icp_profiles upsert
-      expect(icpUpsertSpy).toHaveBeenCalledWith(
+      // Verify user_id and business_profile_id in icp_profiles insert
+      expect(icpInsertSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'test-user-id',
           business_profile_id: 'biz-123',
         }),
-        { onConflict: 'user_id' },
       )
     })
   })

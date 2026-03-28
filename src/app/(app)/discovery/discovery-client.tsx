@@ -477,8 +477,8 @@ export function DiscoveryClient({
 
             {/* Scoring done */}
             {scoringDone && (
-              <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
-                <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
+              <div className="flex items-center gap-3 rounded-xl border border-status-success-bg bg-status-success-bg p-4">
+                <CheckCircle className="h-5 w-5 shrink-0 text-status-success-text" />
                 <div>
                   <p className="text-sm font-semibold text-foreground">Scoring abgeschlossen</p>
                   <p className="text-xs text-muted-foreground">
