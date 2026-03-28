@@ -17,25 +17,23 @@ export function MobileTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-sidebar pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
       aria-label="Mobile Navigation"
     >
-      <div className="flex h-14 items-center justify-around">
+      <div className="flex h-16 items-center justify-around">
         {tabs.map(({ label, href, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Link
               key={href}
               href={href}
-              className={`flex min-h-12 min-w-12 flex-col items-center justify-center gap-0.5 rounded-lg px-2 text-[10px] font-medium transition-colors ${
-                isActive
-                  ? 'text-accent'
-                  : 'text-sidebar-muted hover:text-sidebar-foreground'
+              className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 min-w-[48px] min-h-[48px] ${
+                isActive ? 'text-accent' : 'text-muted-foreground'
               }`}
               aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className="size-5" aria-hidden="true" />
-              <span>{label}</span>
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              <span className="text-[10px] font-medium">{label}</span>
             </Link>
           )
         })}

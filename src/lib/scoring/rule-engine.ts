@@ -183,6 +183,11 @@ function scoreBuyingSignals(lead: Lead): number {
   // Registered legal entity (from website analysis — Handelsregister/Firmenbuch)
   if (raw.registryInfo) score += 2
 
+  // Competitor user bonus — uses a competing tool → higher switching probability
+  if (raw.competitor_matches && Array.isArray(raw.competitor_matches) && raw.competitor_matches.length > 0) {
+    score += 5
+  }
+
   return Math.min(score, 25)
 }
 
