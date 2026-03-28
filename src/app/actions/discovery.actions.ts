@@ -4,11 +4,16 @@ import { createClient, requireAuth } from '@/lib/supabase/server'
 import { searchOrganizations } from '@/lib/apollo/client'
 import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
+import { runScoringPipeline } from '@/lib/scoring/pipeline'
+import type { ICP } from '@/lib/scoring/rule-engine'
+import type { Lead } from '@/types/lead'
 import type { ApolloOrganization } from '@/lib/apollo/types'
+import type { Place } from '@/lib/google-places/types'
 import type { Database } from '@/types/database'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
 import { PipelineTimer } from '@/lib/pipeline/timer'
+import { deduplicateLeads } from '@/lib/pipeline/dedup'
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert']
 type AgentLogInsert = Database['public']['Tables']['agent_logs']['Insert']
@@ -24,6 +29,7 @@ interface DiscoveryFormData {
 interface DiscoveryResult {
   campaignId: string
   leadsFound: number
+  leadsScored: number
 }
 
 async function logAgent(
@@ -82,6 +88,84 @@ function categorizeSize(employees: number): string {
   return '5001+'
 }
 
+// ---------------------------------------------------------------------------
+// Google Places → Lead helpers
+// ---------------------------------------------------------------------------
+
+const DACH_COUNTRY_MAP: Record<string, string> = {
+  österreich: 'Austria',
+  austria: 'Austria',
+  deutschland: 'Germany',
+  germany: 'Germany',
+  schweiz: 'Switzerland',
+  switzerland: 'Switzerland',
+}
+
+function extractCountryFromAddress(address: string): string | null {
+  const lastSegment = address.split(',').pop()?.trim().toLowerCase()
+  if (!lastSegment) return null
+  return DACH_COUNTRY_MAP[lastSegment] ?? null
+}
+
+const PLACE_TYPE_TO_INDUSTRY: Record<string, string> = {
+  accounting: 'Steuerberatung & Buchhaltung',
+  lawyer: 'Rechtsberatung',
+  insurance_agency: 'Versicherungen',
+  real_estate_agency: 'Immobilien',
+  finance: 'Finanzdienstleistungen',
+  bank: 'Finanzdienstleistungen',
+  marketing_agency: 'Marketing & Werbung',
+  it_services: 'IT-Dienstleistungen',
+  software_company: 'Software',
+  consulting: 'Beratung',
+  restaurant: 'Gastronomie',
+  hotel: 'Hotellerie',
+  hospital: 'Gesundheitswesen',
+  dentist: 'Gesundheitswesen',
+  doctor: 'Gesundheitswesen',
+  pharmacy: 'Gesundheitswesen',
+  gym: 'Fitness & Wellness',
+  car_dealer: 'Automobilhandel',
+  car_repair: 'Automobilservice',
+  electrician: 'Handwerk & Technik',
+  plumber: 'Handwerk & Technik',
+  store: 'Einzelhandel',
+  supermarket: 'Einzelhandel',
+  school: 'Bildung',
+  university: 'Bildung',
+}
+
+function mapPlaceTypesToIndustry(types: string[]): string | null {
+  for (const type of types) {
+    const industry = PLACE_TYPE_TO_INDUSTRY[type]
+    if (industry) return industry
+  }
+  return null
+}
+
+function placeToLead(place: Place, userId: string, campaignId: string): LeadInsert {
+  return {
+    user_id: userId,
+    campaign_id: campaignId,
+    company_name: place.displayName,
+    company_domain: place.websiteUri,
+    company_website: place.websiteUri,
+    location: place.formattedAddress,
+    country: extractCountryFromAddress(place.formattedAddress),
+    industry: mapPlaceTypesToIndustry(place.types),
+    source: 'google_places',
+    raw_data: {
+      place_id: place.id,
+      rating: place.rating,
+      user_rating_count: place.userRatingCount,
+      phone: place.nationalPhoneNumber,
+      international_phone: place.internationalPhoneNumber,
+      business_status: place.businessStatus,
+      types: place.types,
+    },
+  }
+}
+
 export async function startDiscoveryAction(
   formData: DiscoveryFormData,
 ): Promise<ApiResponse<DiscoveryResult>> {
@@ -118,6 +202,7 @@ export async function startDiscoveryAction(
     .single()
 
   if (campaignError || !campaign) {
+    console.error('[Discovery] Campaign creation failed:', campaignError)
     return fail('INTERNAL_ERROR', 'Campaign konnte nicht erstellt werden')
   }
 
@@ -240,8 +325,8 @@ export async function startDiscoveryAction(
         `${apolloResult.organizations.length} Unternehmen via Apollo gefunden`,
       )
     } catch (error) {
+      console.error('[Discovery] Apollo search failed:', error)
       const apolloErrMsg = error instanceof Error ? error.message : String(error)
-      console.error('[Discovery] Apollo search failed:', apolloErrMsg)
       await logAgent(
         supabase,
         user.id,
@@ -265,20 +350,7 @@ export async function startDiscoveryAction(
       try {
         const result = await textSearch({ query: query.query, region: query.region })
         for (const place of result.places) {
-          allLeads.push({
-            user_id: user.id,
-            campaign_id: campaign.id,
-            company_name: place.displayName,
-            company_domain: place.websiteUri,
-            company_website: place.websiteUri,
-            location: place.formattedAddress,
-            source: 'google_places',
-            raw_data: {
-              place_id: place.id,
-              rating: place.rating,
-              phone: place.nationalPhoneNumber,
-            },
-          })
+          allLeads.push(placeToLead(place, user.id, campaign.id))
         }
       } catch (error) {
         console.error(`[Discovery] Google Places failed for "${query.query}":`, error)
@@ -286,29 +358,74 @@ export async function startDiscoveryAction(
     }
     timer.stop('google_places_ms')
 
+    // Step 4: Deduplicate and save leads
+    const dedupedLeads = deduplicateLeads(allLeads)
+    const dupsRemoved = allLeads.length - dedupedLeads.length
+
     await logAgent(
       supabase,
       user.id,
       campaign.id,
       'leads_discovered',
-      `${allLeads.length} Leads insgesamt gefunden`,
+      `${allLeads.length} Leads gefunden${dupsRemoved > 0 ? `, ${dupsRemoved} Duplikate entfernt` : ''}`,
     )
-
-    // Step 4: Save leads
-    if (allLeads.length > 0) {
-      const { error: insertError } = await supabase.from('leads').insert(allLeads)
+    let savedLeads: Lead[] = []
+    if (dedupedLeads.length > 0) {
+      const { data: inserted, error: insertError } = await supabase
+        .from('leads')
+        .insert(dedupedLeads)
+        .select()
       if (insertError) {
         console.error('[Discovery] Failed to save leads:', insertError)
         throw new Error('Leads konnten nicht gespeichert werden')
       }
+      savedLeads = (inserted ?? []) as Lead[]
     }
 
-    // Step 5: Update campaign
+    // Step 5: Score all leads
+    let leadsScored = 0
+    if (savedLeads.length > 0) {
+      timer.start('scoring_ms')
+      await logAgent(
+        supabase,
+        user.id,
+        campaign.id,
+        'lead_scored',
+        `Bewerte ${savedLeads.length} Leads...`,
+      )
+
+      const icp: ICP = {
+        target_industries: effectiveIcp.industries ?? [],
+        target_company_sizes: effectiveIcp.company_sizes ?? [],
+        target_countries: effectiveIcp.regions ?? [],
+        target_seniorities: effectiveIcp.seniority_levels ?? [],
+        target_titles: effectiveIcp.job_titles ?? [],
+      }
+
+      try {
+        const scoringResult = await runScoringPipeline(supabase, savedLeads, icp, user.id)
+        leadsScored = scoringResult.scored
+      } catch (scoringError) {
+        console.error('[Discovery] Scoring failed (non-fatal):', scoringError)
+        await logAgent(
+          supabase,
+          user.id,
+          campaign.id,
+          'campaign_failed',
+          'Scoring fehlgeschlagen — Leads wurden trotzdem gespeichert',
+        )
+      }
+
+      timer.stop('scoring_ms')
+    }
+
+    // Step 6: Update campaign
     await supabase
       .from('search_campaigns')
       .update({
         status: 'completed',
-        leads_found: allLeads.length,
+        leads_found: savedLeads.length,
+        leads_scored: leadsScored,
         completed_at: new Date().toISOString(),
       })
       .eq('id', campaign.id)
@@ -320,26 +437,50 @@ export async function startDiscoveryAction(
       user.id,
       campaign.id,
       'campaign_completed',
-      `Fertig! ${allLeads.length} Leads gefunden.`,
-      { leads_found: allLeads.length, pipeline_timing: timer.getMetrics() },
+      `Fertig! ${savedLeads.length} Leads gefunden, ${leadsScored} bewertet.`,
+      { leads_found: savedLeads.length, leads_scored: leadsScored, pipeline_timing: timer.getMetrics() },
     )
 
-    return ok({ campaignId: campaign.id, leadsFound: allLeads.length })
+    // Step 7: Trigger async enrichment (fire-and-forget)
+    if (savedLeads.length > 0) {
+      triggerEnrichment(campaign.id).catch((err) =>
+        console.error('[Discovery] Failed to trigger enrichment:', err),
+      )
+    }
+
+    return ok({ campaignId: campaign.id, leadsFound: savedLeads.length, leadsScored })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unbekannter Fehler'
+    console.error('[Discovery] Pipeline failed:', error)
+    const internalMessage = error instanceof Error ? error.message : 'Unbekannter Fehler'
     await supabase
       .from('search_campaigns')
-      .update({ status: 'failed', error_message: message })
+      .update({ status: 'failed', error_message: internalMessage })
       .eq('id', campaign.id)
     await logAgent(
       supabase,
       user.id,
       campaign.id,
       'campaign_failed',
-      `Pipeline fehlgeschlagen: ${message}`,
+      `Pipeline fehlgeschlagen: ${internalMessage}`,
     )
-    return fail('INTERNAL_ERROR', message)
+    return fail('INTERNAL_ERROR', 'Lead Discovery fehlgeschlagen. Bitte versuchen Sie es erneut.')
   }
+}
+
+// ---------------------------------------------------------------------------
+// Enrichment trigger (fire-and-forget via internal API call)
+// ---------------------------------------------------------------------------
+
+async function triggerEnrichment(campaignId: string): Promise<void> {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000'
+
+  await fetch(`${baseUrl}/api/enrichment/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ campaignId }),
+  })
 }
 
 // ---------------------------------------------------------------------------

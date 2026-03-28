@@ -47,7 +47,7 @@ export async function analyzeWebsiteAction(rawUrl: string): Promise<ApiResponse<
     const profile: ProfileData = {
       website_url: websiteUrl,
       company_name: analysis.companyName,
-      description: analysis.productsServices.join(', '),
+      description: analysis.companyDescription,
       industry: analysis.industry,
       product_summary: analysis.productsServices.join('; '),
       value_proposition: analysis.valueProposition,
@@ -65,7 +65,11 @@ export async function analyzeWebsiteAction(rawUrl: string): Promise<ApiResponse<
 
     return ok({ profile, icp })
   } catch (err) {
-    return fail('INTERNAL_ERROR', (err as Error).message)
+    console.error('[Onboarding] Website analysis failed:', err)
+    return fail(
+      'INTERNAL_ERROR',
+      'Website-Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    )
   }
 }
 
@@ -101,7 +105,7 @@ export async function saveOnboardingAction(
     .single()
 
   if (profileError || !businessProfile) {
-    console.error('saveOnboardingAction: business_profiles upsert failed', profileError)
+    console.error('[Onboarding] Business profile upsert failed:', profileError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des Profils')
   }
 
@@ -119,7 +123,7 @@ export async function saveOnboardingAction(
   )
 
   if (icpError) {
-    console.error('saveOnboardingAction: icp_profiles upsert failed', icpError)
+    console.error('[Onboarding] ICP profile upsert failed:', icpError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des ICP')
   }
 
@@ -140,8 +144,8 @@ export async function trackOnboardingEventAction(
       `Onboarding Schritt ${step} ${event === 'started' ? 'gestartet' : 'abgeschlossen'}`,
       { step, ...metadata },
     )
-  } catch {
+  } catch (error) {
     // Non-critical — don't break onboarding if tracking fails
-    console.error('[Onboarding] Tracking failed')
+    console.error('[Onboarding] Tracking failed:', error)
   }
 }

@@ -6,6 +6,7 @@ import {
   discoveryFormSchema,
   onboardingProfileSchema,
   onboardingIcpSchema,
+  communicationStyleSchema,
 } from './schemas'
 
 // ---------------------------------------------------------------------------
@@ -264,6 +265,87 @@ describe('onboardingProfileSchema', () => {
       expect(messages).toContain('Firmenname ist erforderlich')
     }
   })
+
+  it('returns German error for empty description', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      description: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Beschreibung ist erforderlich')
+    }
+  })
+
+  it('returns German error for empty industry', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      industry: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Branche ist erforderlich')
+    }
+  })
+
+  it('accepts multi-sentence Fließtext description from AI analysis', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      description:
+        'Acme GmbH ist ein B2B-SaaS-Unternehmen, das Vertriebsteams bei der Lead-Qualifizierung unterstützt. Die Plattform richtet sich an mittelständische Unternehmen im DACH-Raum.',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('returns German error for empty product_summary', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      product_summary: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Produktübersicht ist erforderlich')
+    }
+  })
+
+  it('returns German error for empty value_proposition', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      value_proposition: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Nutzenversprechen ist erforderlich')
+    }
+  })
+
+  it('returns German error for empty target_market', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      target_market: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Zielmarkt ist erforderlich')
+    }
+  })
+
+  it('returns German error for empty website_url', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      website_url: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Website-URL ist erforderlich')
+    }
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -319,6 +401,43 @@ describe('onboardingIcpSchema', () => {
     if (result.success) {
       expect('tech_stack' in result.data).toBe(false)
     }
+  })
+
+  it('accepts free-text company_sizes like "10-100" (text input, not dropdown)', () => {
+    const result = onboardingIcpSchema.safeParse({
+      ...validOnboardingIcp,
+      company_sizes: ['10-100', '500+', 'Mittelstand'],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.company_sizes).toEqual(['10-100', '500+', 'Mittelstand'])
+    }
+  })
+
+  it('accepts single free-text company_size entry', () => {
+    const result = onboardingIcpSchema.safeParse({
+      ...validOnboardingIcp,
+      company_sizes: ['50-500 Mitarbeiter'],
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.company_sizes).toEqual(['50-500 Mitarbeiter'])
+    }
+  })
+
+  it('requires all five ICP array fields to be present', () => {
+    // Missing seniority_levels, industries, company_sizes, regions
+    const result = onboardingIcpSchema.safeParse({ job_titles: ['CTO'] })
+    expect(result.success).toBe(false)
+
+    // Missing only regions
+    const result2 = onboardingIcpSchema.safeParse({
+      job_titles: ['CTO'],
+      seniority_levels: ['C-Level'],
+      industries: ['SaaS'],
+      company_sizes: ['10-50'],
+    })
+    expect(result2.success).toBe(false)
   })
 
   it('parses output shape correctly', () => {
@@ -408,6 +527,119 @@ describe('discoveryFormSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data).toEqual(validForm)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// communicationStyleSchema
+// ---------------------------------------------------------------------------
+
+describe('communicationStyleSchema', () => {
+  const fullStyle = {
+    email_example: 'Hallo Herr Müller, ...',
+    email_signature: 'Mit freundlichen Grüßen, Sarah',
+    writing_style: 'formal',
+    salutation_preference: 'sie' as const,
+    voice_example: 'Guten Tag, hier ist Sarah von...',
+    speaking_style: 'freundlich und professionell',
+    opening_phrase: 'Darf ich Ihnen kurz vorstellen...',
+    call_to_action: 'Wollen wir einen Termin vereinbaren?',
+    additional_notes: 'DACH-Markt, immer Sie-Ansprache',
+  }
+
+  it('accepts full communication style data', () => {
+    const result = communicationStyleSchema.safeParse(fullStyle)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual(fullStyle)
+    }
+  })
+
+  it('accepts empty object — all fields are optional', () => {
+    const result = communicationStyleSchema.safeParse({})
+    expect(result.success).toBe(true)
+  })
+
+  it('applies defaults correctly for empty object', () => {
+    const result = communicationStyleSchema.safeParse({})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual({
+        email_example: '',
+        email_signature: '',
+        writing_style: '',
+        salutation_preference: 'sie',
+        voice_example: '',
+        speaking_style: '',
+        opening_phrase: '',
+        call_to_action: '',
+        additional_notes: '',
+      })
+    }
+  })
+
+  it('accepts "du" as salutation_preference', () => {
+    const result = communicationStyleSchema.safeParse({
+      salutation_preference: 'du',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.salutation_preference).toBe('du')
+    }
+  })
+
+  it('accepts "sie" as salutation_preference', () => {
+    const result = communicationStyleSchema.safeParse({
+      salutation_preference: 'sie',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.salutation_preference).toBe('sie')
+    }
+  })
+
+  it('rejects invalid salutation_preference value', () => {
+    const result = communicationStyleSchema.safeParse({
+      salutation_preference: 'ihr',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects non-string salutation_preference', () => {
+    const result = communicationStyleSchema.safeParse({
+      salutation_preference: 123,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('defaults salutation_preference to "sie" when omitted', () => {
+    const result = communicationStyleSchema.safeParse({
+      email_example: 'Hallo...',
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.salutation_preference).toBe('sie')
+    }
+  })
+
+  it('preserves provided values and fills defaults for omitted fields', () => {
+    const partial = {
+      email_example: 'Hallo Herr Schmidt',
+      salutation_preference: 'du' as const,
+    }
+    const result = communicationStyleSchema.safeParse(partial)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.email_example).toBe('Hallo Herr Schmidt')
+      expect(result.data.salutation_preference).toBe('du')
+      expect(result.data.email_signature).toBe('')
+      expect(result.data.writing_style).toBe('')
+      expect(result.data.voice_example).toBe('')
+      expect(result.data.speaking_style).toBe('')
+      expect(result.data.opening_phrase).toBe('')
+      expect(result.data.call_to_action).toBe('')
+      expect(result.data.additional_notes).toBe('')
     }
   })
 })

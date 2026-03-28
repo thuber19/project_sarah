@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback } from 'react'
 import { Download, FileSpreadsheet, Link2, Play, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScoreBadge } from '@/components/leads/score-badge'
 import { Button } from '@/components/ui/button'
 import { exportLeadsAction } from '@/app/actions/export.actions'
+import { useServerAction } from '@/hooks/use-server-action'
 
 type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
 
@@ -18,8 +19,34 @@ interface ExportContentProps {
 
 const gradeOrder: Grade[] = ['HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR']
 
+/** Trigger a browser file download from CSV string data. */
+function triggerCsvDownload(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportContentProps) {
-  const [isExporting, setIsExporting] = useState(false)
+  const { execute: executeExport, isPending: isExporting } = useServerAction(exportLeadsAction, {
+    errorMessage: 'Export fehlgeschlagen',
+    onSuccess: (data) => {
+      triggerCsvDownload(data.csv, data.filename)
+      toast.success(`${data.rowCount} Leads exportiert`)
+    },
+  })
+
+  const handleExport = useCallback(
+    (grade?: Grade) => {
+      executeExport(grade ? { grade } : {})
+    },
+    [executeExport],
+  )
 
   if (totalLeads === 0) {
     return (
@@ -36,34 +63,6 @@ export function ExportContent({ totalLeads, scoredLeads, gradeCounts }: ExportCo
         />
       </div>
     )
-  }
-
-  async function handleExport(grade?: Grade) {
-    setIsExporting(true)
-    try {
-      const result = await exportLeadsAction(grade ? { grade } : {})
-      if (!result.success) {
-        toast.error(result.error.message)
-        return
-      }
-
-      // Trigger browser download
-      const blob = new Blob([result.data.csv], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = result.data.filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      toast.success(`${result.data.rowCount} Leads exportiert`)
-    } catch {
-      toast.error('Export fehlgeschlagen')
-    } finally {
-      setIsExporting(false)
-    }
   }
 
   return (

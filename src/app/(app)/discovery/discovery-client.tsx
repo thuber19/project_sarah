@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Compass, Play, Search, Settings, SlidersHorizontal } from 'lucide-react'
@@ -12,6 +12,7 @@ import {
   type DiscoveryLead,
 } from '@/app/actions/discovery.actions'
 import { discoveryFormSchema } from '@/lib/validation/schemas'
+import { useServerAction } from '@/hooks/use-server-action'
 import {
   Table,
   TableBody,
@@ -37,12 +38,18 @@ export function DiscoveryClient({
   hasIcp,
 }: DiscoveryClientProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [industries, setIndustries] = useState(icpDefaults.industries)
   const [companySize, setCompanySize] = useState(icpDefaults.companySize)
   const [region, setRegion] = useState(icpDefaults.region)
   const [technologies, setTechnologies] = useState(icpDefaults.technologies)
   const [keywords, setKeywords] = useState(icpDefaults.keywords)
+
+  const { execute: runDiscovery, isPending } = useServerAction(startDiscoveryAction, {
+    onSuccess: (data) => {
+      toast.success(`${data.leadsFound} Leads gefunden!`)
+      router.refresh()
+    },
+  })
 
   function handleDiscovery() {
     const validation = discoveryFormSchema.safeParse({
@@ -57,22 +64,13 @@ export function DiscoveryClient({
       return
     }
 
-    startTransition(async () => {
-      toast.info('Discovery gestartet...')
-      const result = await startDiscoveryAction({
-        industries,
-        companySize,
-        region,
-        technologies: technologies || undefined,
-        keywords: keywords || undefined,
-      })
-
-      if (!result.success) {
-        toast.error(result.error.message)
-      } else {
-        toast.success(`${result.data.leadsFound} Leads gefunden!`)
-        router.refresh()
-      }
+    toast.info('Discovery gestartet...')
+    runDiscovery({
+      industries,
+      companySize,
+      region,
+      technologies: technologies || undefined,
+      keywords: keywords || undefined,
     })
   }
 

@@ -8,13 +8,13 @@ export const urlSchema = z.string().url('Ungültige URL').or(z.literal(''))
 
 // Full profile schema (onboarding — all fields required, AI-populated)
 export const onboardingProfileSchema = z.object({
-  website_url: z.string().min(1),
+  website_url: z.string().min(1, 'Website-URL ist erforderlich'),
   company_name: z.string().min(1, 'Firmenname ist erforderlich'),
-  description: z.string().min(1),
-  industry: z.string().min(1),
-  product_summary: z.string().min(1),
-  value_proposition: z.string().min(1),
-  target_market: z.string().min(1),
+  description: z.string().min(1, 'Beschreibung ist erforderlich'),
+  industry: z.string().min(1, 'Branche ist erforderlich'),
+  product_summary: z.string().min(1, 'Produktübersicht ist erforderlich'),
+  value_proposition: z.string().min(1, 'Nutzenversprechen ist erforderlich'),
+  target_market: z.string().min(1, 'Zielmarkt ist erforderlich'),
   raw_scraped_content: z.string(),
 })
 
@@ -55,6 +55,19 @@ export const settingsIcpSchema = z.object({
   additional_info: z.string().optional(),
 })
 
+// Communication style schema (settings — all fields optional)
+export const communicationStyleSchema = z.object({
+  email_example: z.string().optional().default(''),
+  email_signature: z.string().optional().default(''),
+  writing_style: z.string().optional().default(''),
+  salutation_preference: z.enum(['du', 'sie']).optional().default('sie'),
+  voice_example: z.string().optional().default(''),
+  speaking_style: z.string().optional().default(''),
+  opening_phrase: z.string().optional().default(''),
+  call_to_action: z.string().optional().default(''),
+  additional_notes: z.string().optional().default(''),
+})
+
 // Aliases for clarity
 export const settingsProfileSchema = profileSchema
 
@@ -64,3 +77,5 @@ export type OnboardingProfileData = z.infer<typeof onboardingProfileSchema>
 export type OnboardingIcpData = z.infer<typeof onboardingIcpSchema>
 export type SettingsProfileData = ProfileFormData
 export type SettingsIcpData = z.infer<typeof settingsIcpSchema>
+/** Input type — fields are optional (before Zod defaults are applied). */
+export type CommunicationStyleData = z.input<typeof communicationStyleSchema>

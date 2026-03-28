@@ -236,4 +236,31 @@ describe('proxy', () => {
       expect(response.status).toBe(200)
     })
   })
+
+  // -----------------------------------------------------------------------
+  // Unknown routes — passthrough for 404 handling (#104)
+  // -----------------------------------------------------------------------
+
+  describe('unknown routes (404)', () => {
+    it('passes through unknown routes without auth so Next.js can render 404', async () => {
+      mockUnauthenticated()
+      const response = await proxy(buildRequest('/this-does-not-exist-xyz'))
+      expect(response.status).toBe(200) // proxy passes through; Next.js will set 404
+      expect(response.headers.get('location')).toBeNull()
+    })
+
+    it('does not redirect unknown routes to /login for unauthenticated users', async () => {
+      mockUnauthenticated()
+      const response = await proxy(buildRequest('/nonexistent-page'))
+      // Should NOT redirect — let Next.js handle the 404
+      expect(response.headers.get('location')).toBeNull()
+    })
+
+    it('passes through unknown routes for authenticated users', async () => {
+      mockAuthenticatedWithProfile()
+      const response = await proxy(buildRequest('/random-unknown-path'))
+      expect(response.status).toBe(200)
+      expect(response.headers.get('location')).toBeNull()
+    })
+  })
 })

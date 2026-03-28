@@ -1,9 +1,9 @@
 'use client'
 
-import { useTransition } from 'react'
 import { Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { exportLeadsAction } from '@/app/actions/export.actions'
+import { useServerAction } from '@/hooks/use-server-action'
 
 interface LeadExportButtonProps {
   grade?: string
@@ -11,32 +11,27 @@ interface LeadExportButtonProps {
 }
 
 export function LeadExportButton({ grade, q }: LeadExportButtonProps) {
-  const [isPending, startTransition] = useTransition()
-
-  function handleExport() {
-    startTransition(async () => {
-      const result = await exportLeadsAction({
-        grade: grade as 'ALL' | 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR' | undefined,
-        q,
-      })
-
-      if (!result.success) {
-        toast.error(result.error.message)
-        return
-      }
-
+  const { execute: exportLeads, isPending } = useServerAction(exportLeadsAction, {
+    onSuccess: (data) => {
       // Trigger browser download
-      const blob = new Blob([result.data.csv], { type: 'text/csv;charset=utf-8' })
+      const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = result.data.filename
+      a.download = data.filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      toast.success(`${result.data.rowCount} Leads exportiert`)
+      toast.success(`${data.rowCount} Leads exportiert`)
+    },
+  })
+
+  function handleExport() {
+    exportLeads({
+      grade: grade as 'ALL' | 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR' | undefined,
+      q,
     })
   }
 

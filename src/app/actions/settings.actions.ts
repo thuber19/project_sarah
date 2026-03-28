@@ -7,8 +7,10 @@ import type { BusinessProfile, IcpProfile } from '@/types/database'
 import {
   profileSchema,
   settingsIcpSchema,
+  communicationStyleSchema,
   type SettingsProfileData,
   type SettingsIcpData,
+  type CommunicationStyleData,
 } from '@/lib/validation/schemas'
 
 // Types re-exported from @/lib/validation/schemas — import directly from there in client code
@@ -26,7 +28,7 @@ export async function loadSettingsData(): Promise<ApiResponse<SettingsData>> {
     supabase
       .from('business_profiles')
       .select(
-        'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, raw_scraped_content, created_at, updated_at',
+        'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, raw_scraped_content, communication_style, created_at, updated_at',
       )
       .eq('user_id', user.id)
       .single(),
@@ -64,7 +66,10 @@ export async function updateProfileAction(data: SettingsProfileData): Promise<Ap
     })
     .eq('user_id', user.id)
 
-  if (error) return fail('INTERNAL_ERROR', 'Profil konnte nicht gespeichert werden')
+  if (error) {
+    console.error('[Settings] Profile update failed:', error)
+    return fail('INTERNAL_ERROR', 'Profil konnte nicht gespeichert werden')
+  }
   return ok(null)
 }
 
@@ -87,6 +92,52 @@ export async function updateIcpAction(data: SettingsIcpData): Promise<ApiRespons
     })
     .eq('user_id', user.id)
 
-  if (error) return fail('INTERNAL_ERROR', 'ICP konnte nicht gespeichert werden')
+  if (error) {
+    console.error('[Settings] ICP update failed:', error)
+    return fail('INTERNAL_ERROR', 'ICP konnte nicht gespeichert werden')
+  }
   return ok(null)
+}
+
+// CommunicationStyleData re-exported from @/lib/validation/schemas — import directly from there in client code
+
+export async function saveCommunicationStyleAction(
+  data: CommunicationStyleData,
+): Promise<ApiResponse<null>> {
+  const { user, supabase } = await requireAuth()
+
+  const parsed = communicationStyleSchema.safeParse(data)
+  if (!parsed.success) return fail('VALIDATION_ERROR', 'Ungültige Kommunikationsstil-Daten')
+
+  const { error } = await supabase
+    .from('business_profiles')
+    .update({
+      communication_style: parsed.data,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('[Settings] Communication style update failed:', error)
+    return fail('INTERNAL_ERROR', 'Kommunikationsstil konnte nicht gespeichert werden')
+  }
+  return ok(null)
+}
+
+export async function getCommunicationStyleAction(): Promise<ApiResponse<CommunicationStyleData>> {
+  const { user, supabase } = await requireAuth()
+
+  const { data, error } = await supabase
+    .from('business_profiles')
+    .select('communication_style')
+    .eq('user_id', user.id)
+    .single()
+
+  if (error) {
+    console.error('[Settings] Get communication style failed:', error)
+    return fail('INTERNAL_ERROR', 'Kommunikationsstil konnte nicht geladen werden')
+  }
+
+  const raw = (data as Record<string, unknown>)?.communication_style
+  return ok((raw ?? {}) as CommunicationStyleData)
 }

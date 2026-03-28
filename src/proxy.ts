@@ -149,17 +149,9 @@ export async function proxy(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
 
   const { pathname } = request.nextUrl
-  const isPublic =
-    pathname === '/' ||
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/magic-link-sent') ||
-    pathname.startsWith('/pricing') ||
-    pathname.startsWith('/impressum') ||
-    pathname.startsWith('/datenschutz') ||
-    pathname.startsWith('/api/')
 
-  // Known protected routes — anything else falls through to Next.js (→ 404)
+  // Protected route prefixes — only these require authentication.
+  // Unknown routes are NOT redirected so Next.js can render the 404 page.
   const isProtected =
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/leads') ||
@@ -170,8 +162,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/settings') ||
     pathname.startsWith('/onboarding')
 
-  // Gate 1: Auth — redirect unauthenticated users to login (only for known protected routes)
-  if (!user && !isPublic && isProtected) {
+  // Gate 1: Auth — redirect unauthenticated users to login (protected routes only)
+  if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', pathname)
@@ -185,7 +177,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Gate 2: Onboarding completion — only for known protected routes (not onboarding itself)
+  // Gate 2: Onboarding completion — only for authenticated protected routes
   if (user && isProtected && !pathname.startsWith('/onboarding')) {
     const { data: profile } = await supabase
       .from('business_profiles')

@@ -1,13 +1,28 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
+import { Mail, Mic, Settings } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { AppTopbar } from '@/components/layout/app-topbar'
-import { updateProfileAction, updateIcpAction } from '@/app/actions/settings.actions'
-import { profileSchema, type SettingsIcpData } from '@/lib/validation/schemas'
+import {
+  updateProfileAction,
+  updateIcpAction,
+  saveCommunicationStyleAction,
+} from '@/app/actions/settings.actions'
+import { profileSchema, type SettingsIcpData, type CommunicationStyleData } from '@/lib/validation/schemas'
+import { useServerAction } from '@/hooks/use-server-action'
+import type { ApiResponse } from '@/lib/api-response'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 function PlaceholderContent() {
@@ -32,7 +47,6 @@ interface SettingsClientProps {
 }
 
 export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
-  const [isPending, startTransition] = useTransition()
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   // Profile fields
@@ -49,6 +63,49 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [icpJobTitles, setIcpJobTitles] = useState(toCommaStr(icp?.job_titles))
   const [icpSeniority, setIcpSeniority] = useState(toCommaStr(icp?.seniority_levels))
   const [icpAdditionalInfo, setIcpAdditionalInfo] = useState(icp?.additional_info ?? '')
+
+  // Communication style fields (loaded from profile.communication_style JSON)
+  const commStyle = (profile?.communication_style ?? {}) as CommunicationStyleData
+  const [emailExample, setEmailExample] = useState(commStyle.email_example ?? '')
+  const [emailSignature, setEmailSignature] = useState(commStyle.email_signature ?? '')
+  const [writingStyle, setWritingStyle] = useState(commStyle.writing_style ?? '')
+  const [salutationPref, setSalutationPref] = useState(commStyle.salutation_preference ?? 'sie')
+  const [voiceExample, setVoiceExample] = useState(commStyle.voice_example ?? '')
+  const [speakingStyle, setSpeakingStyle] = useState(commStyle.speaking_style ?? '')
+  const [openingPhrase, setOpeningPhrase] = useState(commStyle.opening_phrase ?? '')
+  const [callToAction, setCallToAction] = useState(commStyle.call_to_action ?? '')
+  const [commAdditionalNotes, setCommAdditionalNotes] = useState(commStyle.additional_notes ?? '')
+
+  // Combined save action: profile + optional ICP update
+  const saveSettingsAction = useCallback(
+    async (data: {
+      profileData: Parameters<typeof updateProfileAction>[0]
+      icpData: SettingsIcpData | null
+    }): Promise<ApiResponse<null>> => {
+      const profileResult = await updateProfileAction(data.profileData)
+      if (!profileResult.success) return profileResult
+
+      if (data.icpData) {
+        const icpResult = await updateIcpAction(data.icpData)
+        if (!icpResult.success) return icpResult
+      }
+
+      return profileResult
+    },
+    [],
+  )
+
+  const { execute: saveSettings, isPending: isSavingSettings } = useServerAction(
+    saveSettingsAction,
+    { successMessage: 'Einstellungen gespeichert' },
+  )
+
+  const { execute: saveCommStyle, isPending: isSavingCommStyle } = useServerAction(
+    saveCommunicationStyleAction,
+    { successMessage: 'Kommunikationsstil gespeichert' },
+  )
+
+  const isPending = isSavingSettings || isSavingCommStyle
 
   function handleSave() {
     setFieldErrors({})
@@ -71,37 +128,38 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
       return
     }
 
-    startTransition(async () => {
-      const profileResult = await updateProfileAction({
+    saveSettings({
+      profileData: {
         company_name: companyName,
         industry: industry || undefined,
         description: description || undefined,
         target_market: targetMarket || undefined,
         website_url: websiteUrl || undefined,
-      })
+      },
+      icpData: icp
+        ? {
+            industries: fromCommaStr(icpIndustries),
+            company_sizes: fromCommaStr(icpSizes),
+            regions: fromCommaStr(icpRegions),
+            job_titles: fromCommaStr(icpJobTitles),
+            seniority_levels: fromCommaStr(icpSeniority),
+            additional_info: icpAdditionalInfo || undefined,
+          }
+        : null,
+    })
+  }
 
-      if (!profileResult.success) {
-        toast.error(profileResult.error.message)
-        return
-      }
-
-      if (icp) {
-        const icpData: SettingsIcpData = {
-          industries: fromCommaStr(icpIndustries),
-          company_sizes: fromCommaStr(icpSizes),
-          regions: fromCommaStr(icpRegions),
-          job_titles: fromCommaStr(icpJobTitles),
-          seniority_levels: fromCommaStr(icpSeniority),
-          additional_info: icpAdditionalInfo || undefined,
-        }
-        const icpResult = await updateIcpAction(icpData)
-        if (!icpResult.success) {
-          toast.error(icpResult.error.message)
-          return
-        }
-      }
-
-      toast.success('Einstellungen gespeichert')
+  function handleSaveCommStyle() {
+    saveCommStyle({
+      email_example: emailExample || undefined,
+      email_signature: emailSignature || undefined,
+      writing_style: writingStyle || undefined,
+      salutation_preference: (salutationPref as 'du' | 'sie') || undefined,
+      voice_example: voiceExample || undefined,
+      speaking_style: speakingStyle || undefined,
+      opening_phrase: openingPhrase || undefined,
+      call_to_action: callToAction || undefined,
+      additional_notes: commAdditionalNotes || undefined,
     })
   }
 
@@ -126,6 +184,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
           <TabsList variant="line" className="w-full justify-start border-b border-border">
             <TabsTrigger value="profil">Profil</TabsTrigger>
             <TabsTrigger value="icp">ICP-Konfiguration</TabsTrigger>
+            <TabsTrigger value="kommunikation">Kommunikationsstil</TabsTrigger>
             <TabsTrigger value="integrationen">Integrationen</TabsTrigger>
             <TabsTrigger value="benachrichtigungen">Benachrichtigungen</TabsTrigger>
             <TabsTrigger value="abrechnung">Abrechnung</TabsTrigger>
@@ -302,6 +361,202 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 Kein ICP-Profil gefunden. Schließe zuerst das Onboarding ab.
               </p>
             )}
+          </TabsContent>
+
+          {/* Kommunikationsstil Tab */}
+          <TabsContent value="kommunikation">
+            <div className="flex flex-col gap-8 pt-6">
+              {/* E-Mail-Stil */}
+              <section>
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Mail className="size-5 text-accent" />
+                  E-Mail-Stil
+                </h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Definiere den Ton und Stil deiner automatisierten E-Mails.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="comm-email-example">Beispiel-E-Mail</Label>
+                    <Textarea
+                      id="comm-email-example"
+                      value={emailExample}
+                      onChange={(e) => setEmailExample(e.target.value)}
+                      rows={6}
+                      placeholder="Hallo Herr Müller, ich bin auf Ihr Unternehmen gestoßen..."
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="comm-email-signature">E-Mail-Signatur</Label>
+                    <Textarea
+                      id="comm-email-signature"
+                      value={emailSignature}
+                      onChange={(e) => setEmailSignature(e.target.value)}
+                      rows={3}
+                      placeholder="Freundliche Grüße, [Name]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="comm-writing-style">Schreibstil</Label>
+                      <Select
+                        value={writingStyle}
+                        onValueChange={(val) => setWritingStyle(val as string)}
+                      >
+                        <SelectTrigger id="comm-writing-style" className="w-full">
+                          <SelectValue placeholder="Stil wählen..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="formell">Formell</SelectItem>
+                          <SelectItem value="freundlich-professionell">
+                            Freundlich-professionell
+                          </SelectItem>
+                          <SelectItem value="direkt-knapp">Direkt &amp; knapp</SelectItem>
+                          <SelectItem value="locker">Locker</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <fieldset className="flex flex-col gap-1.5">
+                      <legend className="text-sm font-medium">Anrede-Präferenz</legend>
+                      <div className="mt-1 flex items-center gap-6">
+                        <label
+                          htmlFor="salutation-sie"
+                          className="flex items-center gap-2 text-sm text-foreground"
+                        >
+                          <input
+                            type="radio"
+                            id="salutation-sie"
+                            name="salutation"
+                            value="sie"
+                            checked={salutationPref === 'sie'}
+                            onChange={() => setSalutationPref('sie')}
+                            className="size-4 accent-accent"
+                          />
+                          Sie-Form
+                        </label>
+                        <label
+                          htmlFor="salutation-du"
+                          className="flex items-center gap-2 text-sm text-foreground"
+                        >
+                          <input
+                            type="radio"
+                            id="salutation-du"
+                            name="salutation"
+                            value="du"
+                            checked={salutationPref === 'du'}
+                            onChange={() => setSalutationPref('du')}
+                            className="size-4 accent-accent"
+                          />
+                          Du-Form
+                        </label>
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+              </section>
+
+              {/* Voice-Message-Stil */}
+              <section>
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Mic className="size-5 text-accent" />
+                  Voice-Message-Stil
+                </h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Konfiguriere den Stil für automatische Sprachnachrichten.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="comm-voice-example">Beispiel-Skript</Label>
+                    <Textarea
+                      id="comm-voice-example"
+                      value={voiceExample}
+                      onChange={(e) => setVoiceExample(e.target.value)}
+                      rows={4}
+                      placeholder="Guten Tag Herr Müller, mein Name ist... Ich rufe an, weil..."
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="comm-speaking-style">Sprechstil</Label>
+                    <Select
+                      value={speakingStyle}
+                      onValueChange={(val) => setSpeakingStyle(val as string)}
+                    >
+                      <SelectTrigger id="comm-speaking-style" className="w-full">
+                        <SelectValue placeholder="Stil wählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ruhig-sachlich">Ruhig &amp; sachlich</SelectItem>
+                        <SelectItem value="energetisch">Energetisch</SelectItem>
+                        <SelectItem value="persoenlich-warm">
+                          Persönlich &amp; warm
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="comm-opening-phrase">Typische Eröffnungsphrase</Label>
+                      <Input
+                        id="comm-opening-phrase"
+                        value={openingPhrase}
+                        onChange={(e) => setOpeningPhrase(e.target.value)}
+                        placeholder="Guten Tag, mein Name ist..."
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="comm-cta">Typischer Call-to-Action</Label>
+                      <Input
+                        id="comm-cta"
+                        value={callToAction}
+                        onChange={(e) => setCallToAction(e.target.value)}
+                        placeholder="Hätten Sie 15 Minuten..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Allgemein */}
+              <section>
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Settings className="size-5 text-accent" />
+                  Allgemein
+                </h3>
+
+                <div className="mt-4 flex flex-col gap-1.5">
+                  <Label htmlFor="comm-additional-notes">Zusätzliche Hinweise</Label>
+                  <Textarea
+                    id="comm-additional-notes"
+                    value={commAdditionalNotes}
+                    onChange={(e) => setCommAdditionalNotes(e.target.value)}
+                    rows={4}
+                    placeholder="z. B. Ich erwähne nie den Preis im ersten Kontakt, vermeide Fachjargon..."
+                  />
+                </div>
+              </section>
+
+              {/* Save button */}
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleSaveCommStyle}
+                  disabled={isPending}
+                  className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                >
+                  {isPending ? 'Speichere...' : 'Speichern'}
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Alle Felder sind optional — fülle aus, was für dich relevant ist.
+                </span>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="integrationen">

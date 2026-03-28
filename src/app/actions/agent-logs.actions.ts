@@ -39,7 +39,10 @@ export async function getRecentNotificationsAction(): Promise<
       .order('created_at', { ascending: false })
       .limit(6)
 
-    if (error) return fail('INTERNAL_ERROR', 'Benachrichtigungen konnten nicht geladen werden')
+    if (error) {
+      console.error('[AgentLogs] Notifications query failed:', error)
+      return fail('INTERNAL_ERROR', 'Benachrichtigungen konnten nicht geladen werden')
+    }
 
     const notifications: NotificationEntry[] = (data ?? []).map((log) => ({
       id: log.id,
@@ -49,7 +52,8 @@ export async function getRecentNotificationsAction(): Promise<
     }))
 
     return ok(notifications)
-  } catch {
+  } catch (error) {
+    console.error('[AgentLogs] Notifications failed:', error)
     return fail('INTERNAL_ERROR', 'Benachrichtigungen konnten nicht geladen werden')
   }
 }

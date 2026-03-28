@@ -37,7 +37,10 @@ export async function createConversationAction(
     .select()
     .single()
 
-  if (error) return fail('INTERNAL_ERROR', 'Gespräch konnte nicht erstellt werden')
+  if (error) {
+    console.error('[Conversations] Create failed:', error)
+    return fail('INTERNAL_ERROR', 'Gespräch konnte nicht erstellt werden')
+  }
   return ok(data)
 }
 
@@ -51,7 +54,10 @@ export async function listConversationsAction(): Promise<ApiResponse<AgentConver
     .order('updated_at', { ascending: false })
     .limit(50)
 
-  if (error) return fail('INTERNAL_ERROR', 'Gespräche konnten nicht geladen werden')
+  if (error) {
+    console.error('[Conversations] List query failed:', error)
+    return fail('INTERNAL_ERROR', 'Gespräche konnten nicht geladen werden')
+  }
   return ok(data ?? [])
 }
 
@@ -72,7 +78,10 @@ export async function getConversationMessagesAction(
     .eq('user_id', user.id)
     .order('created_at', { ascending: true })
 
-  if (error) return fail('INTERNAL_ERROR', 'Nachrichten konnten nicht geladen werden')
+  if (error) {
+    console.error('[Conversations] Messages query failed:', error)
+    return fail('INTERNAL_ERROR', 'Nachrichten konnten nicht geladen werden')
+  }
   return ok(data ?? [])
 }
 
@@ -90,7 +99,10 @@ export async function deleteConversationAction(conversationId: string): Promise<
     .eq('id', parsed.data)
     .eq('user_id', user.id)
 
-  if (error) return fail('INTERNAL_ERROR', 'Gespräch konnte nicht gelöscht werden')
+  if (error) {
+    console.error('[Conversations] Delete failed:', error)
+    return fail('INTERNAL_ERROR', 'Gespräch konnte nicht gelöscht werden')
+  }
   return ok(null)
 }
 
@@ -124,7 +136,10 @@ export async function saveMessageAction(
     .select()
     .single()
 
-  if (error) return fail('INTERNAL_ERROR', 'Nachricht konnte nicht gespeichert werden')
+  if (error) {
+    console.error('[Conversations] Save message failed:', error)
+    return fail('INTERNAL_ERROR', 'Nachricht konnte nicht gespeichert werden')
+  }
 
   // Update conversation timestamp
   await supabase

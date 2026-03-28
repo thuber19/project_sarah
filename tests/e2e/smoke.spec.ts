@@ -55,5 +55,6 @@ test.describe('404 Page', () => {
   test('custom 404 page shown for unknown routes', async ({ page }) => {
     const response = await page.goto('/this-does-not-exist-xyz')
     expect(response?.status()).toBe(404)
+    await expect(page.locator('h1')).toContainText('Seite nicht gefunden')
   })
 })

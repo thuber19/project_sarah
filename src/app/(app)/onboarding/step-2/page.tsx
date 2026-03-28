@@ -7,23 +7,9 @@ import { CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import type { ProfileData } from '@/app/actions/onboarding.actions'
 import { trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-md bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
-      {children}
-    </span>
-  )
-}
-
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-4">
-      <span className="w-[140px] shrink-0 text-sm font-medium text-foreground">{label}</span>
-      <div className="text-sm text-foreground">{children}</div>
-    </div>
-  )
-}
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 function getStoredProfile(): ProfileData | null {
   if (typeof window === 'undefined') return null
@@ -39,12 +25,30 @@ export default function OnboardingStep2() {
   const [profile] = useState<ProfileData | null>(getStoredProfile)
   const startTimeRef = useRef(0)
 
+  const [companyName, setCompanyName] = useState(profile?.company_name ?? '')
+  const [industry, setIndustry] = useState(profile?.industry ?? '')
+  const [targetMarket, setTargetMarket] = useState(profile?.target_market ?? '')
+  const [productSummary, setProductSummary] = useState(profile?.product_summary ?? '')
+  const [valueProposition, setValueProposition] = useState(profile?.value_proposition ?? '')
+  const [description, setDescription] = useState(profile?.description ?? '')
+
   useEffect(() => {
     startTimeRef.current = Date.now()
     trackOnboardingEventAction(2, 'started')
   }, [])
 
   function handleContinue() {
+    const updatedProfile: ProfileData = {
+      ...profile!,
+      company_name: companyName,
+      industry,
+      target_market: targetMarket,
+      product_summary: productSummary,
+      value_proposition: valueProposition,
+      description,
+    }
+    sessionStorage.setItem('onboarding_profile', JSON.stringify(updatedProfile))
+
     trackOnboardingEventAction(2, 'completed', {
       duration_ms: Date.now() - startTimeRef.current,
     })
@@ -61,23 +65,78 @@ export default function OnboardingStep2() {
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Sarah hat deine Website analysiert. Überprüfe die Ergebnisse.
+        Sarah hat deine Website analysiert. Überprüfe und bearbeite die Ergebnisse.
       </p>
 
       <div className="flex flex-col gap-4">
-        <FieldRow label="Unternehmensname">{profile.company_name}</FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="company-name" className="text-sm font-medium text-foreground">
+            Unternehmensname
+          </Label>
+          <Input
+            id="company-name"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+          />
+        </div>
 
-        <FieldRow label="Branche">
-          <Tag>{profile.industry}</Tag>
-        </FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="industry" className="text-sm font-medium text-foreground">
+            Branche
+          </Label>
+          <Input
+            id="industry"
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}
+          />
+        </div>
 
-        <FieldRow label="Zielmarkt">{profile.target_market}</FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="target-market" className="text-sm font-medium text-foreground">
+            Zielmarkt
+          </Label>
+          <Input
+            id="target-market"
+            value={targetMarket}
+            onChange={(e) => setTargetMarket(e.target.value)}
+          />
+        </div>
 
-        <FieldRow label="Produkt">{profile.product_summary}</FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="product-summary" className="text-sm font-medium text-foreground">
+            Produkt
+          </Label>
+          <Textarea
+            id="product-summary"
+            rows={2}
+            value={productSummary}
+            onChange={(e) => setProductSummary(e.target.value)}
+          />
+        </div>
 
-        <FieldRow label="Value Proposition">{profile.value_proposition}</FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="value-proposition" className="text-sm font-medium text-foreground">
+            Value Proposition
+          </Label>
+          <Textarea
+            id="value-proposition"
+            rows={3}
+            value={valueProposition}
+            onChange={(e) => setValueProposition(e.target.value)}
+          />
+        </div>
 
-        <FieldRow label="Beschreibung">{profile.description}</FieldRow>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="description" className="text-sm font-medium text-foreground">
+            Beschreibung
+          </Label>
+          <Textarea
+            id="description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="h-px w-full bg-secondary" />

@@ -18,6 +18,7 @@ export type Database = {
           value_proposition: string | null
           target_market: string | null
           raw_scraped_content: string | null
+          communication_style: Record<string, unknown> | null
           created_at: string
           updated_at: string
         }
@@ -32,6 +33,7 @@ export type Database = {
           value_proposition?: string | null
           target_market?: string | null
           raw_scraped_content?: string | null
+          communication_style?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }
@@ -46,6 +48,7 @@ export type Database = {
           value_proposition?: string | null
           target_market?: string | null
           raw_scraped_content?: string | null
+          communication_style?: Record<string, unknown> | null
           created_at?: string
           updated_at?: string
         }
@@ -169,6 +172,7 @@ export type Database = {
           source: 'apollo' | 'google_places' | 'enriched' | null
           apollo_id: string | null
           raw_data: Json | null
+          enrichment_status: 'pending' | 'enriching' | 'enriched' | 'skipped' | 'failed'
           created_at: string
           updated_at: string
         }
@@ -196,6 +200,7 @@ export type Database = {
           source?: 'apollo' | 'google_places' | 'enriched' | null
           apollo_id?: string | null
           raw_data?: Json | null
+          enrichment_status?: 'pending' | 'enriching' | 'enriched' | 'skipped' | 'failed'
           created_at?: string
           updated_at?: string
         }
@@ -223,6 +228,7 @@ export type Database = {
           source?: 'apollo' | 'google_places' | 'enriched' | null
           apollo_id?: string | null
           raw_data?: Json | null
+          enrichment_status?: 'pending' | 'enriching' | 'enriched' | 'skipped' | 'failed'
           created_at?: string
           updated_at?: string
         }
@@ -244,6 +250,7 @@ export type Database = {
           confidence: number | null
           dach_notes: string | null
           key_insights: string[] | null
+          data_quality_score: number
           created_at: string
           updated_at: string
         }
@@ -263,6 +270,7 @@ export type Database = {
           confidence?: number | null
           dach_notes?: string | null
           key_insights?: string[] | null
+          data_quality_score?: number
           created_at?: string
           updated_at?: string
         }
@@ -282,6 +290,7 @@ export type Database = {
           confidence?: number | null
           dach_notes?: string | null
           key_insights?: string[] | null
+          data_quality_score?: number
           created_at?: string
           updated_at?: string
         }
@@ -307,6 +316,9 @@ export type Database = {
             | 'research_completed'
             | 'outreach_generated'
             | 'conversation_created'
+            | 'enrichment_started'
+            | 'enrichment_completed'
+            | 'enrichment_failed'
           message: string
           metadata: Json | null
           created_at: string
@@ -331,6 +343,9 @@ export type Database = {
             | 'research_completed'
             | 'outreach_generated'
             | 'conversation_created'
+            | 'enrichment_started'
+            | 'enrichment_completed'
+            | 'enrichment_failed'
           message: string
           metadata?: Json | null
           created_at?: string
@@ -355,6 +370,9 @@ export type Database = {
             | 'research_completed'
             | 'outreach_generated'
             | 'conversation_created'
+            | 'enrichment_started'
+            | 'enrichment_completed'
+            | 'enrichment_failed'
           message?: string
           metadata?: Json | null
           created_at?: string

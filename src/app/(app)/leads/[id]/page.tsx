@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, ExternalLink, Mail, User } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
+import { DataQualityBadge } from '@/components/leads/data-quality-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
 import { OutreachVoice } from '@/components/leads/outreach-voice'
 import { OutreachDraft } from '@/components/leads/outreach-draft'
@@ -38,7 +39,7 @@ export default async function LeadDetailPage({ params }: Props) {
     supabase
       .from('leads')
       .select(
-        'id, first_name, last_name, full_name, company_name, email, linkedin_url, job_title, industry, company_size, revenue_range, funding_stage, location, country, company_website, company_domain, campaign_id',
+        'id, first_name, last_name, full_name, company_name, email, linkedin_url, job_title, industry, company_size, revenue_range, funding_stage, location, country, company_website, company_domain, campaign_id, enrichment_status',
       )
       .eq('id', id)
       .eq('user_id', user.id)
@@ -46,7 +47,7 @@ export default async function LeadDetailPage({ params }: Props) {
     supabase
       .from('lead_scores')
       .select(
-        'total_score, grade, company_fit_score, contact_fit_score, buying_signals_score, timing_score, ai_reasoning, recommended_action',
+        'total_score, grade, company_fit_score, contact_fit_score, buying_signals_score, timing_score, ai_reasoning, recommended_action, data_quality_score',
       )
       .eq('lead_id', id)
       .eq('user_id', user.id)
@@ -107,6 +108,15 @@ export default async function LeadDetailPage({ params }: Props) {
             </h1>
             <div className="mt-2 flex items-center gap-3">
               {grade && <ScoreBadge grade={grade} />}
+              {score?.data_quality_score != null && (
+                <DataQualityBadge score={score.data_quality_score} />
+              )}
+              {lead.enrichment_status === 'enriching' && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                  Wird angereichert…
+                </span>
+              )}
               {(lead.location ?? lead.country) && (
                 <span className="text-sm text-muted-foreground">
                   {lead.location ?? lead.country}

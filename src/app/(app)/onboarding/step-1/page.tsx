@@ -1,19 +1,32 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { analyzeWebsiteAction, trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
+import { useServerAction } from '@/hooks/use-server-action'
 import { urlSchema } from '@/lib/validation/schemas'
 
 export default function OnboardingStep1() {
   const router = useRouter()
   const [url, setUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [validationError, setValidationError] = useState<string | null>(null)
   const startTimeRef = useRef(0)
+
+  const { execute, isPending } = useServerAction(analyzeWebsiteAction, {
+    successMessage: 'Analyse abgeschlossen!',
+    errorMessage: 'Website konnte nicht analysiert werden.',
+    onSuccess(data) {
+      sessionStorage.setItem('onboarding_profile', JSON.stringify(data.profile))
+      sessionStorage.setItem('onboarding_icp', JSON.stringify(data.icp))
+      trackOnboardingEventAction(1, 'completed', {
+        duration_ms: Date.now() - startTimeRef.current,
+      })
+      router.push('/onboarding/step-2')
+    },
+  })
 
   useEffect(() => {
     startTimeRef.current = Date.now()
@@ -21,31 +34,15 @@ export default function OnboardingStep1() {
   }, [])
 
   function handleSubmit() {
-    setError(null)
+    setValidationError(null)
     const result = urlSchema.safeParse(url)
     if (!result.success) {
-      setError(result.error.issues[0]?.message ?? 'Ungültige URL')
+      setValidationError(result.error.issues[0]?.message ?? 'Ungültige URL')
       return
     }
 
     toast.info('Website wird analysiert...')
-    startTransition(async () => {
-      const result = await analyzeWebsiteAction(url)
-
-      if (!result.success) {
-        setError(result.error.message)
-        toast.error('Website konnte nicht analysiert werden.')
-        return
-      }
-
-      toast.success('Analyse abgeschlossen!')
-      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.data.profile))
-      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.data.icp))
-      trackOnboardingEventAction(1, 'completed', {
-        duration_ms: Date.now() - startTimeRef.current,
-      })
-      router.push('/onboarding/step-2')
-    })
+    execute(url)
   }
 
   return (
@@ -74,12 +71,12 @@ export default function OnboardingStep1() {
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           disabled={isPending}
-          aria-invalid={!!error}
-          aria-describedby={[error ? 'url-error' : null, 'url-help'].filter(Boolean).join(' ')}
+          aria-invalid={!!validationError}
+          aria-describedby={[validationError ? 'url-error' : null, 'url-help'].filter(Boolean).join(' ')}
         />
-        {error && (
+        {validationError && (
           <p id="url-error" role="alert" className="text-sm text-destructive">
-            {error}
+            {validationError}
           </p>
         )}
       </div>

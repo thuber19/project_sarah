@@ -171,10 +171,17 @@ function scoreBuyingSignals(lead: Lead): number {
   if (raw.is_hiring || raw.job_postings) score += 7
 
   // Has technology data (potential tech migration)
-  if (raw.technologies && Array.isArray(raw.technologies) && raw.technologies.length > 0) score += 5
+  const technologies = raw.technologies ?? raw.detectedTechnologies
+  if (technologies && Array.isArray(technologies) && technologies.length > 0) score += 5
 
   // Has social presence (engaged company)
   if (raw.linkedin_url || raw.twitter_url) score += 5
+
+  // B2B business model match (from website analysis)
+  if (raw.businessModel === 'B2B' || raw.businessModel === 'B2B2C') score += 3
+
+  // Registered legal entity (from website analysis — Handelsregister/Firmenbuch)
+  if (raw.registryInfo) score += 2
 
   return Math.min(score, 25)
 }
@@ -198,6 +205,14 @@ function scoreTiming(lead: Lead): number {
     const daysSince = (Date.now() - updated.getTime()) / (1000 * 60 * 60 * 24)
     if (daysSince < 60) score += 7
     else if (daysSince < 180) score += 4
+  }
+
+  // Website recently analyzed (proxy: company is active, website reachable)
+  if (raw.website_analyzed_at) {
+    const analyzed = new Date(raw.website_analyzed_at as string)
+    const daysSince = (Date.now() - analyzed.getTime()) / (1000 * 60 * 60 * 24)
+    if (daysSince < 7) score += 5
+    else if (daysSince < 30) score += 3
   }
 
   return Math.min(score, 15)

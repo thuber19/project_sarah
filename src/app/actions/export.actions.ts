@@ -61,7 +61,7 @@ export async function exportLeadsAction(params: ExportParams): Promise<ApiRespon
   const { data: leads, error } = await query
 
   if (error) {
-    console.error('[Export] Query failed:', error.message)
+    console.error('[Export] Query failed:', error)
     return fail('INTERNAL_ERROR', 'Export fehlgeschlagen')
   }
 

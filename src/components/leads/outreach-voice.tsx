@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Download, Loader2, Mic, Play, Square } from 'lucide-react'
+import { Download, Mic, Play, Square } from 'lucide-react'
+import { GeneratedContentCard } from '@/components/shared/generated-content-card'
 
 interface Props {
   leadId: string
@@ -68,21 +69,17 @@ export function OutreachVoice({ leadId, companyName }: Props) {
   }
 
   return (
-    <div
-      className="rounded-xl border border-border bg-white p-6"
-      aria-busy={status === 'generating'}
+    <GeneratedContentCard
+      title="Voice Message"
+      description={`Generiere eine persönliche Sprachnachricht für ${companyName ?? 'diesen Lead'} — als MP3 zum Herunterladen für LinkedIn oder Voicemail.`}
+      icon={<Mic className="h-4 w-4" />}
+      isLoading={status === 'generating'}
+      completion={script}
+      onGenerate={generate}
+      generateLabel="Voice Message generieren"
+      regenerateLabel="Neu generieren"
+      emptyLabel="Noch keine Voice Message generiert"
     >
-      <div className="mb-4 flex items-center gap-2">
-        <Mic className="h-4 w-4 text-accent" />
-        <h2 className="text-base font-semibold text-foreground">Voice Message</h2>
-      </div>
-
-      <p className="mb-4 text-sm text-muted-foreground">
-        Generiere eine persönliche Sprachnachricht für{' '}
-        <span className="font-medium text-foreground">{companyName ?? 'diesen Lead'}</span> — als
-        MP3 zum Herunterladen für LinkedIn oder Voicemail.
-      </p>
-
       {/* Tone selector */}
       <div className="mb-4 flex gap-2">
         {(['professional', 'friendly'] as Tone[]).map((t) => (
@@ -101,40 +98,16 @@ export function OutreachVoice({ leadId, companyName }: Props) {
         ))}
       </div>
 
-      {/* Generate button */}
-      <button
-        type="button"
-        onClick={generate}
-        disabled={status === 'generating'}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {status === 'generating' ? (
-          <>
-            <Loader2
-              className="h-4 w-4 animate-spin"
-              role="status"
-              aria-label="Audio wird generiert"
-            />
-            Generiere Audio…
-          </>
-        ) : (
-          <>
-            <Mic className="h-4 w-4" />
-            {status === 'ready' ? 'Neu generieren' : 'Voice Message generieren'}
-          </>
-        )}
-      </button>
-
       {/* Error */}
       {status === 'error' && error && (
-        <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {/* Audio player + download */}
       {status === 'ready' && audioUrl && (
-        <div className="mt-4 space-y-3" aria-live="polite">
+        <div className="mb-4 space-y-3" aria-live="polite">
           {/* Hidden native audio element */}
           <audio
             ref={audioRef}
@@ -170,16 +143,8 @@ export function OutreachVoice({ leadId, companyName }: Props) {
               Download MP3
             </a>
           </div>
-
-          {/* Script preview */}
-          {script && (
-            <div className="rounded-lg bg-secondary p-4">
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">Generiertes Skript</p>
-              <p className="text-sm leading-relaxed text-foreground">{script}</p>
-            </div>
-          )}
         </div>
       )}
-    </div>
+    </GeneratedContentCard>
   )
 }

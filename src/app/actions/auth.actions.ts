@@ -11,6 +11,7 @@ export async function signOutAction(): Promise<ApiResponse<null>> {
     await supabase.auth.signOut()
   } catch (error) {
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') throw error
+    console.error('[Auth] Sign out failed:', error)
     return fail('LOGOUT_FAILED', 'Abmeldung fehlgeschlagen')
   }
   redirect('/login')

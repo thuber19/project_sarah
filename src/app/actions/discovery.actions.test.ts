@@ -36,6 +36,10 @@ vi.mock('@/lib/ai/optimize-query', () => ({
   optimizeSearchQuery: vi.fn(),
 }))
 
+vi.mock('@/lib/scoring/pipeline', () => ({
+  runScoringPipeline: vi.fn().mockResolvedValue({ scored: 0, failed: 0, results: [] }),
+}))
+
 // Mock 'next/navigation' to prevent real redirects
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(() => {
@@ -172,6 +176,48 @@ function createQueryChain(data: unknown = null, error: unknown = null) {
   return chain
 }
 
+/**
+ * Creates an insert chain that captures inserted data and returns it with mock IDs.
+ * Used for leads table where insert().select() needs to return the saved records.
+ */
+function createLeadsInsertChain(error?: { message: string }) {
+  const chain: Record<string, ReturnType<typeof vi.fn>> = {}
+  let resolvedResult: { data: unknown; error: unknown } = { data: [], error: error ?? null }
+
+  const methods = [
+    'select', 'update', 'delete', 'eq', 'neq', 'in', 'is',
+    'order', 'limit', 'single', 'maybeSingle',
+  ]
+
+  for (const method of methods) {
+    chain[method] = vi.fn().mockReturnValue(chain)
+  }
+
+  chain['insert'] = vi.fn((data: unknown) => {
+    if (!error && Array.isArray(data)) {
+      resolvedResult = {
+        data: data.map((d: Record<string, unknown>, i: number) => ({
+          ...d,
+          id: `mock-lead-${i + 1}`,
+          created_at: '2026-01-01T00:00:00Z',
+          updated_at: '2026-01-01T00:00:00Z',
+        })),
+        error: null,
+      }
+    }
+    return chain
+  })
+
+  Object.defineProperty(chain, 'then', {
+    get() {
+      return (resolve: (v: unknown) => void) => Promise.resolve(resolvedResult).then(resolve)
+    },
+    configurable: true,
+  })
+
+  return chain
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -219,8 +265,9 @@ describe('discovery.actions', () => {
       const campaignChain = createQueryChain({ id: 'camp-1' })
       const profileChain = createQueryChain(null)
       const icpChain = createQueryChain(null)
-      const insertChain = createQueryChain(null)
+      const insertChain = createLeadsInsertChain()
       const logChain = createQueryChain(null)
+      const scoreChain = createQueryChain(null)
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
@@ -234,6 +281,8 @@ describe('discovery.actions', () => {
             return insertChain
           case 'agent_logs':
             return logChain
+          case 'lead_scores':
+            return scoreChain
           default:
             return createQueryChain(null)
         }
@@ -266,8 +315,9 @@ describe('discovery.actions', () => {
       const campaignChain = createQueryChain({ id: 'camp-1' })
       const profileChain = createQueryChain(null)
       const icpChain = createQueryChain(null)
-      const insertChain = createQueryChain(null)
+      const insertChain = createLeadsInsertChain()
       const logChain = createQueryChain(null)
+      const scoreChain = createQueryChain(null)
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
@@ -281,6 +331,8 @@ describe('discovery.actions', () => {
             return insertChain
           case 'agent_logs':
             return logChain
+          case 'lead_scores':
+            return scoreChain
           default:
             return createQueryChain(null)
         }
@@ -432,9 +484,10 @@ describe('discovery.actions', () => {
         updated_at: '2026-01-01',
       })
       const insertChain = options?.insertError
-        ? createQueryChain(null, { message: 'Insert failed' })
-        : createQueryChain(null)
+        ? createLeadsInsertChain({ message: 'Insert failed' })
+        : createLeadsInsertChain()
       const logChain = createQueryChain(null)
+      const scoreChain = createQueryChain(null)
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
@@ -448,6 +501,8 @@ describe('discovery.actions', () => {
             return insertChain
           case 'agent_logs':
             return logChain
+          case 'lead_scores':
+            return scoreChain
           default:
             return createQueryChain(null)
         }
@@ -494,7 +549,7 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 1 } })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 1, leadsScored: 0 } })
     })
 
     it('parses comma-separated form inputs correctly', async () => {
@@ -605,19 +660,25 @@ describe('discovery.actions', () => {
         company_domain: 'https://wienersaas.at',
         company_website: 'https://wienersaas.at',
         location: 'Kärntner Str. 1, 1010 Wien',
+        country: null, // Address doesn't end with a DACH country name
+        industry: null, // 'establishment' type doesn't map to an industry
         source: 'google_places',
         raw_data: {
           place_id: 'place-1',
           rating: 4.5,
+          user_rating_count: 10,
           phone: '+4312345678',
+          international_phone: null,
+          business_status: 'OPERATIONAL',
+          types: ['establishment'],
         },
       })
     })
 
     it('handles multiple Apollo organizations', async () => {
       const { insertChain } = setupFullPipelineMocks()
-      const org1 = makeApolloOrg({ id: 'org-1', name: 'TechCorp GmbH' })
-      const org2 = makeApolloOrg({ id: 'org-2', name: 'DataHub AG' })
+      const org1 = makeApolloOrg({ id: 'org-1', name: 'TechCorp GmbH', website_url: 'https://techcorp.at' })
+      const org2 = makeApolloOrg({ id: 'org-2', name: 'DataHub AG', website_url: 'https://datahub.de' })
 
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
@@ -630,7 +691,7 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 2 } })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 2, leadsScored: 0 } })
       const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
         Record<string, unknown>
       >
@@ -692,7 +753,7 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0 } })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0, leadsScored: 0 } })
       // leads.insert should not have been called
       expect(insertChain['insert']).not.toHaveBeenCalled()
     })
@@ -712,7 +773,7 @@ describe('discovery.actions', () => {
 
       expect(result).toEqual({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Leads konnten nicht gespeichert werden' },
+        error: { code: 'INTERNAL_ERROR', message: 'Lead Discovery fehlgeschlagen. Bitte versuchen Sie es erneut.' },
       })
     })
 
@@ -752,7 +813,7 @@ describe('discovery.actions', () => {
         // technologies and keywords omitted
       })
 
-      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0 } })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0, leadsScored: 0 } })
     })
   })
 

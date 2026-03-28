@@ -43,7 +43,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
   }
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col justify-between bg-sidebar px-4 py-6">
+    <aside className="flex h-full w-60 shrink-0 flex-col bg-sidebar px-4 py-6">
       {/* Top: Logo + Navigation */}
       <div>
         <div className="px-3 pb-8">
@@ -75,46 +75,49 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
         </nav>
       </div>
 
-      {/* Bottom: User info + Logout */}
-      <div className="flex items-center gap-3 rounded-lg px-2 py-3">
-        <div
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent"
-          aria-hidden="true"
-        >
-          <span className="text-xs font-semibold text-white">{initials}</span>
+      {/* Bottom: User info + Legal — pinned to bottom */}
+      <div className="mt-auto pb-3">
+        {/* User info + Logout */}
+        <div className="flex items-center gap-3 rounded-lg px-2 py-3">
+          <div
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent"
+            aria-hidden="true"
+          >
+            <span className="text-xs font-semibold text-white">{initials}</span>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-white">{displayName}</p>
+            <p className="truncate text-[11px] text-sidebar-muted">{email}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={isPending}
+            className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
+            aria-label="Abmelden"
+            title="Abmelden"
+          >
+            <LogOut className="size-4" />
+          </button>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium text-white">{displayName}</p>
-          <p className="truncate text-[11px] text-sidebar-muted">{email}</p>
+        {/* Legal links */}
+        <div className="flex gap-3 px-2 pt-1">
+          <Link
+            href="/impressum"
+            className="text-[10px] text-sidebar-muted transition-colors hover:text-sidebar-foreground"
+          >
+            Impressum
+          </Link>
+          <Link
+            href="/datenschutz"
+            className="text-[10px] text-sidebar-muted transition-colors hover:text-sidebar-foreground"
+          >
+            Datenschutz
+          </Link>
         </div>
-
-        <button
-          type="button"
-          onClick={handleSignOut}
-          disabled={isPending}
-          className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
-          aria-label="Abmelden"
-          title="Abmelden"
-        >
-          <LogOut className="size-4" />
-        </button>
-      </div>
-
-      {/* Legal links */}
-      <div className="flex gap-3 px-2 pb-1">
-        <Link
-          href="/impressum"
-          className="min-h-12 flex items-center text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-        >
-          Impressum
-        </Link>
-        <Link
-          href="/datenschutz"
-          className="min-h-12 flex items-center text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-        >
-          Datenschutz
-        </Link>
       </div>
     </aside>
   )

@@ -13,7 +13,13 @@ vi.mock('next/navigation', () => ({
 
 // --- Imports (after mocks) -------------------------------------------
 
-import { loadSettingsData, updateProfileAction, updateIcpAction } from './settings.actions'
+import {
+  loadSettingsData,
+  updateProfileAction,
+  updateIcpAction,
+  saveCommunicationStyleAction,
+  getCommunicationStyleAction,
+} from './settings.actions'
 import { requireAuth } from '@/lib/supabase/server'
 import {
   createMockQueryBuilder,
@@ -406,6 +412,177 @@ describe('settings.actions', () => {
         }),
       )
       expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id')
+    })
+  })
+
+  // =====================================================================
+  // saveCommunicationStyleAction
+  // =====================================================================
+  describe('saveCommunicationStyleAction', () => {
+    const validStyle = {
+      email_example: 'Hallo Herr Müller, ...',
+      email_signature: 'Mit freundlichen Grüßen, Sarah',
+      writing_style: 'formal',
+      salutation_preference: 'sie' as const,
+      voice_example: 'Guten Tag, hier ist Sarah von...',
+      speaking_style: 'freundlich und professionell',
+      opening_phrase: 'Darf ich Ihnen kurz vorstellen...',
+      call_to_action: 'Wollen wir einen Termin vereinbaren?',
+      additional_notes: 'DACH-Markt, immer Sie-Ansprache',
+    }
+
+    it('saves valid communication style data and returns success', async () => {
+      const { supabase, queryBuilder } = mockUpdateAuth({ error: null })
+
+      const result = await saveCommunicationStyleAction(validStyle)
+
+      expect(result).toEqual({ success: true, data: null })
+      expect(supabase.from).toHaveBeenCalledWith('business_profiles')
+      expect(queryBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          communication_style: validStyle,
+        }),
+      )
+      expect(queryBuilder.eq).toHaveBeenCalledWith('user_id', 'test-user-id')
+    })
+
+    it('accepts empty/minimal data with defaults applied', async () => {
+      const { queryBuilder } = mockUpdateAuth({ error: null })
+
+      const result = await saveCommunicationStyleAction({})
+
+      expect(result).toEqual({ success: true, data: null })
+      expect(queryBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          communication_style: {
+            email_example: '',
+            email_signature: '',
+            writing_style: '',
+            salutation_preference: 'sie',
+            voice_example: '',
+            speaking_style: '',
+            opening_phrase: '',
+            call_to_action: '',
+            additional_notes: '',
+          },
+        }),
+      )
+    })
+
+    it('rejects invalid salutation_preference value', async () => {
+      mockUpdateAuth({ error: null })
+
+      const result = await saveCommunicationStyleAction({
+        salutation_preference: 'ihr' as 'du' | 'sie',
+      })
+
+      const error = assertFail(result)
+      expect(error.code).toBe('VALIDATION_ERROR')
+      expect(error.message).toBe('Ungültige Kommunikationsstil-Daten')
+    })
+
+    it('returns error on DB failure', async () => {
+      mockUpdateAuth({
+        error: { code: '42501', message: 'RLS policy violation' },
+      })
+
+      const result = await saveCommunicationStyleAction(validStyle)
+
+      const error = assertFail(result)
+      expect(error.code).toBe('INTERNAL_ERROR')
+      expect(error.message).toBe('Kommunikationsstil konnte nicht gespeichert werden')
+    })
+
+    it('sets updated_at timestamp on update', async () => {
+      const { queryBuilder } = mockUpdateAuth({ error: null })
+
+      const before = new Date().toISOString()
+      await saveCommunicationStyleAction(validStyle)
+
+      const updatePayload = queryBuilder.update.mock.calls[0]?.[0] as
+        | Record<string, string>
+        | undefined
+      expect(updatePayload).toHaveProperty('updated_at')
+      expect(new Date(updatePayload!.updated_at).getTime()).toBeGreaterThanOrEqual(
+        new Date(before).getTime() - 1000,
+      )
+    })
+  })
+
+  // =====================================================================
+  // getCommunicationStyleAction
+  // =====================================================================
+  describe('getCommunicationStyleAction', () => {
+    /**
+     * Sets up mock for getCommunicationStyleAction.
+     * The `select().eq().single()` chain resolves the terminal value.
+     */
+    function mockGetAuth(selectResult: { data: unknown; error: unknown }) {
+      const queryBuilder = createMockQueryBuilder(selectResult)
+
+      const supabase = { from: vi.fn().mockReturnValue(queryBuilder) }
+
+      vi.mocked(requireAuth).mockResolvedValue({
+        user: TEST_USER as never,
+        supabase: supabase as never,
+      })
+
+      return { supabase, queryBuilder }
+    }
+
+    it('returns communication style data when it exists', async () => {
+      const styleData = {
+        email_example: 'Hallo...',
+        salutation_preference: 'du',
+        writing_style: 'casual',
+      }
+      const { supabase } = mockGetAuth({
+        data: { communication_style: styleData },
+        error: null,
+      })
+
+      const result = await getCommunicationStyleAction()
+      const data = assertSuccess(result)
+
+      expect(data).toEqual(styleData)
+      expect(supabase.from).toHaveBeenCalledWith('business_profiles')
+    })
+
+    it('returns empty object when communication_style is null', async () => {
+      mockGetAuth({
+        data: { communication_style: null },
+        error: null,
+      })
+
+      const result = await getCommunicationStyleAction()
+      const data = assertSuccess(result)
+
+      expect(data).toEqual({})
+    })
+
+    it('returns empty object when communication_style is undefined', async () => {
+      mockGetAuth({
+        data: {},
+        error: null,
+      })
+
+      const result = await getCommunicationStyleAction()
+      const data = assertSuccess(result)
+
+      expect(data).toEqual({})
+    })
+
+    it('returns error on DB failure', async () => {
+      mockGetAuth({
+        data: null,
+        error: { code: 'PGRST116', message: 'not found' },
+      })
+
+      const result = await getCommunicationStyleAction()
+
+      const error = assertFail(result)
+      expect(error.code).toBe('INTERNAL_ERROR')
+      expect(error.message).toBe('Kommunikationsstil konnte nicht geladen werden')
     })
   })
 })

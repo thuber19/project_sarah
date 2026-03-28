@@ -91,6 +91,10 @@ const mockScrapedContent = {
   aboutSection: 'About us...',
   servicesSection: 'Services...',
   footerText: 'Footer',
+  impressumSection: '',
+  teamSection: '',
+  contactEmails: [],
+  contactPhones: [],
 }
 
 const mockAnalysis = {
@@ -98,6 +102,8 @@ const mockAnalysis = {
   industry: 'SaaS',
   businessModel: 'B2B' as const,
   productsServices: ['Lead scoring', 'CRM integration'],
+  companyDescription:
+    'Acme GmbH ist ein B2B-SaaS-Unternehmen, das Vertriebsteams bei der Lead-Qualifizierung unterstützt. Die Plattform richtet sich an mittelständische Unternehmen im DACH-Raum.',
   tonality: 'Professional' as const,
   valueProposition: 'Save 50% time on lead qualification',
   targetCustomers: {
@@ -212,11 +218,50 @@ describe('onboarding.actions', () => {
         website_url: 'https://example.com',
         company_name: 'Acme GmbH',
         industry: 'SaaS',
-        description: 'Lead scoring, CRM integration',
+        description:
+          'Acme GmbH ist ein B2B-SaaS-Unternehmen, das Vertriebsteams bei der Lead-Qualifizierung unterstützt. Die Plattform richtet sich an mittelständische Unternehmen im DACH-Raum.',
         product_summary: 'Lead scoring; CRM integration',
         value_proposition: 'Save 50% time on lead qualification',
         target_market: 'KMU in SaaS, E-Commerce',
       })
+    })
+
+    it('maps companyDescription to description field (not productsServices)', async () => {
+      const analysisWithDistinctFields = {
+        ...mockAnalysis,
+        companyDescription:
+          'Ein spezialisierter Anbieter für digitale Vertriebslösungen im deutschsprachigen Raum.',
+        productsServices: ['CRM', 'Analytics Dashboard'],
+      }
+      vi.mocked(scrapeWebsite).mockResolvedValue(mockScrapedContent)
+      vi.mocked(analyzeWebsite).mockResolvedValue(analysisWithDistinctFields)
+
+      const result = await analyzeWebsiteAction('https://example.com')
+
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile.description).toBe(
+        'Ein spezialisierter Anbieter für digitale Vertriebslösungen im deutschsprachigen Raum.',
+      )
+      // description should NOT contain the productsServices values
+      expect(result.data.profile.description).not.toContain('CRM')
+    })
+
+    it('maps productsServices to product_summary as semicolon-joined string', async () => {
+      const analysisWithProducts = {
+        ...mockAnalysis,
+        productsServices: ['Lead Scoring', 'E-Mail Automatisierung', 'CRM Integration'],
+      }
+      vi.mocked(scrapeWebsite).mockResolvedValue(mockScrapedContent)
+      vi.mocked(analyzeWebsite).mockResolvedValue(analysisWithProducts)
+
+      const result = await analyzeWebsiteAction('https://example.com')
+
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile.product_summary).toBe(
+        'Lead Scoring; E-Mail Automatisierung; CRM Integration',
+      )
     })
 
     it('builds raw_scraped_content from title, meta, and body', async () => {
@@ -251,18 +296,21 @@ describe('onboarding.actions', () => {
 
     // -- Error handling -------------------------------------------------------
 
-    it('returns error message when scrapeWebsite throws', async () => {
+    it('returns user-friendly error when scrapeWebsite throws', async () => {
       vi.mocked(scrapeWebsite).mockRejectedValue(new Error('Website nicht erreichbar'))
 
       const result = await analyzeWebsiteAction('https://example.com')
 
       expect(result).toEqual({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Website nicht erreichbar' },
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Website-Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.',
+        },
       })
     })
 
-    it('returns error message when analyzeWebsite throws', async () => {
+    it('returns user-friendly error when analyzeWebsite throws', async () => {
       vi.mocked(scrapeWebsite).mockResolvedValue(mockScrapedContent)
       vi.mocked(analyzeWebsite).mockRejectedValue(new Error('AI service unavailable'))
 
@@ -270,8 +318,23 @@ describe('onboarding.actions', () => {
 
       expect(result).toEqual({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'AI service unavailable' },
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Website-Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.',
+        },
       })
+    })
+
+    it('does not leak internal error details to client', async () => {
+      vi.mocked(scrapeWebsite).mockRejectedValue(new Error('ECONNREFUSED 10.0.0.1:5432'))
+
+      const result = await analyzeWebsiteAction('https://example.com')
+
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.message).not.toContain('ECONNREFUSED')
+        expect(result.error.message).not.toContain('10.0.0.1')
+      }
     })
 
     // -- Edge cases -----------------------------------------------------------
@@ -286,6 +349,10 @@ describe('onboarding.actions', () => {
         aboutSection: '',
         servicesSection: '',
         footerText: '',
+        impressumSection: '',
+        teamSection: '',
+        contactEmails: [],
+        contactPhones: [],
       }
       vi.mocked(scrapeWebsite).mockResolvedValue(minimalScraped)
       vi.mocked(analyzeWebsite).mockResolvedValue(mockAnalysis)
@@ -470,6 +537,47 @@ describe('onboarding.actions', () => {
         success: false,
         error: { message: 'Ungültige ICP-Daten' },
       })
+    })
+
+    it('accepts ICP with free-text company sizes (not preset dropdown values)', async () => {
+      const freeTextIcp: IcpData = {
+        ...validIcp,
+        company_sizes: ['10-100', '500+', 'Mittelstand'],
+      }
+
+      const result = await saveOnboardingAction(validProfile, freeTextIcp)
+
+      // Free-text company sizes should be valid — no enum restriction
+      expect(result).not.toMatchObject({
+        success: false,
+        error: { message: 'Ungültige ICP-Daten' },
+      })
+    })
+
+    it('validates profile with all required fields populated', async () => {
+      vi.mocked(redirect).mockImplementation(() => {
+        throw new Error('NEXT_REDIRECT')
+      })
+
+      // All fields present and valid — should proceed to DB and redirect
+      await expect(saveOnboardingAction(validProfile, validIcp)).rejects.toThrow('NEXT_REDIRECT')
+      expect(redirect).toHaveBeenCalledWith('/dashboard')
+    })
+
+    it('accepts profile with multi-sentence Fließtext description', async () => {
+      const profileWithLongDescription: ProfileData = {
+        ...validProfile,
+        description:
+          'Acme GmbH ist ein B2B-SaaS-Unternehmen, das Vertriebsteams bei der Lead-Qualifizierung unterstützt. Die Plattform richtet sich an mittelständische Unternehmen im DACH-Raum. Mit KI-gestützter Analyse werden potenzielle Kunden automatisch bewertet.',
+      }
+
+      vi.mocked(redirect).mockImplementation(() => {
+        throw new Error('NEXT_REDIRECT')
+      })
+
+      await expect(
+        saveOnboardingAction(profileWithLongDescription, validIcp),
+      ).rejects.toThrow('NEXT_REDIRECT')
     })
 
     // -- Supabase interaction -------------------------------------------------
