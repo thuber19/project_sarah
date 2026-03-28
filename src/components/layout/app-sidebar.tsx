@@ -8,7 +8,6 @@ import {
   Users,
   Compass,
   Target,
-  Activity,
   BarChart3,
   Share2,
   Settings,
@@ -22,7 +21,8 @@ const navItems = [
   { label: 'Leads', href: '/leads', icon: Users },
   { label: 'Discovery', href: '/discovery', icon: Compass },
   { label: 'Scoring', href: '/scoring', icon: Target },
-  { label: 'Agent Logs', href: '/agent-logs', icon: Activity },
+  // Agent Logs hidden from user navigation — admin-only, no end-user value
+  // Page still accessible at /agent-logs for admin/debug use
   { label: 'Analyse', href: '/competitor-analysis', icon: BarChart3 },
   { label: 'Export & CRM', href: '/export', icon: Share2 },
   { label: 'Settings', href: '/settings', icon: Settings },

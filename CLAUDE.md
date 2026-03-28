@@ -78,7 +78,7 @@ src/app/
 │   ├── scoring/page.tsx        # Score distribution + rule config (+ empty state)
 │   ├── export/page.tsx         # HubSpot Export & CRM (+ empty state)
 │   ├── settings/page.tsx       # Tabbed settings (profile, ICP, comm style, integrations)
-│   ├── agent-logs/page.tsx     # Activity timeline (+ empty state)
+│   ├── agent-logs/page.tsx     # Activity timeline (+ empty state) — HIDDEN from nav, admin-only
 │   ├── competitor-analysis/    # Competitor analysis (mock data, KI recommendations)
 │   └── onboarding/
 │       ├── welcome/page.tsx    # Welcome screen with step preview
@@ -100,7 +100,7 @@ src/components/
 Most data pages are wired to real Supabase queries (dashboard, leads, lead detail, scoring, agent-logs, discovery, settings).
 All server actions use the standardized `ApiResponse<T>` envelope pattern (see above).
 Export page has CSV export (working) + HubSpot integration (post-MVP placeholder). Empty state shows when no data exists.
-Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Agent Logs, Analyse, Export & CRM, Settings.
+Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Analyse, Export & CRM, Settings. (Agent Logs hidden from user nav — admin/debug only, accessible via direct URL).
 Mobile tab bar: Dashboard, Leads, Discovery, Scoring, Settings (5 primary tabs).
 Notifications page: `/notifications` with grouped notifications (Heute/Gestern), linked from NotificationBell dropdown.
 AI Outreach: `/leads/[id]/outreach` — standalone page with lead context + email generation (reuses `OutreachDraft`).
