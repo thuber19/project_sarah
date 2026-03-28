@@ -32,8 +32,11 @@ async function rateLimit() {
 async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
   await rateLimit()
 
+  const url = `${APOLLO_BASE_URL}${endpoint}`
+  console.log(`[Apollo] → ${endpoint}`, JSON.stringify(body, null, 2))
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const response = await fetch(`${APOLLO_BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -41,6 +44,8 @@ async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): 
       },
       body: JSON.stringify(body),
     })
+
+    console.log(`[Apollo] ← ${endpoint} attempt=${attempt} status=${response.status}`)
 
     if (response.status === 429) {
       const retryAfter = Number(response.headers.get('retry-after') || 60)
@@ -51,6 +56,7 @@ async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): 
 
     if (!response.ok) {
       const errorBody = await response.text()
+      console.error(`[Apollo] Error ${response.status} on ${endpoint}:`, errorBody)
       if (attempt < MAX_RETRIES && response.status >= 500) {
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)))
         continue
@@ -58,7 +64,13 @@ async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): 
       throw new Error(`Apollo API error ${response.status}: ${errorBody}`)
     }
 
-    return (await response.json()) as T
+    const data = (await response.json()) as T
+    const count =
+      (data as Record<string, unknown>).people
+        ? ((data as Record<string, { length: number }>).people?.length ?? 0)
+        : ((data as Record<string, { length: number }>).organizations?.length ?? 0)
+    console.log(`[Apollo] ✓ ${endpoint} returned ${count} results`)
+    return data
   }
 
   throw new Error('Apollo API: max retries exceeded')
