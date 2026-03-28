@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { redirect, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
@@ -13,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import type { IcpData } from '@/app/actions/onboarding.actions'
+import { useOnboarding } from '@/contexts/onboarding-context'
 
 function TagPill({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
@@ -31,15 +29,6 @@ function TagPill({ children, onRemove }: { children: React.ReactNode; onRemove: 
   )
 }
 
-function getStoredIcp(): IcpData | null {
-  if (typeof window === 'undefined') return null
-  const stored = sessionStorage.getItem('onboarding_icp')
-  if (!stored) {
-    redirect('/onboarding/step-1')
-  }
-  return JSON.parse(stored)
-}
-
 function deriveRegions(icpRegions: string[]): Record<string, boolean> {
   const lower = icpRegions.map((r) => r.toLowerCase())
   const hasDach = lower.some((r) => r.includes('dach'))
@@ -52,29 +41,71 @@ function deriveRegions(icpRegions: string[]): Record<string, boolean> {
 
 export default function OnboardingStep3() {
   const router = useRouter()
-  const [storedIcp] = useState(getStoredIcp)
-  const [industries, setIndustries] = useState<string[]>(storedIcp?.industries ?? [])
-  const [companySize, setCompanySize] = useState('10-100')
-  const [regions, setRegions] = useState<Record<string, boolean>>(() => deriveRegions(storedIcp?.regions ?? []))
-  const [techStack, setTechStack] = useState<string[]>([])
-  const [scoreThreshold, setScoreThreshold] = useState(60)
+  const context = useOnboarding()
+  const { icp, scoreThreshold, setIcp, setScoreThreshold } = context
+
+  if (!icp) {
+    return (
+      <div className="text-center text-muted-foreground">
+        Bitte starten Sie mit Schritt 1
+      </div>
+    )
+  }
+
+  const [companySize] = icp.company_sizes
+  const regions = deriveRegions(icp.regions)
 
   function handleNext() {
     const selectedRegions = Object.entries(regions)
       .filter(([, v]) => v)
       .map(([k]) => k)
 
-    const icpData: IcpData = {
-      job_titles: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').job_titles ?? [],
-      seniority_levels: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').seniority_levels ?? [],
-      industries,
-      company_sizes: [companySize],
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries,
+      company_sizes: icp!.company_sizes,
       regions: selectedRegions,
-    }
-
-    sessionStorage.setItem('onboarding_icp', JSON.stringify(icpData))
-    sessionStorage.setItem('onboarding_score_threshold', String(scoreThreshold))
+    })
     router.push('/onboarding/step-4')
+  }
+
+  const handleCompanySizeChange = (value: string | null) => {
+    if (!value) return
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries,
+      company_sizes: [value],
+      regions: icp!.regions,
+    })
+  }
+
+  const handleRegionChange = (region: string, checked: boolean) => {
+    const newRegions = checked
+      ? [...icp!.regions, region]
+      : icp!.regions.filter((r) => r !== region)
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries,
+      company_sizes: icp!.company_sizes,
+      regions: newRegions,
+    })
+  }
+
+  const handleIndustryRemove = (industryToRemove: string) => {
+    setIcp({
+      job_titles: icp!.job_titles,
+      seniority_levels: icp!.seniority_levels,
+      industries: icp!.industries.filter((i) => i !== industryToRemove),
+      company_sizes: icp!.company_sizes,
+      regions: icp!.regions,
+    })
+  }
+
+  const handleBack = () => {
+    router.push('/onboarding/step-2')
   }
 
   return (
@@ -91,21 +122,18 @@ export default function OnboardingStep3() {
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-foreground">Zielbranchen</label>
           <div className="flex flex-wrap items-center gap-2">
-            {industries.map((industry) => (
-              <TagPill key={industry} onRemove={() => setIndustries((prev) => prev.filter((i) => i !== industry))}>
+            {icp.industries.map((industry) => (
+              <TagPill key={industry} onRemove={() => handleIndustryRemove(industry)}>
                 {industry}
               </TagPill>
             ))}
-            <button type="button" className="text-xs text-muted-foreground hover:text-foreground">
-              + hinzufügen
-            </button>
           </div>
         </div>
 
         {/* Unternehmensgröße */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-foreground">Unternehmensgröße</label>
-          <Select value={companySize} onValueChange={(v) => v && setCompanySize(v)}>
+          <Select value={companySize} onValueChange={handleCompanySizeChange}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -127,26 +155,11 @@ export default function OnboardingStep3() {
               <label key={region} className="flex items-center gap-2 text-sm text-foreground">
                 <Checkbox
                   checked={checked}
-                  onCheckedChange={(v) => setRegions((prev) => ({ ...prev, [region]: v === true }))}
+                  onCheckedChange={(v) => handleRegionChange(region, v === true)}
                 />
                 {region}
               </label>
             ))}
-          </div>
-        </div>
-
-        {/* Technologie-Stack */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">Technologie-Stack</label>
-          <div className="flex flex-wrap items-center gap-2">
-            {techStack.map((tech) => (
-              <TagPill key={tech} onRemove={() => setTechStack((prev) => prev.filter((t) => t !== tech))}>
-                {tech}
-              </TagPill>
-            ))}
-            <button type="button" className="text-xs text-muted-foreground hover:text-foreground">
-              + hinzufügen
-            </button>
           </div>
         </div>
 
@@ -166,12 +179,13 @@ export default function OnboardingStep3() {
       </div>
 
       <div className="flex justify-end gap-3">
-        <Link
-          href="/onboarding/step-2"
+        <button
+          type="button"
+          onClick={handleBack}
           className="rounded-lg border border-border px-5 py-2 text-sm font-medium text-foreground"
         >
           Zurück
-        </Link>
+        </button>
         <button
           type="button"
           onClick={handleNext}

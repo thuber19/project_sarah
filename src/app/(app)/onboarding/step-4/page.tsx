@@ -1,32 +1,24 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { CheckCircle, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { saveOnboardingAction, type ProfileData, type IcpData } from '@/app/actions/onboarding.actions'
-
-function getStoredData(): { profile: ProfileData; icp: IcpData; threshold: number } | null {
-  if (typeof window === 'undefined') return null
-  const storedProfile = sessionStorage.getItem('onboarding_profile')
-  const storedIcp = sessionStorage.getItem('onboarding_icp')
-  if (!storedProfile || !storedIcp) {
-    redirect('/onboarding/step-1')
-  }
-  return {
-    profile: JSON.parse(storedProfile),
-    icp: JSON.parse(storedIcp),
-    threshold: Number(sessionStorage.getItem('onboarding_score_threshold') ?? '60'),
-  }
-}
+import { saveOnboardingAction } from '@/app/actions/onboarding.actions'
+import { useOnboarding } from '@/contexts/onboarding-context'
 
 export default function OnboardingStep4() {
-  const [stored] = useState(getStoredData)
-  const profile = stored?.profile ?? null
-  const icp = stored?.icp ?? null
-  const scoreThreshold = stored?.threshold ?? 60
+  const router = useRouter()
+  const { profile, icp, scoreThreshold, resetOnboarding } = useOnboarding()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+
+  if (!profile || !icp) {
+    return (
+      <div className="text-center text-muted-foreground">
+        Bitte starten Sie mit Schritt 1
+      </div>
+    )
+  }
 
   function handleComplete() {
     if (!profile || !icp) return
@@ -39,14 +31,13 @@ export default function OnboardingStep4() {
         return
       }
       // saveOnboardingAction redirects to /dashboard on success
-      // Clean up sessionStorage
-      sessionStorage.removeItem('onboarding_profile')
-      sessionStorage.removeItem('onboarding_icp')
-      sessionStorage.removeItem('onboarding_score_threshold')
+      resetOnboarding()
     })
   }
 
-  if (!profile || !icp) return null
+  const handleBack = () => {
+    router.push('/onboarding/step-3')
+  }
 
   return (
     <div className="flex w-full max-w-[560px] flex-col items-center gap-7 rounded-xl border border-border bg-white p-12 pt-12 pb-10">
@@ -87,12 +78,13 @@ export default function OnboardingStep4() {
         )}
       </button>
 
-      <Link
-        href="/discovery"
+      <button
+        type="button"
+        onClick={handleBack}
         className="w-full rounded-lg border border-border py-2.5 text-center text-sm font-medium text-foreground"
       >
-        Erste Discovery starten
-      </Link>
+        Zurück
+      </button>
     </div>
   )
 }

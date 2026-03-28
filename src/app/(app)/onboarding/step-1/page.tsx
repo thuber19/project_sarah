@@ -5,30 +5,32 @@ import { useRouter } from 'next/navigation'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { analyzeWebsiteAction } from '@/app/actions/onboarding.actions'
+import { useOnboarding } from '@/contexts/onboarding-context'
 
 export default function OnboardingStep1() {
   const router = useRouter()
-  const [url, setUrl] = useState('')
+  const { setProfile, setIcp } = useOnboarding()
+  const [urlInput, setUrlInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit() {
-    if (!url.trim()) {
+    if (!urlInput.trim()) {
       setError('Bitte gib eine URL ein')
       return
     }
     setError(null)
 
     startTransition(async () => {
-      const result = await analyzeWebsiteAction(url)
+      const result = await analyzeWebsiteAction(urlInput)
 
       if ('error' in result) {
         setError(result.error)
         return
       }
 
-      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.profile))
-      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.icp))
+      setProfile(result.profile)
+      setIcp(result.icp)
       router.push('/onboarding/step-2')
     })
   }
@@ -52,8 +54,8 @@ export default function OnboardingStep1() {
         <label className="text-sm font-medium text-foreground">Website URL</label>
         <Input
           placeholder="https://dein-unternehmen.at"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           disabled={isPending}
         />
@@ -63,7 +65,7 @@ export default function OnboardingStep1() {
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={isPending || !url.trim()}
+        disabled={isPending || !urlInput.trim()}
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >
         {isPending ? (

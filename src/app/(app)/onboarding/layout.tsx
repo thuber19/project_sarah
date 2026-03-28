@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Bot } from "lucide-react";
+import { OnboardingProvider } from "@/contexts/onboarding-context";
 
 const TOTAL_STEPS = 4;
 
@@ -23,49 +24,51 @@ export default function OnboardingLayout({
   const currentStep = parseStep(pathname);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between bg-muted pb-8 pt-10">
-      {/* Header */}
-      <div className="flex flex-col items-center">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-accent" />
-          <span className="text-lg font-bold text-foreground">Sarah</span>
-        </div>
+    <OnboardingProvider>
+      <div className="flex min-h-screen flex-col items-center justify-between bg-muted pb-8 pt-10">
+        {/* Header */}
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-accent" />
+            <span className="text-lg font-bold text-foreground">Sarah</span>
+          </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">
-            Schritt {currentStep} von {TOTAL_STEPS}
-          </span>
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Schritt {currentStep} von {TOTAL_STEPS}
+            </span>
 
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: TOTAL_STEPS }, (_, i) => {
-              const step = i + 1;
-              const isActiveOrCompleted = step <= currentStep;
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => {
+                const step = i + 1;
+                const isActiveOrCompleted = step <= currentStep;
 
-              return (
-                <div
-                  key={step}
-                  className={`h-2 w-2 rounded-full ${
-                    isActiveOrCompleted ? "bg-accent" : "bg-border"
-                  }`}
-                />
-              );
-            })}
+                return (
+                  <div
+                    key={step}
+                    className={`h-2 w-2 rounded-full ${
+                      isActiveOrCompleted ? "bg-accent" : "bg-border"
+                    }`}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div
-        key={currentStep}
-        className="flex flex-1 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-300"
-      >
-        {children}
-      </div>
+        {/* Content */}
+        <div
+          key={currentStep}
+          className="flex flex-1 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-300"
+        >
+          {children}
+        </div>
 
-      {/* Footer */}
-      <p className="text-[13px] text-muted-foreground">
-        DSGVO-konform &middot; Deine Daten sind sicher
-      </p>
-    </div>
+        {/* Footer */}
+        <p className="text-[13px] text-muted-foreground">
+          DSGVO-konform &middot; Deine Daten sind sicher
+        </p>
+      </div>
+    </OnboardingProvider>
   );
 }
