@@ -49,23 +49,21 @@ const plans = [
 export default function PricingPage() {
   return (
     <>
-      {/* Headline Section */}
-      <section className="flex w-full flex-col items-center bg-white px-20 py-16 text-center">
+      <section className="flex w-full flex-col items-center bg-white px-4 py-10 text-center lg:px-20 lg:py-16">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-light px-3 py-1 text-xs font-medium text-accent">
           <Tag className="h-3.5 w-3.5" />
           Preise & Pakete
         </span>
 
-        <h1 className="mt-4 text-4xl font-extrabold text-foreground">Wähle den passenden Plan</h1>
+        <h1 className="mt-4 text-3xl font-extrabold text-foreground lg:text-4xl">Wähle den passenden Plan</h1>
 
-        <p className="mt-2 text-lg text-muted-foreground">
+        <p className="mt-2 text-base text-muted-foreground lg:text-lg">
           Starte kostenlos und upgrade jederzeit. Keine versteckten Kosten.
         </p>
       </section>
 
-      {/* Pricing Grid */}
-      <section className="w-full bg-white px-20 py-12">
-        <div className="grid grid-cols-3 gap-6">
+      <section className="w-full bg-white px-4 py-8 lg:px-20 lg:py-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {plans.map((plan) => (
             <PricingCard key={plan.name} {...plan} />
           ))}

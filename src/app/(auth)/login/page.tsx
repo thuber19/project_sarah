@@ -43,11 +43,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex min-h-screen flex-col lg:flex-row">
       <AuthLeftPanel />
 
-      {/* Right Panel */}
-      <div className="flex w-full flex-col items-center justify-center bg-white px-10 py-10 lg:w-1/2 lg:px-20">
+      <div className="flex w-full flex-1 flex-col items-center justify-center bg-white px-6 py-10 lg:w-1/2 lg:px-20">
         <div className="flex w-full max-w-[400px] flex-col gap-8">
           {submitted ? (
             <div className="flex flex-col gap-3 text-center">

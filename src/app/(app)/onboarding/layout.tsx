@@ -5,13 +5,13 @@ import { Logo } from '@/components/shared/logo'
 
 const TOTAL_STEPS = 4
 
-function parseStep(pathname: string): number {
+function parseStep(pathname: string): number | null {
   const match = pathname.match(/\/onboarding\/step-(\d+)/)
   if (match) {
     const step = parseInt(match[1], 10)
     return step >= 1 && step <= TOTAL_STEPS ? step : 1
   }
-  return 1
+  return null
 }
 
 export default function OnboardingLayout({
@@ -21,9 +21,14 @@ export default function OnboardingLayout({
 }>) {
   const pathname = usePathname()
   const currentStep = parseStep(pathname)
+  const isStepPage = currentStep !== null
+
+  if (!isStepPage) {
+    return <>{children}</>
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between bg-muted pb-8 pt-10">
+    <div className="flex min-h-screen flex-col items-center justify-between bg-muted px-4 pb-8 pt-10 lg:px-0">
       {/* Header */}
       <div className="flex flex-col items-center">
         <Logo size="sm" textClassName="font-bold text-foreground" />
@@ -54,7 +59,7 @@ export default function OnboardingLayout({
       {/* Content */}
       <div
         key={currentStep}
-        className="flex flex-1 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-300"
+        className="flex w-full max-w-2xl flex-1 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-300"
       >
         {children}
       </div>

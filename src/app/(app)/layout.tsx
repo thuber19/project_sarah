@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
 import { getBusinessProfile } from '@/lib/queries/cached'
@@ -31,12 +32,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen bg-muted">
-      <AppSidebar displayName={rawName} email={email} initials={initials} />
+      <div className="hidden lg:flex">
+        <AppSidebar displayName={rawName} email={email} initials={initials} />
+      </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <main id="main-content" tabIndex={-1} className="flex flex-1 flex-col overflow-y-auto">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex flex-1 flex-col overflow-y-auto pb-16 lg:pb-0"
+        >
           {children}
         </main>
       </div>
+      <MobileTabBar />
       <AgentChat />
     </div>
   )

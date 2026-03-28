@@ -9,6 +9,7 @@ import {
   Compass,
   Target,
   Activity,
+  BarChart3,
   Share2,
   Settings,
   LogOut,
@@ -22,6 +23,7 @@ const navItems = [
   { label: 'Discovery', href: '/discovery', icon: Compass },
   { label: 'Scoring', href: '/scoring', icon: Target },
   { label: 'Agent Logs', href: '/agent-logs', icon: Activity },
+  { label: 'Analyse', href: '/competitor-analysis', icon: BarChart3 },
   { label: 'Export & CRM', href: '/export', icon: Share2 },
   { label: 'Settings', href: '/settings', icon: Settings },
 ] as const

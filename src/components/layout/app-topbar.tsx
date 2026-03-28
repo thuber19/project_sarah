@@ -10,7 +10,7 @@ interface AppTopbarProps {
 
 export function AppTopbar({ title, actions, initials = 'BG' }: AppTopbarProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-white px-4 lg:h-16 lg:px-8">
       <h1 className="text-base font-semibold text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">

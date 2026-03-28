@@ -20,8 +20,8 @@ export default function MarketingLayout({
         {children}
       </main>
 
-      <footer className="border-t border-border bg-white px-20 py-8">
-        <div className="flex items-center justify-between">
+      <footer className="border-t border-border bg-white px-4 py-6 lg:px-20 lg:py-8">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <p className="text-[13px] text-muted-foreground">
             &copy; 2026 Sarah AI. Alle Rechte vorbehalten.
           </p>

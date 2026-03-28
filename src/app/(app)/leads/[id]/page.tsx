@@ -91,7 +91,7 @@ export default async function LeadDetailPage({ params }: Props) {
       <AppTopbar title="Lead-Detail" initials={user.email?.slice(0, 2).toUpperCase() ?? 'SP'} />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto px-4 py-5 lg:p-8">
         <Link
           href="/leads"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -101,12 +101,12 @@ export default async function LeadDetailPage({ params }: Props) {
         </Link>
 
         {/* Header */}
-        <div className="mt-4 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-foreground lg:text-2xl">
               {lead.company_name ?? displayName}
             </h1>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-2 lg:gap-3">
               {grade && <ScoreBadge grade={grade} />}
               {score?.data_quality_score != null && (
                 <DataQualityBadge score={score.data_quality_score} />
@@ -125,25 +125,25 @@ export default async function LeadDetailPage({ params }: Props) {
             </div>
           </div>
           {score && (
-            <div className="text-right">
+            <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0 sm:text-right">
               <AnimatedScore
                 value={score.total_score}
-                className={`text-4xl font-bold ${scoreColor}`}
+                className={`text-3xl font-bold lg:text-4xl ${scoreColor}`}
               />
-              <p className="mt-1 text-sm font-medium text-muted-foreground">{grade}</p>
+              <p className="text-sm font-medium text-muted-foreground sm:mt-1">{grade}</p>
             </div>
           )}
         </div>
 
         {/* Two-column layout */}
-        <div className="mt-8 flex flex-col gap-8 lg:flex-row">
+        <div className="mt-6 flex flex-col gap-6 lg:mt-8 lg:flex-row lg:gap-8">
           {/* Left column */}
-          <div className="flex flex-1 flex-col gap-8">
+          <div className="flex flex-1 flex-col gap-6 lg:gap-8">
             <LeadResearch leadId={id} cachedReport={research?.full_report ?? null} />
             <OutreachDraft leadId={id} />
             <OutreachVoice leadId={id} companyName={lead.company_name ?? null} />
             {score && (
-              <div className="rounded-xl border border-border bg-white p-6">
+              <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
                 <h2 className="mb-4 text-base font-semibold text-foreground">Score Breakdown</h2>
                 <ScoreBreakdown
                   companyFit={score.company_fit_score}
@@ -169,7 +169,7 @@ export default async function LeadDetailPage({ params }: Props) {
             <LeadStreamingAnalysis leadId={id} hasExistingScore={!!score} />
 
             {/* Kontakt */}
-            <div className="rounded-xl border border-border bg-white p-6">
+            <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
               <h2 className="mb-4 text-base font-semibold text-foreground">Kontaktinformationen</h2>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
@@ -206,7 +206,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
           {/* Right column */}
           <div className="flex w-full flex-col gap-6 lg:w-[340px]">
-            <div className="rounded-xl border border-border bg-white p-6">
+            <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
               <h2 className="mb-4 text-base font-semibold text-foreground">Unternehmensprofil</h2>
               <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                 {lead.industry && (
@@ -258,7 +258,7 @@ export default async function LeadDetailPage({ params }: Props) {
             </div>
 
             {logs && logs.length > 0 && (
-              <div className="rounded-xl border border-border bg-white p-6">
+              <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
                 <h2 className="mb-4 text-base font-semibold text-foreground">Aktivitäten</h2>
                 <div className="flex flex-col gap-4">
                   {logs.map((log) => (

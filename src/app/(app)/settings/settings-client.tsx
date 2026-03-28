@@ -172,36 +172,36 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
             type="button"
             onClick={handleSave}
             disabled={isPending}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+            className="min-h-12 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {isPending ? 'Speichere...' : 'Speichern'}
           </button>
         }
       />
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 py-5 lg:px-8 lg:py-8">
         <Tabs defaultValue="profil">
-          <TabsList variant="line" className="w-full justify-start border-b border-border">
-            <TabsTrigger value="profil">Profil</TabsTrigger>
-            <TabsTrigger value="icp">ICP-Konfiguration</TabsTrigger>
-            <TabsTrigger value="kommunikation">Kommunikationsstil</TabsTrigger>
-            <TabsTrigger value="integrationen">Integrationen</TabsTrigger>
-            <TabsTrigger value="benachrichtigungen">Benachrichtigungen</TabsTrigger>
-            <TabsTrigger value="abrechnung">Abrechnung</TabsTrigger>
+          <TabsList variant="line" className="w-full justify-start overflow-x-auto border-b border-border">
+            <TabsTrigger value="profil" className="min-h-12 shrink-0">Profil</TabsTrigger>
+            <TabsTrigger value="icp" className="min-h-12 shrink-0">ICP-Konfiguration</TabsTrigger>
+            <TabsTrigger value="kommunikation" className="min-h-12 shrink-0">Kommunikationsstil</TabsTrigger>
+            <TabsTrigger value="integrationen" className="min-h-12 shrink-0">Integrationen</TabsTrigger>
+            <TabsTrigger value="benachrichtigungen" className="min-h-12 shrink-0">Benachrichtigungen</TabsTrigger>
+            <TabsTrigger value="abrechnung" className="min-h-12 shrink-0">Abrechnung</TabsTrigger>
           </TabsList>
 
           {/* Profil Tab */}
           <TabsContent value="profil">
             <div className="flex flex-col gap-8 pt-6">
               <section>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:justify-between">
                   <h2 className="text-base font-semibold text-foreground">Profil-Informationen</h2>
                   <span className="text-xs text-muted-foreground">
                     Alle Änderungen werden sofort beim Speichern übernommen
                   </span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4">
+                <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="unternehmen">Unternehmen</Label>
                     <Input
@@ -244,7 +244,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       </p>
                     )}
                   </div>
-                  <div className="col-span-2 flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5 lg:col-span-2">
                     <Label htmlFor="zielmarkt">Zielmarkt</Label>
                     <Input
                       id="zielmarkt"
@@ -252,7 +252,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       onChange={(e) => setTargetMarket(e.target.value)}
                     />
                   </div>
-                  <div className="col-span-2 flex flex-col gap-1.5">
+                  <div className="flex flex-col gap-1.5 lg:col-span-2">
                     <Label htmlFor="beschreibung">Beschreibung</Label>
                     <textarea
                       id="beschreibung"
@@ -289,7 +289,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
                   {[
                     {
                       id: 'icp-industries',
@@ -399,14 +399,14 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="comm-writing-style">Schreibstil</Label>
                       <Select
                         value={writingStyle}
                         onValueChange={(val) => setWritingStyle(val as string)}
                       >
-                        <SelectTrigger id="comm-writing-style" className="w-full">
+                        <SelectTrigger id="comm-writing-style" className="min-h-12 w-full">
                           <SelectValue placeholder="Stil wählen..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -425,7 +425,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       <div className="mt-1 flex items-center gap-6">
                         <label
                           htmlFor="salutation-sie"
-                          className="flex items-center gap-2 text-sm text-foreground"
+                          className="flex min-h-12 items-center gap-2 text-sm text-foreground"
                         >
                           <input
                             type="radio"
@@ -440,7 +440,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                         </label>
                         <label
                           htmlFor="salutation-du"
-                          className="flex items-center gap-2 text-sm text-foreground"
+                          className="flex min-h-12 items-center gap-2 text-sm text-foreground"
                         >
                           <input
                             type="radio"
@@ -487,7 +487,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       value={speakingStyle}
                       onValueChange={(val) => setSpeakingStyle(val as string)}
                     >
-                      <SelectTrigger id="comm-speaking-style" className="w-full">
+                      <SelectTrigger id="comm-speaking-style" className="min-h-12 w-full">
                         <SelectValue placeholder="Stil wählen..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -500,7 +500,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-4 lg:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Label htmlFor="comm-opening-phrase">Typische Eröffnungsphrase</Label>
                       <Input
@@ -543,12 +543,12 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
               </section>
 
               {/* Save button */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
                 <button
                   type="button"
                   onClick={handleSaveCommStyle}
                   disabled={isPending}
-                  className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                  className="min-h-12 w-full rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50 lg:w-auto"
                 >
                   {isPending ? 'Speichere...' : 'Speichern'}
                 </button>
