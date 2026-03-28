@@ -32,7 +32,10 @@ pnpm db:types     # supabase gen types typescript --local > src/lib/database.typ
 - **RLS** — Every Supabase table has row-level security. Policies reference `auth.uid()`.
 - **Styling** — Tailwind CSS 4 + shadcn/ui. Design tokens in `globals.css` (Slate palette + score colors). Font: Inter.
 - **Layouts** — App sidebar (dark, 240px) in `(app)/layout.tsx`. Marketing navbar/footer in `(marketing)/layout.tsx`. Onboarding wizard in `(app)/onboarding/layout.tsx`.
-- **Security** — `proxy.ts` handles CSP headers; `middleware.ts` handles rate limiting and auth redirects.
+- **Security** — `proxy.ts` handles CSP headers, rate limiting, auth redirects, AND onboarding guard. Next.js 16 does NOT allow both `proxy.ts` and `middleware.ts` — all logic is in `proxy.ts`.
+- **Toasts** — Sonner `<Toaster />` in root layout (`app/layout.tsx`). Use `toast.success/error/info` from `sonner`.
+- **Validation** — Shared Zod schemas in `src/lib/validation/schemas.ts`. Use client-side before server actions.
+- **Tests** — 273 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`.
 
 ## Frontend Structure
 ```
@@ -63,10 +66,11 @@ src/components/
 ├── auth/                       # AuthLeftPanel (shared left panel for auth pages)
 ├── marketing/                  # PricingCard
 ├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution, DashboardEmpty
-└── leads/                      # ScoreBadge, LeadTable, LeadFilters, ScoreBreakdown
+└── leads/                      # ScoreBadge, LeadTable, LeadFilters, LeadSearchInput, LeadPagination, ScoreBreakdown
 ```
 
-All data pages have empty state conditionals (toggle `hasLeads`/`hasDiscovery`/etc. flags).
+Most data pages are wired to real Supabase queries (dashboard, leads, lead detail, scoring, agent-logs, discovery, settings).
+Export page is still placeholder (Post-MVP). Empty state shows when no data exists.
 Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Agent Logs, Export & CRM, Settings.
 
 ## Environment
