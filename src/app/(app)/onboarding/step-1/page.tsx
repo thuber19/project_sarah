@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { analyzeWebsiteAction } from '@/app/actions/onboarding.actions'
+import { onboardingStep1Schema } from '@/schemas/onboarding.schema'
 
 export default function OnboardingStep1() {
   const router = useRouter()
@@ -13,11 +14,12 @@ export default function OnboardingStep1() {
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit() {
-    if (!url.trim()) {
-      setError('Bitte gib eine URL ein')
+    setError(null)
+    const result = onboardingStep1Schema.safeParse({ url })
+    if (!result.success) {
+      setError(result.error.issues[0]?.message ?? 'Ungültige Eingabe')
       return
     }
-    setError(null)
 
     startTransition(async () => {
       const result = await analyzeWebsiteAction(url)
@@ -51,13 +53,20 @@ export default function OnboardingStep1() {
       <div className="flex w-full flex-col gap-1.5">
         <label className="text-sm font-medium text-foreground">Website URL</label>
         <Input
+          id="website-url"
           placeholder="https://dein-unternehmen.at"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           disabled={isPending}
+          aria-invalid={!!error}
+          aria-describedby={error ? 'url-error' : undefined}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p id="url-error" role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
       </div>
 
       <button

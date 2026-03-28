@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { AuthLeftPanel } from '@/components/auth/auth-left-panel'
+import { loginSchema } from '@/schemas/login.schema'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -16,6 +17,13 @@ export default function LoginPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    const result = loginSchema.safeParse({ email })
+    if (!result.success) {
+      setError(result.error.issues[0]?.message ?? 'Ungültige Eingabe')
+      return
+    }
+
     startTransition(async () => {
       const supabase = createClient()
       const { error } = await supabase.auth.signInWithOtp({
@@ -64,10 +72,15 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@unternehmen.at"
                     className="h-10"
-                    required
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'email-error' : undefined}
                   />
                 </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
+                {error && (
+                  <p id="email-error" role="alert" className="text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
                 <Button
                   type="submit"
                   disabled={isPending || !email}

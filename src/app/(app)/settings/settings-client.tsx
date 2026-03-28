@@ -10,6 +10,7 @@ import {
   type SettingsIcpData,
 } from '@/app/actions/settings.actions'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
+import { profileSchema } from '@/schemas/settings.schema'
 
 function PlaceholderContent() {
   return <p className="py-8 text-center text-sm text-muted-foreground">Demnächst verfügbar</p>
@@ -45,6 +46,7 @@ interface SettingsClientProps {
 export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   // Profile fields
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '')
@@ -63,6 +65,23 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
 
   function handleSave() {
     setMessage(null)
+    setFieldErrors({})
+
+    const validation = profileSchema.safeParse({
+      company_name: companyName,
+      industry: industry || undefined,
+      website_url: websiteUrl || undefined,
+    })
+    if (!validation.success) {
+      const errors: Record<string, string> = {}
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as string
+        errors[field] = issue.message
+      }
+      setFieldErrors(errors)
+      return
+    }
+
     startTransition(async () => {
       const profileResult = await updateProfileAction({
         company_name: companyName,
@@ -148,7 +167,14 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       id="unternehmen"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
+                      aria-invalid={!!fieldErrors.company_name}
+                      aria-describedby={fieldErrors.company_name ? 'unternehmen-error' : undefined}
                     />
+                    {fieldErrors.company_name && (
+                      <p id="unternehmen-error" role="alert" className="text-xs text-destructive">
+                        {fieldErrors.company_name}
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="branche">Branche</Label>
@@ -168,7 +194,14 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       id="website"
                       value={websiteUrl}
                       onChange={(e) => setWebsiteUrl(e.target.value)}
+                      aria-invalid={!!fieldErrors.website_url}
+                      aria-describedby={fieldErrors.website_url ? 'website-error' : undefined}
                     />
+                    {fieldErrors.website_url && (
+                      <p id="website-error" role="alert" className="text-xs text-destructive">
+                        {fieldErrors.website_url}
+                      </p>
+                    )}
                   </div>
                   <div className="col-span-2 flex flex-col gap-1.5">
                     <Label htmlFor="zielmarkt">Zielmarkt</Label>
