@@ -1,4 +1,4 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 export const loginSchema = z.object({
   email: z
@@ -7,4 +7,4 @@ export const loginSchema = z.object({
     .email('Bitte gib eine gültige E-Mail-Adresse ein'),
 })
 
-export type LoginFormData = z.infer<typeof loginSchema>
+export type LoginInput = z.infer<typeof loginSchema>

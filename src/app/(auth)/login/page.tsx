@@ -7,21 +7,21 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { AuthLeftPanel } from '@/components/auth/auth-left-panel'
-import { emailSchema } from '@/lib/validation/schemas'
+import { loginSchema } from '@/schemas/login.schema'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    setEmailError(null)
 
-    const emailValidation = emailSchema.safeParse(email)
-    if (!emailValidation.success) {
-      setError(emailValidation.error.issues[0]?.message ?? 'Ungültige E-Mail-Adresse')
+    const validation = loginSchema.safeParse({ email })
+    if (!validation.success) {
+      setEmailError(validation.error.issues[0].message)
       return
     }
 
@@ -32,21 +32,19 @@ export default function LoginPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) {
-        console.error('[login] signInWithOtp error:', error)
-        setError(error.message)
-        toast.error('Magic Link konnte nicht gesendet werden.')
+        toast.error('Magic Link konnte nicht gesendet werden. Bitte versuche es erneut.')
         return
       }
-      toast.success('Magic Link gesendet! Prüfe dein Postfach.')
       setSubmitted(true)
     })
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
+    <div className="min-h-screen flex">
       <AuthLeftPanel />
 
-      <div className="flex w-full flex-1 flex-col items-center justify-center bg-white px-6 py-10 lg:w-1/2 lg:px-20">
+      {/* Right Panel */}
+      <div className="flex w-full flex-col items-center justify-center bg-white px-10 py-10 lg:w-1/2 lg:px-20">
         <div className="flex w-full max-w-[400px] flex-col gap-8">
           {submitted ? (
             <div className="flex flex-col gap-3 text-center">
@@ -72,21 +70,22 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); setEmailError(null) }}
                     placeholder="name@unternehmen.at"
                     className="h-10"
-                    aria-invalid={!!error}
-                    aria-describedby={error ? 'email-error' : undefined}
+                    aria-invalid={emailError ? 'true' : undefined}
+                    aria-describedby={emailError ? 'email-error' : undefined}
+                    required
                   />
+                  {emailError && (
+                    <p id="email-error" role="alert" className="text-sm text-destructive">
+                      {emailError}
+                    </p>
+                  )}
                 </div>
-                {error && (
-                  <p id="email-error" role="alert" className="text-sm text-destructive">
-                    {error}
-                  </p>
-                )}
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || !email}
                   className="w-full bg-accent py-2.5 text-sm font-semibold text-white hover:bg-accent/90"
                 >
                   {isPending ? 'Wird gesendet…' : 'Magic Link senden'}

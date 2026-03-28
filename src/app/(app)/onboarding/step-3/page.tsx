@@ -1,13 +1,21 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { redirect, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { X } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import type { IcpData } from '@/app/actions/onboarding.actions'
-import { trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
+import { icpStep3Schema } from '@/schemas/onboarding.schema'
 
 function TagPill({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
@@ -47,56 +55,53 @@ function deriveRegions(icpRegions: string[]): Record<string, boolean> {
 export default function OnboardingStep3() {
   const router = useRouter()
   const [storedIcp] = useState(getStoredIcp)
-  const startTimeRef = useRef(0)
-
-  useEffect(() => {
-    startTimeRef.current = Date.now()
-    trackOnboardingEventAction(3, 'started')
-  }, [])
   const [industries, setIndustries] = useState<string[]>(storedIcp?.industries ?? [])
-  const [showAddIndustry, setShowAddIndustry] = useState(false)
-  const [newIndustry, setNewIndustry] = useState('')
-  const addIndustryInputRef = useRef<HTMLInputElement>(null)
-  const [companySize, setCompanySize] = useState(storedIcp?.company_sizes?.[0] ?? '10-100')
-  const [regions, setRegions] = useState<Record<string, boolean>>(() =>
-    deriveRegions(storedIcp?.regions ?? []),
-  )
-  function handleAddIndustry() {
-    const trimmed = newIndustry.trim()
-    if (!trimmed) return
-    if (industries.some((i) => i.toLowerCase() === trimmed.toLowerCase())) return
-    setIndustries((prev) => [...prev, trimmed])
-    setNewIndustry('')
-    setShowAddIndustry(false)
-  }
+  const [companySize, setCompanySize] = useState('10-100')
+  const [regions, setRegions] = useState<Record<string, boolean>>(() => deriveRegions(storedIcp?.regions ?? []))
+  const [techStack, setTechStack] = useState<string[]>([])
+  const [scoreThreshold, setScoreThreshold] = useState(60)
+  const [industriesError, setIndustriesError] = useState<string | null>(null)
+  const [regionsError, setRegionsError] = useState<string | null>(null)
 
   function handleNext() {
+    setIndustriesError(null)
+    setRegionsError(null)
+
+    const validation = icpStep3Schema.safeParse({
+      industries,
+      companySize,
+      regions,
+      scoreThreshold,
+    })
+    if (!validation.success) {
+      for (const issue of validation.error.issues) {
+        if (issue.path[0] === 'industries') setIndustriesError(issue.message)
+        else if (issue.path[0] === 'regions') setRegionsError(issue.message)
+      }
+      return
+    }
+
     const selectedRegions = Object.entries(regions)
       .filter(([, v]) => v)
       .map(([k]) => k)
 
     const icpData: IcpData = {
       job_titles: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').job_titles ?? [],
-      seniority_levels:
-        JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').seniority_levels ?? [],
+      seniority_levels: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').seniority_levels ?? [],
       industries,
       company_sizes: [companySize],
       regions: selectedRegions,
     }
 
     sessionStorage.setItem('onboarding_icp', JSON.stringify(icpData))
-    trackOnboardingEventAction(3, 'completed', {
-      duration_ms: Date.now() - startTimeRef.current,
-    })
+    sessionStorage.setItem('onboarding_score_threshold', String(scoreThreshold))
     router.push('/onboarding/step-4')
   }
 
   return (
     <div className="flex w-full max-w-[700px] flex-col gap-7 rounded-xl border border-border bg-white p-9">
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold text-foreground">
-          Definiere dein ideales Kundenprofil
-        </h1>
+        <h1 className="text-xl font-semibold text-foreground">Definiere dein ideales Kundenprofil</h1>
         <p className="text-sm text-muted-foreground">
           Basierend auf der Analyse empfehlen wir folgende Kriterien. Passe sie an.
         </p>
@@ -104,106 +109,104 @@ export default function OnboardingStep3() {
 
       <div className="flex flex-col gap-5">
         {/* Zielbranchen */}
-        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="zielbranchen-label">
-          <label id="zielbranchen-label" className="text-sm font-medium text-foreground">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-foreground" id="industries-label">
             Zielbranchen
           </label>
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="flex flex-wrap items-center gap-2"
+            aria-labelledby="industries-label"
+            aria-describedby={industriesError ? 'industries-error' : undefined}
+          >
             {industries.map((industry) => (
-              <TagPill
-                key={industry}
-                onRemove={() => setIndustries((prev) => prev.filter((i) => i !== industry))}
-              >
+              <TagPill key={industry} onRemove={() => { setIndustries((prev) => prev.filter((i) => i !== industry)); setIndustriesError(null) }}>
                 {industry}
               </TagPill>
             ))}
-            {!showAddIndustry && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddIndustry(true)
-                  setTimeout(() => addIndustryInputRef.current?.focus(), 0)
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                + hinzufügen
-              </button>
-            )}
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground">
+              + hinzufügen
+            </button>
           </div>
-          {showAddIndustry && (
-            <div className="flex items-center gap-2">
-              <Input
-                ref={addIndustryInputRef}
-                type="text"
-                placeholder="Neue Branche eingeben..."
-                value={newIndustry}
-                onChange={(e) => setNewIndustry(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddIndustry()
-                  }
-                  if (e.key === 'Escape') {
-                    setNewIndustry('')
-                    setShowAddIndustry(false)
-                  }
-                }}
-                onBlur={(e) => {
-                  // Don't close if clicking the add button
-                  if (e.relatedTarget?.closest('[data-add-industry-btn]')) return
-                  if (!newIndustry.trim()) {
-                    setShowAddIndustry(false)
-                  }
-                }}
-                className="h-8 max-w-[220px] text-sm"
-                aria-label="Neue Branche"
-              />
-              <button
-                type="button"
-                data-add-industry-btn
-                onClick={handleAddIndustry}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent text-white hover:bg-accent/90"
-                aria-label="Branche hinzufügen"
-              >
-                <Plus size={14} />
-              </button>
-            </div>
+          {industriesError && (
+            <p id="industries-error" role="alert" className="text-sm text-destructive">
+              {industriesError}
+            </p>
           )}
         </div>
 
         {/* Unternehmensgröße */}
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="company-size-input" className="text-sm font-medium text-foreground">
-            Unternehmensgröße
-          </label>
-          <Input
-            id="company-size-input"
-            type="text"
-            placeholder="z. B. 10-100"
-            value={companySize}
-            onChange={(e) => setCompanySize(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Gib eine Mitarbeiteranzahl-Range ein, z. B. 10-100 oder 50-500
-          </p>
+          <label className="text-sm font-medium text-foreground">Unternehmensgröße</label>
+          <Select value={companySize} onValueChange={(v) => v && setCompanySize(v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1-10">1-10 Mitarbeiter</SelectItem>
+              <SelectItem value="10-100">10-100 Mitarbeiter</SelectItem>
+              <SelectItem value="100-250">100-250 Mitarbeiter</SelectItem>
+              <SelectItem value="250-1000">250-1000 Mitarbeiter</SelectItem>
+              <SelectItem value="1000+">1000+ Mitarbeiter</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Region */}
-        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="region-label">
-          <span id="region-label" className="text-sm font-medium text-foreground">Region</span>
+        <div
+          className="flex flex-col gap-1.5"
+          role="group"
+          aria-labelledby="regions-label"
+          aria-describedby={regionsError ? 'regions-error' : undefined}
+        >
+          <span id="regions-label" className="text-sm font-medium text-foreground">
+            Region
+          </span>
           <div className="flex flex-col gap-2.5">
             {Object.entries(regions).map(([region, checked]) => (
               <label key={region} className="flex items-center gap-2 text-sm text-foreground">
                 <Checkbox
                   checked={checked}
-                  onCheckedChange={(v) => setRegions((prev) => ({ ...prev, [region]: v === true }))}
+                  onCheckedChange={(v) => { setRegions((prev) => ({ ...prev, [region]: v === true })); setRegionsError(null) }}
                 />
                 {region}
               </label>
             ))}
           </div>
+          {regionsError && (
+            <p id="regions-error" role="alert" className="text-sm text-destructive">
+              {regionsError}
+            </p>
+          )}
         </div>
 
+        {/* Technologie-Stack */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-foreground">Technologie-Stack</label>
+          <div className="flex flex-wrap items-center gap-2">
+            {techStack.map((tech) => (
+              <TagPill key={tech} onRemove={() => setTechStack((prev) => prev.filter((t) => t !== tech))}>
+                {tech}
+              </TagPill>
+            ))}
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground">
+              + hinzufügen
+            </button>
+          </div>
+        </div>
+
+        {/* Min. Score Threshold */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">Min. Score Threshold</label>
+            <span className="text-sm font-medium text-foreground">{scoreThreshold}</span>
+          </div>
+          <Slider
+            min={0}
+            max={100}
+            value={[scoreThreshold]}
+            onValueChange={(value) => setScoreThreshold(Array.isArray(value) ? value[0] : value)}
+          />
+        </div>
       </div>
 
       <div className="flex justify-end gap-3">

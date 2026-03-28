@@ -1,11 +1,11 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
-export const discoverySchema = z.object({
-  industry: z.string().min(1, 'Bitte gib eine Branche ein'),
-  location: z.string().optional(),
-  companySize: z.string().optional(),
+export const discoverySearchSchema = z.object({
+  branchen: z.string().min(1, 'Bitte gib mindestens eine Branche an'),
+  unternehmensgroesse: z.string().min(1, 'Bitte gib eine Unternehmensgröße an'),
+  region: z.string().min(1, 'Bitte gib eine Region an'),
+  technologien: z.string().optional(),
   keywords: z.string().optional(),
-  limit: z.number().int().min(1).max(100).optional().default(25),
 })
 
-export type DiscoveryFormData = z.infer<typeof discoverySchema>
+export type DiscoverySearchInput = z.infer<typeof discoverySearchSchema>

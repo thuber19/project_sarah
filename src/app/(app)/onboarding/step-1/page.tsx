@@ -1,48 +1,40 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { analyzeWebsiteAction, trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
-import { useServerAction } from '@/hooks/use-server-action'
-import { urlSchema } from '@/lib/validation/schemas'
+import { analyzeWebsiteAction } from '@/app/actions/onboarding.actions'
+import { websiteUrlSchema } from '@/schemas/onboarding.schema'
 
 export default function OnboardingStep1() {
   const router = useRouter()
   const [url, setUrl] = useState('')
-  const [validationError, setValidationError] = useState<string | null>(null)
-  const startTimeRef = useRef(0)
-
-  const { execute, isPending } = useServerAction(analyzeWebsiteAction, {
-    successMessage: 'Analyse abgeschlossen!',
-    errorMessage: 'Website konnte nicht analysiert werden.',
-    onSuccess(data) {
-      sessionStorage.setItem('onboarding_profile', JSON.stringify(data.profile))
-      sessionStorage.setItem('onboarding_icp', JSON.stringify(data.icp))
-      trackOnboardingEventAction(1, 'completed', {
-        duration_ms: Date.now() - startTimeRef.current,
-      })
-      router.push('/onboarding/step-2')
-    },
-  })
-
-  useEffect(() => {
-    startTimeRef.current = Date.now()
-    trackOnboardingEventAction(1, 'started')
-  }, [])
+  const [urlError, setUrlError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   function handleSubmit() {
-    setValidationError(null)
-    const result = urlSchema.safeParse(url)
-    if (!result.success) {
-      setValidationError(result.error.issues[0]?.message ?? 'Ungültige URL')
+    setUrlError(null)
+
+    const validation = websiteUrlSchema.safeParse({ url })
+    if (!validation.success) {
+      setUrlError(validation.error.issues[0].message)
       return
     }
 
-    toast.info('Website wird analysiert...')
-    execute(url)
+    startTransition(async () => {
+      const result = await analyzeWebsiteAction(url)
+
+      if ('error' in result) {
+        toast.error(result.error)
+        return
+      }
+
+      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.profile))
+      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.icp))
+      router.push('/onboarding/step-2')
+    })
   }
 
   return (
@@ -56,8 +48,8 @@ export default function OnboardingStep1() {
       </h1>
 
       <p className="text-center text-sm text-muted-foreground">
-        Gib deine Website-URL ein und Sarah analysiert automatisch dein Business-Profil, deine
-        Branche und ideale Zielkunden.
+        Gib deine Website-URL ein und Sarah analysiert automatisch dein Business-Profil, deine Branche
+        und ideale Zielkunden.
       </p>
 
       <div className="flex w-full flex-col gap-1.5">
@@ -68,15 +60,15 @@ export default function OnboardingStep1() {
           id="website-url"
           placeholder="https://dein-unternehmen.at"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => { setUrl(e.target.value); setUrlError(null) }}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           disabled={isPending}
-          aria-invalid={!!validationError}
-          aria-describedby={[validationError ? 'url-error' : null, 'url-help'].filter(Boolean).join(' ')}
+          aria-invalid={urlError ? 'true' : undefined}
+          aria-describedby={urlError ? 'url-error' : undefined}
         />
-        {validationError && (
+        {urlError && (
           <p id="url-error" role="alert" className="text-sm text-destructive">
-            {validationError}
+            {urlError}
           </p>
         )}
       </div>
@@ -97,7 +89,7 @@ export default function OnboardingStep1() {
         )}
       </button>
 
-      <p id="url-help" className="text-xs text-muted-foreground">Die Analyse dauert ca. 30 Sekunden</p>
+      <p className="text-xs text-muted-foreground">Die Analyse dauert ca. 30 Sekunden</p>
     </div>
   )
 }

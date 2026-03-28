@@ -1,20 +1,24 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
-export const onboardingStep1Schema = z.object({
+export const websiteUrlSchema = z.object({
   url: z
     .string()
-    .min(1, 'Website-URL ist erforderlich')
-    .url('Bitte gib eine gültige URL ein (z.B. https://dein-unternehmen.at)'),
+    .min(1, 'Bitte gib eine URL ein')
+    .url('Bitte gib eine gültige URL ein (z. B. https://dein-unternehmen.at)'),
 })
 
-export type OnboardingStep1Data = z.infer<typeof onboardingStep1Schema>
-
-export const icpSchema = z.object({
-  industries: z.array(z.string()).min(1, 'Bitte wähle mindestens eine Branche aus'),
+export const icpStep3Schema = z.object({
+  industries: z
+    .array(z.string())
+    .min(1, 'Bitte wähle mindestens eine Branche aus'),
   companySize: z.string().min(1, 'Bitte wähle eine Unternehmensgröße aus'),
   regions: z
     .record(z.string(), z.boolean())
-    .refine((r) => Object.values(r).some(Boolean), 'Bitte wähle mindestens eine Region aus'),
+    .refine((r) => Object.values(r).some(Boolean), {
+      message: 'Bitte wähle mindestens eine Region aus',
+    }),
+  scoreThreshold: z.number().min(0).max(100),
 })
 
-export type IcpFormData = z.infer<typeof icpSchema>
+export type WebsiteUrlInput = z.infer<typeof websiteUrlSchema>
+export type IcpStep3Input = z.infer<typeof icpStep3Schema>

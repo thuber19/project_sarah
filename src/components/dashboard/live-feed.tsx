@@ -78,30 +78,22 @@ export function LiveFeed() {
         ) : logs.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Aktivitäten</p>
         ) : (
-          logs.map((log, index) => {
+          logs.filter((log) => categorize(log.action_type) !== 'error').map((log, index, arr) => {
             const category = categorize(log.action_type)
             const config = categoryConfig[category]
             const Icon = config.icon
-            const isLast = index === logs.length - 1
+            const isLast = index === arr.length - 1
 
             return (
               <div
                 key={log.id}
-                className={cn(
-                  'flex items-center gap-3 px-5 py-3',
-                  !isLast && 'border-b border-border',
-                )}
+                className={cn('flex items-start gap-3 px-5 py-3', !isLast && 'border-b border-border')}
               >
-                <div
-                  className={cn(
-                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-                    config.bg,
-                  )}
-                >
+                <div className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)}>
                   <Icon className={cn('h-4 w-4', config.color)} />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">{log.message}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm text-foreground">{log.message}</p>
                   <span className="text-xs text-muted-foreground">{timeAgo(log.created_at)}</span>
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">
