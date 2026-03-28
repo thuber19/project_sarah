@@ -3,7 +3,7 @@ import { model } from '@/lib/ai/provider'
 import { createClient } from '@/lib/supabase/server'
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech'
-const DEFAULT_VOICE_ID = 'Nzx4EODwcRtz5xESEixO'
+const DEFAULT_VOICE_ID = '1zZyN2MGRZV5dAOWymIa'
 const MAX_SCRIPT_WORDS = 150
 
 function getElevenLabsKey(): string {
