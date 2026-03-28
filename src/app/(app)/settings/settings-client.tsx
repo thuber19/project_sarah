@@ -235,11 +235,11 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     >
                       <span className="text-sm font-bold text-white">{integration.iconLetter}</span>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground">
+                    <div className="min-w-0 flex-1 flex flex-col">
+                      <span className="truncate text-sm font-semibold text-foreground">
                         {integration.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="truncate text-xs text-muted-foreground">
                         {integration.description}
                       </span>
                     </div>

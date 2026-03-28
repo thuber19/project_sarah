@@ -17,10 +17,10 @@ export function StatCard({ label, value, change, changeType = 'neutral' }: StatC
   const colors = changeStyles[changeType]
 
   return (
-    <div className="flex flex-col gap-3 rounded-[--radius-card] border border-border bg-card p-5">
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      <div className="flex items-end justify-between">
-        <span className="text-[28px] font-bold text-foreground">{value}</span>
+    <div className="flex min-w-0 flex-col gap-3 overflow-hidden rounded-[--radius-card] border border-border bg-card p-5">
+      <span className="truncate text-[13px] font-medium text-muted-foreground">{label}</span>
+      <div className="flex min-w-0 items-end justify-between gap-2">
+        <span className="truncate text-[28px] font-bold text-foreground">{value}</span>
         {change && (
           <span
             className={cn('rounded-xl px-2 py-0.5 text-xs font-medium', colors.bg, colors.text)}

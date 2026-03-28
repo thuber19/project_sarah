@@ -31,7 +31,7 @@ export function ScoreBadge({ grade, className }: ScoreBadgeProps) {
       role="status"
       aria-label={`Lead score: ${gradeLabels[grade]}`}
       className={cn(
-        'inline-flex rounded-full px-3.5 py-1 text-xs font-semibold',
+        'inline-flex shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-xs font-semibold',
         gradeStyles[grade],
         className,
       )}

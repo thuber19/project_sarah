@@ -103,7 +103,7 @@ export default async function LeadDetailPage({ params }: Props) {
         {/* Header */}
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-foreground lg:text-2xl">
+            <h1 className="truncate text-xl font-bold text-foreground lg:text-2xl">
               {lead.company_name ?? displayName}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 lg:gap-3">
@@ -154,13 +154,13 @@ export default async function LeadDetailPage({ params }: Props) {
                 {score.ai_reasoning && (
                   <div className="mt-4 rounded-lg bg-secondary p-4">
                     <p className="mb-1 text-xs font-medium text-muted-foreground">AI-Begründung</p>
-                    <p className="text-sm text-foreground">{score.ai_reasoning}</p>
+                    <p className="break-words text-sm text-foreground">{score.ai_reasoning}</p>
                   </div>
                 )}
                 {score.recommended_action && (
                   <div className="mt-3 rounded-lg border border-accent/20 bg-accent-light p-3">
                     <p className="mb-0.5 text-xs font-medium text-accent">Empfehlung</p>
-                    <p className="text-sm text-foreground">{score.recommended_action}</p>
+                    <p className="break-words text-sm text-foreground">{score.recommended_action}</p>
                   </div>
                 )}
               </div>
@@ -172,17 +172,17 @@ export default async function LeadDetailPage({ params }: Props) {
             <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
               <h2 className="mb-4 text-base font-semibold text-foreground">Kontaktinformationen</h2>
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{displayName}</span>
+                <div className="flex min-w-0 items-center gap-3">
+                  <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate text-sm text-foreground">{displayName}</span>
                   {lead.job_title && (
-                    <span className="text-sm text-muted-foreground">{lead.job_title}</span>
+                    <span className="truncate text-sm text-muted-foreground">{lead.job_title}</span>
                   )}
                 </div>
                 {lead.email && (
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a href={`mailto:${lead.email}`} className="text-sm text-accent underline">
+                    <a href={`mailto:${lead.email}`} className="truncate text-sm text-accent underline">
                       {lead.email}
                     </a>
                   </div>
@@ -208,7 +208,7 @@ export default async function LeadDetailPage({ params }: Props) {
           <div className="flex w-full flex-col gap-6 lg:w-[340px]">
             <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
               <h2 className="mb-4 text-base font-semibold text-foreground">Unternehmensprofil</h2>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 [&_p]:break-words">
                 {lead.industry && (
                   <div>
                     <p className="text-xs text-muted-foreground">Industrie</p>

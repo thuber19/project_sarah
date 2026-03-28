@@ -124,7 +124,7 @@ export function IcpRefinementWidget() {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground mb-4">{result.summary}</p>
+      <p className="break-words text-xs text-muted-foreground mb-4">{result.summary}</p>
 
       <div className="flex flex-col gap-2">
         {result.suggestions.map((suggestion, i) => (
@@ -143,13 +143,13 @@ export function IcpRefinementWidget() {
                 {suggestion.action === 'add' && <ArrowUpRight className="h-3 w-3 text-green-600" />}
                 {suggestion.action === 'remove' && <ArrowDownRight className="h-3 w-3 text-red-500" />}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 break-words text-xs text-muted-foreground">
                 {actionLabels[suggestion.action]}: <span className="font-medium text-foreground">{suggestion.suggested_value}</span>
                 {suggestion.current_value && suggestion.action === 'replace' && (
                   <> (statt {suggestion.current_value})</>
                 )}
               </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{suggestion.reasoning}</p>
+              <p className="mt-0.5 break-words text-[11px] text-muted-foreground">{suggestion.reasoning}</p>
             </div>
 
             <button

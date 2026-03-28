@@ -180,7 +180,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
           if (msg.role === 'user') {
             return (
               <div key={msg.id} className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm text-white">
+                <div className="min-w-0 max-w-[80%] break-words rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm text-white">
                   {msg.parts
                     .filter((p) => p.type === 'text')
                     .map((p, i) => (
@@ -218,7 +218,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
                           ) : (
                             <CheckCircle className="h-3 w-3 shrink-0 text-success" />
                           )}
-                          <span className="text-xs text-muted-foreground">
+                          <span className="min-w-0 truncate text-xs text-muted-foreground">
                             {TOOL_LABELS[t.toolName] ?? t.toolName}
                           </span>
                         </div>
@@ -229,7 +229,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
 
                 {/* Text response */}
                 {textParts.length > 0 && (
-                  <div className="max-w-[90%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm text-foreground">
+                  <div className="min-w-0 max-w-[90%] break-words rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm text-foreground">
                     {textParts.map((p, i) => (
                       <span key={i} className="whitespace-pre-wrap">
                         {'text' in p ? (p as { text: string }).text : ''}

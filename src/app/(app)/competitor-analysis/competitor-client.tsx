@@ -48,10 +48,10 @@ function CompetitorCard({ analysis }: { analysis: CompetitorAnalysisRow }) {
     <div className="rounded-xl border border-border bg-white p-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">{companyName}</h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-foreground">{companyName}</h3>
           {domain && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{domain}</p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">{domain}</p>
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -96,13 +96,13 @@ function CompetitorCard({ analysis }: { analysis: CompetitorAnalysisRow }) {
               key={i}
               className="rounded-lg bg-score-qualified/5 border border-score-qualified/20 px-3 py-2"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-foreground">{match.technology}</span>
-                <span className="rounded-full bg-score-qualified/10 px-2 py-0.5 text-[10px] font-medium text-score-qualified">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="truncate text-xs font-medium text-foreground">{match.technology}</span>
+                <span className="shrink-0 rounded-full bg-score-qualified/10 px-2 py-0.5 text-[10px] font-medium text-score-qualified">
                   {match.category}
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 break-words text-[11px] text-muted-foreground">
                 Alternativen: {match.competitors.slice(0, 3).join(', ')}
               </p>
             </div>
@@ -112,8 +112,8 @@ function CompetitorCard({ analysis }: { analysis: CompetitorAnalysisRow }) {
 
       {/* AI Summary */}
       {analysis.ai_summary && (
-        <div className="mt-3 rounded-lg bg-secondary p-3">
-          <p className="text-xs text-foreground">{analysis.ai_summary}</p>
+        <div className="mt-3 overflow-hidden rounded-lg bg-secondary p-3">
+          <p className="break-words text-xs text-foreground">{analysis.ai_summary}</p>
         </div>
       )}
 
