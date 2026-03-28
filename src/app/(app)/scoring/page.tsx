@@ -64,9 +64,9 @@ const iconMap = {
 
 const gradeConfig: { grade: Grade; displayGrade: DisplayGrade; range: string; barColor: string }[] =
   [
-    { grade: 'TOP_MATCH', displayGrade: 'TOP_MATCH', range: 'Company ≥70', barColor: 'bg-score-hot' },
-    { grade: 'GOOD_FIT', displayGrade: 'GOOD_FIT', range: 'Company 40-69', barColor: 'bg-score-qualified' },
-    { grade: 'POOR_FIT', displayGrade: 'POOR_FIT', range: 'Company <40', barColor: 'bg-score-poor-fit' },
+    { grade: 'TOP_MATCH', displayGrade: 'TOP_MATCH', range: 'Company ≥60', barColor: 'bg-score-hot' },
+    { grade: 'GOOD_FIT', displayGrade: 'GOOD_FIT', range: 'Company 30-59', barColor: 'bg-score-qualified' },
+    { grade: 'POOR_FIT', displayGrade: 'POOR_FIT', range: 'Company <30', barColor: 'bg-score-poor-fit' },
   ]
 
 export default async function ScoringPage() {

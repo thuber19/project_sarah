@@ -9,8 +9,8 @@ import type { ScoreGrade } from '@/types/lead'
  * Der Person Score ist eine separate Dimension und beeinflusst das Grade NICHT.
  */
 export function getGradeForScore(companyScore: number): ScoreGrade {
-  if (companyScore >= 70) return 'TOP_MATCH'
-  if (companyScore >= 40) return 'GOOD_FIT'
+  if (companyScore >= 60) return 'TOP_MATCH'
+  if (companyScore >= 30) return 'GOOD_FIT'
   return 'POOR_FIT'
 }
 

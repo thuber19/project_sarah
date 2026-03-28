@@ -6,9 +6,9 @@ interface ScoreDistributionProps {
 }
 
 const gradeConfig = [
-  { key: 'TOP_MATCH', label: 'TOP MATCH', range: 'Company ≥70', textColor: 'text-score-hot', barColor: 'bg-score-hot' },
-  { key: 'GOOD_FIT', label: 'GOOD FIT', range: 'Company 40-69', textColor: 'text-score-qualified', barColor: 'bg-score-qualified' },
-  { key: 'POOR_FIT', label: 'POOR FIT', range: 'Company <40', textColor: 'text-score-poor-fit', barColor: 'bg-score-poor-fit' },
+  { key: 'TOP_MATCH', label: 'TOP MATCH', range: 'Company ≥60', textColor: 'text-score-hot', barColor: 'bg-score-hot' },
+  { key: 'GOOD_FIT', label: 'GOOD FIT', range: 'Company 30-59', textColor: 'text-score-qualified', barColor: 'bg-score-qualified' },
+  { key: 'POOR_FIT', label: 'POOR FIT', range: 'Company <30', textColor: 'text-score-poor-fit', barColor: 'bg-score-poor-fit' },
 ]
 
 /** Remap legacy 5-grade counts to the new 3-grade system */

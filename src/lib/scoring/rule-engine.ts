@@ -77,16 +77,20 @@ export interface ICP {
 // ---------------------------------------------------------------------------
 
 function scoreCompanyIndustry(lead: Lead, icp: ICP): number {
-  if (!lead.industry) return 0
+  if (!lead.industry) return 5 // Branche unbekannt — Basispunkte
   const industry = lead.industry.toLowerCase()
-  if (icp.target_industries.some((t) => industry.includes(t.toLowerCase()))) return 25
-  return 0
+  // Exakter ICP-Match
+  if (icp.target_industries.length > 0 && icp.target_industries.some((t) => industry.includes(t.toLowerCase()))) return 25
+  // Branche vorhanden aber kein ICP-Match (oder ICP leer)
+  if (icp.target_industries.length === 0) return 15 // Kein ICP definiert → neutral
+  return 5 // Branche vorhanden, kein Match
 }
 
 function scoreCompanySize(lead: Lead, icp: ICP): number {
-  if (!lead.company_size) return 0
+  if (!lead.company_size) return 5 // Größe unbekannt — Basispunkte
   const sizeScore = COMPANY_SIZE_SCORES[lead.company_size]
-  if (!sizeScore) return 0
+  if (!sizeScore) return 5
+  if (icp.target_company_sizes.length === 0) return Math.min(sizeScore, 15) // Kein ICP → Score aus Tabelle
   const isTarget = icp.target_company_sizes.includes(lead.company_size)
   return isTarget ? 20 : Math.min(Math.round(sizeScore * 1.3), 12)
 }
@@ -99,7 +103,11 @@ function scoreCompanyGeography(lead: Lead, icp: ICP): number {
       score += 15
     } else if (icp.target_countries.some((c) => country.includes(c.toLowerCase()))) {
       score += 12
+    } else {
+      score += 5 // Land vorhanden, kein Match — Basispunkte
     }
+  } else {
+    score += 3 // Land unbekannt — kleine Basispunkte
   }
   if (lead.company_domain) score += 3
   if (lead.company_name) {
@@ -119,6 +127,9 @@ function scoreCompanySignals(lead: Lead): number {
   if (technologies && Array.isArray(technologies) && technologies.length > 0) score += 4
   if (raw.linkedin_url || raw.twitter_url) score += 3
   if (raw.businessModel === 'B2B' || raw.businessModel === 'B2B2C') score += 2
+
+  // Basispunkte wenn Lead überhaupt raw_data hat (enriched)
+  if (Object.keys(raw).length > 0 && score === 0) score += 2
 
   return Math.min(score, 20)
 }
