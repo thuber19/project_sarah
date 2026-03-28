@@ -75,7 +75,7 @@ export default function OnboardingStep1() {
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           disabled={isPending}
           aria-invalid={!!error}
-          aria-describedby={error ? 'url-error' : undefined}
+          aria-describedby={[error ? 'url-error' : null, 'url-help'].filter(Boolean).join(' ')}
         />
         {error && (
           <p id="url-error" role="alert" className="text-sm text-destructive">
@@ -100,7 +100,7 @@ export default function OnboardingStep1() {
         )}
       </button>
 
-      <p className="text-xs text-muted-foreground">Die Analyse dauert ca. 30 Sekunden</p>
+      <p id="url-help" className="text-xs text-muted-foreground">Die Analyse dauert ca. 30 Sekunden</p>
     </div>
   )
 }

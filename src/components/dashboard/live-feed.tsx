@@ -70,7 +70,7 @@ export function LiveFeed() {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col" aria-live="polite" aria-relevant="additions" aria-atomic="false">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

@@ -36,16 +36,6 @@ export const profileSchema = z.object({
   website_url: urlSchema.optional(),
 })
 
-// ICP validation
-export const icpSchema = z.object({
-  industries: z.array(z.string()).min(1, 'Mindestens eine Branche erforderlich'),
-  company_sizes: z.array(z.string()),
-  regions: z.array(z.string()).min(1, 'Mindestens eine Region erforderlich'),
-  job_titles: z.array(z.string()),
-  seniority_levels: z.array(z.string()),
-  tech_stack: z.array(z.string()),
-})
-
 // Discovery form validation
 export const discoveryFormSchema = z.object({
   industries: z.string().min(1, 'Branchen sind erforderlich'),
@@ -62,16 +52,15 @@ export const settingsIcpSchema = z.object({
   regions: z.array(z.string()),
   job_titles: z.array(z.string()),
   seniority_levels: z.array(z.string()),
-  tech_stack: z.array(z.string()),
+  additional_info: z.string().optional(),
 })
 
 // Aliases for clarity
 export const settingsProfileSchema = profileSchema
 
 export type ProfileFormData = z.infer<typeof profileSchema>
-export type IcpFormData = z.infer<typeof icpSchema>
 export type DiscoveryFormData = z.infer<typeof discoveryFormSchema>
 export type OnboardingProfileData = z.infer<typeof onboardingProfileSchema>
 export type OnboardingIcpData = z.infer<typeof onboardingIcpSchema>
 export type SettingsProfileData = ProfileFormData
-export type SettingsIcpData = IcpFormData
+export type SettingsIcpData = z.infer<typeof settingsIcpSchema>

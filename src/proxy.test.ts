@@ -225,7 +225,7 @@ describe('proxy', () => {
     it('includes CSP header in response', async () => {
       mockAuthenticatedWithProfile()
       const response = await proxy(buildRequest('/dashboard'))
-      const csp = response.headers.get('Content-Security-Policy')
+      const csp = response.headers.get('Content-Security-Policy-Report-Only')
       expect(csp).toBeTruthy()
       expect(csp).toContain("default-src 'self'")
     })

@@ -65,7 +65,6 @@ export default function OnboardingStep3() {
   const [regions, setRegions] = useState<Record<string, boolean>>(() =>
     deriveRegions(storedIcp?.regions ?? []),
   )
-  const [techStack, setTechStack] = useState<string[]>([])
   const [scoreThreshold, setScoreThreshold] = useState(60)
 
   function handleNext() {
@@ -142,8 +141,8 @@ export default function OnboardingStep3() {
         </div>
 
         {/* Region */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-foreground">Region</label>
+        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="region-label">
+          <span id="region-label" className="text-sm font-medium text-foreground">Region</span>
           <div className="flex flex-col gap-2.5">
             {Object.entries(regions).map(([region, checked]) => (
               <label key={region} className="flex items-center gap-2 text-sm text-foreground">
@@ -157,33 +156,13 @@ export default function OnboardingStep3() {
           </div>
         </div>
 
-        {/* Technologie-Stack */}
-        <div className="flex flex-col gap-1.5" role="group" aria-labelledby="tech-stack-label">
-          <label id="tech-stack-label" className="text-sm font-medium text-foreground">
-            Technologie-Stack
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
-            {techStack.map((tech) => (
-              <TagPill
-                key={tech}
-                onRemove={() => setTechStack((prev) => prev.filter((t) => t !== tech))}
-              >
-                {tech}
-              </TagPill>
-            ))}
-            <button type="button" className="text-xs text-muted-foreground hover:text-foreground">
-              + hinzufügen
-            </button>
-          </div>
-        </div>
-
         {/* Min. Score Threshold */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <label id="score-threshold-label" className="text-sm font-medium text-foreground">
               Min. Score Threshold
             </label>
-            <span className="text-sm font-medium text-foreground">{scoreThreshold}</span>
+            <span id="score-threshold-value" className="text-sm font-medium text-foreground">{scoreThreshold}</span>
           </div>
           <Slider
             min={0}
@@ -191,6 +170,7 @@ export default function OnboardingStep3() {
             value={[scoreThreshold]}
             onValueChange={(value) => setScoreThreshold(Array.isArray(value) ? value[0] : value)}
             aria-labelledby="score-threshold-label"
+            aria-describedby="score-threshold-value"
           />
         </div>
       </div>

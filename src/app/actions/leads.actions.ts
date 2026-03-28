@@ -25,7 +25,7 @@ export async function getLeadsAction(
 
   const parsed = leadsQuerySchema.safeParse(params)
   if (!parsed.success) {
-    return ok({ leads: [], totalCount: 0 })
+    return fail('VALIDATION_ERROR', 'Ungültige Suchparameter')
   }
 
   const { grade, q, sort, dir, page } = parsed.data

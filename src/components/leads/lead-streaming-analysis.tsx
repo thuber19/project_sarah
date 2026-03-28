@@ -58,7 +58,7 @@ export function LeadStreamingAnalysis({ leadId, hasExistingScore }: LeadStreamin
         </button>
       )}
 
-      <div aria-live="polite">
+      <div aria-live="polite" aria-atomic="false">
         {(data || isLoading) && (
           <div className="mt-4">
             <StreamingScoreBreakdown

@@ -130,7 +130,6 @@ async function runApolloSearch(
     personTitles: string[]
     personSeniorities: string[]
   },
-  userId: string,
 ): Promise<ApolloPerson[]> {
   // Step A: Find matching organizations
   const orgResult = await searchOrganizations({
@@ -212,7 +211,6 @@ export async function runDiscoveryPipeline(
           personTitles: optimizedQuery.apolloParams.personTitles,
           personSeniorities: optimizedQuery.apolloParams.personSeniorities,
         },
-        userId,
       ).catch((error) => {
         console.error('[Discovery] Apollo search failed:', error)
         logAgentAction(

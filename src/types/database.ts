@@ -64,6 +64,7 @@ export type Database = {
           revenue_ranges: string[] | null
           funding_stages: string[] | null
           keywords: string[] | null
+          additional_info: string | null
           created_at: string
           updated_at: string
         }
@@ -80,6 +81,7 @@ export type Database = {
           revenue_ranges?: string[] | null
           funding_stages?: string[] | null
           keywords?: string[] | null
+          additional_info?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -96,6 +98,7 @@ export type Database = {
           revenue_ranges?: string[] | null
           funding_stages?: string[] | null
           keywords?: string[] | null
+          additional_info?: string | null
           created_at?: string
           updated_at?: string
         }

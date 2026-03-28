@@ -3,7 +3,6 @@ import {
   emailSchema,
   urlSchema,
   profileSchema,
-  icpSchema,
   discoveryFormSchema,
   onboardingProfileSchema,
   onboardingIcpSchema,
@@ -160,83 +159,6 @@ describe('profileSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data).toEqual(validProfile)
-    }
-  })
-})
-
-// ---------------------------------------------------------------------------
-// icpSchema
-// ---------------------------------------------------------------------------
-
-describe('icpSchema', () => {
-  const validIcp = {
-    industries: ['SaaS', 'FinTech'],
-    company_sizes: ['10-50', '50-200'],
-    regions: ['DACH'],
-    job_titles: ['CTO'],
-    seniority_levels: ['C-Level'],
-    tech_stack: ['React', 'Node.js'],
-  }
-
-  it('accepts valid ICP with all fields', () => {
-    const result = icpSchema.safeParse(validIcp)
-    expect(result.success).toBe(true)
-  })
-
-  it('requires at least one industry', () => {
-    const result = icpSchema.safeParse({ ...validIcp, industries: [] })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message)
-      expect(messages).toContain('Mindestens eine Branche erforderlich')
-    }
-  })
-
-  it('requires at least one region', () => {
-    const result = icpSchema.safeParse({ ...validIcp, regions: [] })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const messages = result.error.issues.map((i) => i.message)
-      expect(messages).toContain('Mindestens eine Region erforderlich')
-    }
-  })
-
-  it('accepts empty arrays for optional list fields', () => {
-    const result = icpSchema.safeParse({
-      industries: ['SaaS'],
-      company_sizes: [],
-      regions: ['DACH'],
-      job_titles: [],
-      seniority_levels: [],
-      tech_stack: [],
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('rejects missing industries field', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { industries: _industries, ...rest } = validIcp
-    const result = icpSchema.safeParse(rest)
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects missing regions field', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { regions: _regions, ...rest } = validIcp
-    const result = icpSchema.safeParse(rest)
-    expect(result.success).toBe(false)
-  })
-
-  it('rejects non-string items in industries', () => {
-    const result = icpSchema.safeParse({ ...validIcp, industries: [123] })
-    expect(result.success).toBe(false)
-  })
-
-  it('parses output shape correctly', () => {
-    const result = icpSchema.safeParse(validIcp)
-    expect(result.success).toBe(true)
-    if (result.success) {
-      expect(result.data).toEqual(validIcp)
     }
   })
 })

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { calculateRuleScore, totalFromBreakdown, type ICP } from '@/lib/scoring/rule-engine'
-import { getGradeForScore, type Lead } from '@/types/lead'
+import type { Lead } from '@/types/lead'
+import { getGradeForScore } from '@/lib/scoring/grade'
 import { getAIScoring } from '@/lib/scoring/ai-scoring'
 import { logAgentAction } from '@/lib/agent-log'
 

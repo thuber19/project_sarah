@@ -87,22 +87,23 @@ export async function startDiscoveryAction(
 ): Promise<ApiResponse<DiscoveryResult>> {
   const { user, supabase } = await requireAuth()
 
-  // Fetch business profile + ICP
-  const { data: profile } = await supabase
-    .from('business_profiles')
-    .select(
-      'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, created_at, updated_at',
-    )
-    .eq('user_id', user.id)
-    .single()
-
-  const { data: icpData } = await supabase
-    .from('icp_profiles')
-    .select(
-      'id, user_id, business_profile_id, industries, company_sizes, regions, job_titles, seniority_levels, tech_stack, revenue_ranges, funding_stages, keywords, created_at, updated_at',
-    )
-    .eq('user_id', user.id)
-    .single()
+  // Fetch business profile + ICP in parallel (independent queries)
+  const [{ data: profile }, { data: icpData }] = await Promise.all([
+    supabase
+      .from('business_profiles')
+      .select(
+        'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, created_at, updated_at',
+      )
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('icp_profiles')
+      .select(
+        'id, user_id, business_profile_id, industries, company_sizes, regions, job_titles, seniority_levels, tech_stack, revenue_ranges, funding_stages, keywords, created_at, updated_at',
+      )
+      .eq('user_id', user.id)
+      .single(),
+  ])
 
   // Create campaign
   const { data: campaign, error: campaignError } = await supabase

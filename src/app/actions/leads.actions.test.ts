@@ -16,63 +16,43 @@ vi.mock('next/navigation', () => ({
 
 import { getLeadsAction } from './leads.actions'
 import { requireAuth } from '@/lib/supabase/server'
+import {
+  createMockQueryBuilder,
+  createMockSupabaseClient,
+  TEST_USER,
+  assertSuccess,
+} from '@/lib/testing'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const TEST_USER = { id: 'user-123', email: 'test@example.com' }
-
 /**
- * Build a chainable mock that mirrors the Supabase PostgREST query builder.
+ * Sets up a mock Supabase client and wires it into requireAuth().
  *
- * Every method returns `this` (chainable) except the terminal `.range()` which
- * resolves with `{ data, count, error }`.
+ * Uses the shared `createMockQueryBuilder` and `createMockSupabaseClient`,
+ * then overrides `range` to be a terminal resolver (the leads query ends with
+ * `.range()` which must resolve the PostgREST response).
  */
-function createMockQuery(
-  data: unknown[] = [],
-  count: number = 0,
-  error: null | { message: string } = null,
-) {
-  const query = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    or: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    range: vi.fn().mockResolvedValue({ data, count, error }),
-  }
-  return query
-}
-
-function createMockSupabase(
-  data: unknown[] = [],
-  count: number = 0,
-  error: null | { message: string } = null,
-) {
-  const query = createMockQuery(data, count, error)
-  return {
-    supabase: { from: vi.fn().mockReturnValue(query) },
-    query,
-  }
-}
-
 function mockAuth(
   data: unknown[] = [],
   count: number = 0,
   error: null | { message: string } = null,
 ) {
-  const { supabase, query } = createMockSupabase(data, count, error)
+  const queryBuilder = createMockQueryBuilder({ data, error, count })
+
+  // In the leads action, `.range()` is the terminal call that resolves
+  // the query — override the default chainable behavior.
+  queryBuilder.range.mockResolvedValue({ data, count, error })
+
+  const supabase = createMockSupabaseClient(queryBuilder)
+
   vi.mocked(requireAuth).mockResolvedValue({
     user: TEST_USER as never,
     supabase: supabase as never,
   })
-  return { supabase, query }
-}
 
-/** Unwrap a successful ApiResponse or fail the test */
-function unwrap<T>(result: { success: boolean; data?: T; error?: unknown }): T {
-  expect(result.success).toBe(true)
-  return (result as { success: true; data: T }).data
+  return { supabase, query: queryBuilder }
 }
 
 // ---------------------------------------------------------------------------
@@ -113,28 +93,40 @@ describe('getLeadsAction', () => {
       expect(query.range).toHaveBeenCalledWith(0, 19)
     })
 
-    it('should return empty result for invalid grade value', async () => {
+    it('should return validation error for invalid grade value', async () => {
       mockAuth()
       const result = await getLeadsAction({ grade: 'INVALID_GRADE' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
-    it('should return empty result for negative page number', async () => {
+    it('should return validation error for negative page number', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: '-1' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
-    it('should return empty result for page 0', async () => {
+    it('should return validation error for page 0', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: '0' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
-    it('should return empty result for non-numeric page', async () => {
+    it('should return validation error for non-numeric page', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: 'abc' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
     it('should accept valid params', async () => {
@@ -151,11 +143,14 @@ describe('getLeadsAction', () => {
       expect(query.select).toHaveBeenCalled()
     })
 
-    it('should reject q longer than 100 chars', async () => {
+    it('should return validation error for q longer than 100 chars', async () => {
       mockAuth()
       const longQ = 'a'.repeat(101)
       const result = await getLeadsAction({ q: longQ })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
     it('should accept q at exactly 100 chars', async () => {
@@ -165,16 +160,22 @@ describe('getLeadsAction', () => {
       expect(query.select).toHaveBeenCalled()
     })
 
-    it('should reject invalid sort field', async () => {
+    it('should return validation error for invalid sort field', async () => {
       mockAuth()
       const result = await getLeadsAction({ sort: 'nonexistent_column' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
 
-    it('should reject invalid dir value', async () => {
+    it('should return validation error for invalid dir value', async () => {
       mockAuth()
       const result = await getLeadsAction({ dir: 'sideways' })
-      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Suchparameter' },
+      })
     })
   })
 
@@ -360,7 +361,7 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
-      const data = unwrap(result)
+      const data = assertSuccess(result)
 
       expect(data.leads).toHaveLength(1)
       expect(data.leads[0]).toEqual({
@@ -390,7 +391,7 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
-      const data = unwrap(result)
+      const data = assertSuccess(result)
 
       expect(data.leads[0]).toMatchObject({
         total_score: 92,
@@ -412,7 +413,7 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
-      const data = unwrap(result)
+      const data = assertSuccess(result)
 
       expect(data.leads[0]).toEqual({
         id: 'lead-3',
@@ -441,7 +442,7 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
-      const data = unwrap(result)
+      const data = assertSuccess(result)
 
       expect(data.leads[0]).toMatchObject({
         total_score: null,
@@ -453,7 +454,7 @@ describe('getLeadsAction', () => {
       mockAuth([], 42)
       const result = await getLeadsAction({})
 
-      expect(unwrap(result).totalCount).toBe(42)
+      expect(assertSuccess(result).totalCount).toBe(42)
     })
 
     it('should return totalCount 0 when count is null', async () => {
@@ -461,7 +462,7 @@ describe('getLeadsAction', () => {
       query.range.mockResolvedValue({ data: [], count: null, error: null })
 
       const result = await getLeadsAction({})
-      expect(unwrap(result).totalCount).toBe(0)
+      expect(assertSuccess(result).totalCount).toBe(0)
     })
 
     it('should return empty result on query error', async () => {
@@ -479,7 +480,7 @@ describe('getLeadsAction', () => {
       query.range.mockResolvedValue({ data: null, count: 0, error: null })
 
       const result = await getLeadsAction({})
-      expect(unwrap(result).leads).toEqual([])
+      expect(assertSuccess(result).leads).toEqual([])
     })
 
     it('should map multiple rows correctly', async () => {
@@ -508,7 +509,7 @@ describe('getLeadsAction', () => {
 
       mockAuth(rows, 2)
       const result = await getLeadsAction({})
-      const data = unwrap(result)
+      const data = assertSuccess(result)
 
       expect(data.leads).toHaveLength(2)
       expect(data.leads[0]!.id).toBe('a')

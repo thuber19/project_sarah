@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTransition } from 'react'
 import {
-  Bot,
   LayoutDashboard,
   Users,
   Compass,
@@ -14,6 +13,7 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
+import { Logo } from '@/components/shared/logo'
 import { signOutAction } from '@/app/actions/auth.actions'
 
 const navItems = [
@@ -46,9 +46,8 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
     <aside className="flex h-full w-60 shrink-0 flex-col justify-between bg-sidebar px-4 py-6">
       {/* Top: Logo + Navigation */}
       <div>
-        <div className="flex items-center gap-2.5 px-3 pb-8">
-          <Bot className="size-6 text-accent" aria-hidden="true" />
-          <span className="text-lg font-bold text-white">Sarah</span>
+        <div className="px-3 pb-8">
+          <Logo size="sm" textClassName="font-bold text-white" />
         </div>
 
         <nav aria-label="Hauptnavigation">
@@ -59,7 +58,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
                 <li key={href}>
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    className={`flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-sidebar-accent text-sidebar-foreground'
                         : 'text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
@@ -94,7 +93,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
           type="button"
           onClick={handleSignOut}
           disabled={isPending}
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
+          className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground disabled:opacity-50"
           aria-label="Abmelden"
           title="Abmelden"
         >
@@ -106,13 +105,13 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
       <div className="flex gap-3 px-2 pb-1">
         <Link
           href="/impressum"
-          className="text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          className="min-h-12 flex items-center text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
         >
           Impressum
         </Link>
         <Link
           href="/datenschutz"
-          className="text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          className="min-h-12 flex items-center text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors"
         >
           Datenschutz
         </Link>

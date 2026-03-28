@@ -74,7 +74,14 @@ export function StreamingScoreBreakdown({
             </span>
             <span className="text-xs font-semibold text-accent">{Math.round(progress)}%</span>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-secondary">
+          <div
+            className="h-1.5 w-full rounded-full bg-secondary"
+            role="progressbar"
+            aria-valuenow={Math.round(progress)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`AI-Analyse-Fortschritt: ${Math.round(progress)}% abgeschlossen`}
+          >
             <div
               className="h-1.5 rounded-full bg-accent transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}

@@ -33,7 +33,7 @@ export async function loadSettingsData(): Promise<ApiResponse<SettingsData>> {
     supabase
       .from('icp_profiles')
       .select(
-        'id, user_id, business_profile_id, job_titles, seniority_levels, industries, company_sizes, regions, tech_stack, revenue_ranges, funding_stages, keywords, created_at, updated_at',
+        'id, user_id, business_profile_id, job_titles, seniority_levels, industries, company_sizes, regions, tech_stack, revenue_ranges, funding_stages, keywords, additional_info, created_at, updated_at',
       )
       .eq('user_id', user.id)
       .single(),
@@ -82,7 +82,7 @@ export async function updateIcpAction(data: SettingsIcpData): Promise<ApiRespons
       regions: parsed.data.regions,
       job_titles: parsed.data.job_titles,
       seniority_levels: parsed.data.seniority_levels,
-      tech_stack: parsed.data.tech_stack,
+      additional_info: parsed.data.additional_info ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', user.id)

@@ -58,7 +58,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [icpRegions, setIcpRegions] = useState(toCommaStr(icp?.regions))
   const [icpJobTitles, setIcpJobTitles] = useState(toCommaStr(icp?.job_titles))
   const [icpSeniority, setIcpSeniority] = useState(toCommaStr(icp?.seniority_levels))
-  const [icpTechStack, setIcpTechStack] = useState(toCommaStr(icp?.tech_stack))
+  const [icpAdditionalInfo, setIcpAdditionalInfo] = useState(icp?.additional_info ?? '')
 
   function handleSave() {
     setFieldErrors({})
@@ -102,7 +102,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
           regions: fromCommaStr(icpRegions),
           job_titles: fromCommaStr(icpJobTitles),
           seniority_levels: fromCommaStr(icpSeniority),
-          tech_stack: fromCommaStr(icpTechStack),
+          additional_info: icpAdditionalInfo || undefined,
         }
         const icpResult = await updateIcpAction(icpData)
         if (!icpResult.success) {
@@ -282,42 +282,35 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       label: 'Branchen',
                       value: icpIndustries,
                       onChange: setIcpIndustries,
-                      placeholder: 'z. B. SaaS, FinTech, E-Commerce',
+                      placeholder: 'z. B. SaaS, FinTech, E-Commerce, Beratung',
                     },
                     {
                       id: 'icp-sizes',
                       label: 'Unternehmensgrößen',
                       value: icpSizes,
                       onChange: setIcpSizes,
-                      placeholder: 'z. B. 10-50, 51-200',
+                      placeholder: 'z. B. 11-50, 51-200, 201-500',
                     },
                     {
                       id: 'icp-regions',
                       label: 'Regionen',
                       value: icpRegions,
                       onChange: setIcpRegions,
-                      placeholder: 'z. B. Österreich, Deutschland, Schweiz',
+                      placeholder: 'z. B. Österreich, Deutschland, Schweiz, DACH',
                     },
                     {
                       id: 'icp-job-titles',
                       label: 'Job-Titel',
                       value: icpJobTitles,
                       onChange: setIcpJobTitles,
-                      placeholder: 'z. B. CEO, CTO, Head of Sales',
+                      placeholder: 'z. B. Geschäftsführer, Head of Sales, CTO',
                     },
                     {
                       id: 'icp-seniority',
                       label: 'Seniority-Level',
                       value: icpSeniority,
                       onChange: setIcpSeniority,
-                      placeholder: 'z. B. c_suite, vp, director',
-                    },
-                    {
-                      id: 'icp-tech',
-                      label: 'Technologien',
-                      value: icpTechStack,
-                      onChange: setIcpTechStack,
-                      placeholder: 'z. B. React, Python, AWS',
+                      placeholder: 'z. B. c_suite, vp, director, manager',
                     },
                   ].map(({ id, label, value, onChange, placeholder }) => (
                     <div key={id} className="flex flex-col gap-1.5">
@@ -330,6 +323,18 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                       />
                     </div>
                   ))}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="icp-additional-info">Zusätzliche Informationen</Label>
+                  <textarea
+                    id="icp-additional-info"
+                    value={icpAdditionalInfo}
+                    onChange={(e) => setIcpAdditionalInfo(e.target.value)}
+                    placeholder="z. B. kein Franchise, mind. 2 Jahre am Markt, eigene Website vorhanden"
+                    rows={3}
+                    className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
                 </div>
 
                 <p className="text-xs text-muted-foreground">

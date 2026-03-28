@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { ApolloPerson } from '@/lib/apollo/types'
+import type { ApolloOrganization } from '@/lib/apollo/types'
 import type { OptimizedQuery } from '@/lib/ai/optimize-query'
 
 // ---------------------------------------------------------------------------
@@ -25,8 +25,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 vi.mock('@/lib/apollo/client', () => ({
-  searchPeople: vi.fn(),
-  enrichPerson: vi.fn(),
+  searchOrganizations: vi.fn(),
 }))
 
 vi.mock('@/lib/google-places/client', () => ({
@@ -57,7 +56,7 @@ vi.mock('next/headers', () => ({
 // ---------------------------------------------------------------------------
 
 import { requireAuth } from '@/lib/supabase/server'
-import { searchPeople, enrichPerson } from '@/lib/apollo/client'
+import { searchOrganizations } from '@/lib/apollo/client'
 import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
 import {
@@ -70,39 +69,26 @@ import {
 // Test fixtures
 // ---------------------------------------------------------------------------
 
-function makeApolloPerson(overrides: Partial<ApolloPerson> = {}): ApolloPerson {
+function makeApolloOrg(overrides: Partial<ApolloOrganization> = {}): ApolloOrganization {
   return {
-    id: 'apollo-1',
-    first_name: 'Max',
-    last_name: 'Mustermann',
-    name: 'Max Mustermann',
-    title: 'CTO',
-    seniority: 'c_suite',
-    email: 'max@example.com',
-    email_status: 'verified',
-    phone_numbers: [{ raw_number: '+4312345678', sanitized_number: '+4312345678', type: 'work' }],
-    linkedin_url: 'https://linkedin.com/in/max',
-    organization_id: 'org-1',
-    organization: {
-      id: 'org-1',
-      name: 'TechCorp GmbH',
-      website_url: 'https://techcorp.at',
-      industry: 'Software',
-      estimated_num_employees: 75,
-      annual_revenue: null,
-      annual_revenue_printed: null,
-      country: 'Austria',
-      city: 'Wien',
-      state: null,
-      linkedin_url: null,
-      twitter_url: 'https://twitter.com/techcorp',
-      founded_year: 2018,
-      total_funding: 5000000,
-      total_funding_printed: '5M',
-      latest_funding_round_type: 'Series A',
-      technologies: ['React', 'TypeScript'],
-      keywords: ['SaaS', 'B2B'],
-    },
+    id: 'org-1',
+    name: 'TechCorp GmbH',
+    website_url: 'https://techcorp.at',
+    industry: 'Software',
+    estimated_num_employees: 75,
+    annual_revenue: null,
+    annual_revenue_printed: null,
+    country: 'Austria',
+    city: 'Wien',
+    state: null,
+    linkedin_url: 'https://linkedin.com/company/techcorp',
+    twitter_url: 'https://twitter.com/techcorp',
+    founded_year: 2018,
+    total_funding: 5000000,
+    total_funding_printed: '5M',
+    latest_funding_round_type: 'Series A',
+    technologies: ['React', 'TypeScript'],
+    keywords: ['SaaS', 'B2B'],
     ...overrides,
   }
 }
@@ -227,12 +213,7 @@ describe('discovery.actions', () => {
     ]
 
     it.each(sizeTestCases)('maps %d employees to "%s"', async (employeeCount, expectedSize) => {
-      const person = makeApolloPerson({
-        organization: {
-          ...makeApolloPerson().organization!,
-          estimated_num_employees: employeeCount,
-        },
-      })
+      const org = makeApolloOrg({ estimated_num_employees: employeeCount })
 
       // Set up the full pipeline mocks needed by startDiscoveryAction
       const campaignChain = createQueryChain({ id: 'camp-1' })
@@ -261,8 +242,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [person],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [org],
         pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -277,11 +258,11 @@ describe('discovery.actions', () => {
   })
 
   // =========================================================================
-  // apolloPersonToLead (tested indirectly via startDiscoveryAction)
+  // apolloOrgToLead (tested indirectly via startDiscoveryAction)
   // =========================================================================
 
-  describe('apolloPersonToLead (via startDiscoveryAction)', () => {
-    async function runWithPerson(person: ApolloPerson) {
+  describe('apolloOrgToLead (via startDiscoveryAction)', () => {
+    async function runWithOrg(org: ApolloOrganization) {
       const campaignChain = createQueryChain({ id: 'camp-1' })
       const profileChain = createQueryChain(null)
       const icpChain = createQueryChain(null)
@@ -308,8 +289,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [person],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [org],
         pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -319,22 +300,22 @@ describe('discovery.actions', () => {
       return insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
     }
 
-    it('maps all Apollo person fields to lead format', async () => {
-      const person = makeApolloPerson()
-      const leads = await runWithPerson(person)
+    it('maps all Apollo org fields to lead format', async () => {
+      const org = makeApolloOrg()
+      const leads = await runWithOrg(org)
 
       expect(leads).toHaveLength(1)
       const lead = leads[0]!
       expect(lead).toMatchObject({
         user_id: 'user-1',
         campaign_id: 'camp-1',
-        first_name: 'Max',
-        last_name: 'Mustermann',
-        full_name: 'Max Mustermann',
-        email: 'max@example.com',
-        linkedin_url: 'https://linkedin.com/in/max',
-        job_title: 'CTO',
-        seniority: 'c_suite',
+        first_name: null,
+        last_name: null,
+        full_name: null,
+        email: null,
+        linkedin_url: 'https://linkedin.com/company/techcorp',
+        job_title: null,
+        seniority: null,
         company_name: 'TechCorp GmbH',
         company_domain: 'https://techcorp.at',
         industry: 'Software',
@@ -342,48 +323,39 @@ describe('discovery.actions', () => {
         country: 'Austria',
         location: 'Wien, Austria',
         source: 'apollo',
-        apollo_id: 'apollo-1',
+        apollo_id: 'org-1',
       })
     })
 
-    it('constructs full_name from first + last name', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({ first_name: 'Anna', last_name: 'Schmidt' }),
-      )
-      expect(leads[0]?.full_name).toBe('Anna Schmidt')
-    })
-
-    it('handles missing first name in full_name', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({ first_name: null, last_name: 'Schmidt' }),
-      )
-      expect(leads[0]?.full_name).toBe('Schmidt')
-    })
-
-    it('handles missing last name in full_name', async () => {
-      const leads = await runWithPerson(makeApolloPerson({ first_name: 'Anna', last_name: null }))
-      expect(leads[0]?.full_name).toBe('Anna')
-    })
-
-    it('returns null full_name when both names are null', async () => {
-      const leads = await runWithPerson(makeApolloPerson({ first_name: null, last_name: null }))
-      expect(leads[0]?.full_name).toBeNull()
-    })
-
-    it('handles person without organization', async () => {
-      const leads = await runWithPerson(makeApolloPerson({ organization: null }))
+    it('sets person fields to null for org-only leads', async () => {
+      const leads = await runWithOrg(makeApolloOrg())
       const lead = leads[0]!
-      expect(lead.company_name).toBeNull()
-      expect(lead.company_domain).toBeNull()
-      expect(lead.industry).toBeNull()
-      expect(lead.company_size).toBeNull()
-      expect(lead.country).toBeNull()
-      expect(lead.location).toBeNull()
+      expect(lead.first_name).toBeNull()
+      expect(lead.last_name).toBeNull()
+      expect(lead.full_name).toBeNull()
+      expect(lead.email).toBeNull()
+      expect(lead.job_title).toBeNull()
+      expect(lead.seniority).toBeNull()
+    })
+
+    it('handles org with null name', async () => {
+      const leads = await runWithOrg(makeApolloOrg({ name: null }))
+      expect(leads[0]?.company_name).toBeNull()
+    })
+
+    it('handles org with null website_url', async () => {
+      const leads = await runWithOrg(makeApolloOrg({ website_url: null }))
+      expect(leads[0]?.company_domain).toBeNull()
+    })
+
+    it('handles org with null industry', async () => {
+      const leads = await runWithOrg(makeApolloOrg({ industry: null }))
+      expect(leads[0]?.industry).toBeNull()
     })
 
     it('includes raw_data with org metadata', async () => {
-      const person = makeApolloPerson()
-      const leads = await runWithPerson(person)
+      const org = makeApolloOrg()
+      const leads = await runWithOrg(org)
       const raw = leads[0]?.raw_data as Record<string, unknown>
 
       expect(raw).toMatchObject({
@@ -395,64 +367,23 @@ describe('discovery.actions', () => {
       })
     })
 
-    it('includes phone_numbers in raw_data', async () => {
-      const person = makeApolloPerson()
-      const leads = await runWithPerson(person)
-      const raw = leads[0]?.raw_data as Record<string, unknown>
-
-      expect(raw.phone_numbers).toEqual([
-        { raw_number: '+4312345678', sanitized_number: '+4312345678', type: 'work' },
-      ])
-    })
-
     it('handles null company_size when estimated_num_employees is null', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({
-          organization: {
-            ...makeApolloPerson().organization!,
-            estimated_num_employees: null,
-          },
-        }),
-      )
+      const leads = await runWithOrg(makeApolloOrg({ estimated_num_employees: null }))
       expect(leads[0]?.company_size).toBeNull()
     })
 
     it('builds location from city and country', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({
-          organization: {
-            ...makeApolloPerson().organization!,
-            city: 'Graz',
-            country: 'Austria',
-          },
-        }),
-      )
+      const leads = await runWithOrg(makeApolloOrg({ city: 'Graz', country: 'Austria' }))
       expect(leads[0]?.location).toBe('Graz, Austria')
     })
 
     it('handles location with city but no country', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({
-          organization: {
-            ...makeApolloPerson().organization!,
-            city: 'Graz',
-            country: null,
-          },
-        }),
-      )
+      const leads = await runWithOrg(makeApolloOrg({ city: 'Graz', country: null }))
       expect(leads[0]?.location).toBe('Graz,')
     })
 
     it('returns null location when city is null', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({
-          organization: {
-            ...makeApolloPerson().organization!,
-            city: null,
-            country: 'Austria',
-          },
-        }),
-      )
+      const leads = await runWithOrg(makeApolloOrg({ city: null, country: 'Austria' }))
       expect(leads[0]?.location).toBeNull()
     })
   })
@@ -539,8 +470,8 @@ describe('discovery.actions', () => {
     it('calls requireAuth before any other work', async () => {
       setupFullPipelineMocks()
       vi.mocked(optimizeSearchQuery).mockResolvedValue(makeOptimizedQuery())
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [],
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -555,8 +486,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [makeApolloPerson()],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [makeApolloOrg()],
         pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -571,8 +502,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [],
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -592,7 +523,7 @@ describe('discovery.actions', () => {
     it('continues with Google Places when Apollo fails', async () => {
       const { logChain } = setupFullPipelineMocks()
       vi.mocked(optimizeSearchQuery).mockResolvedValue(makeOptimizedQuery())
-      vi.mocked(searchPeople).mockRejectedValue(new Error('Apollo API error 500'))
+      vi.mocked(searchOrganizations).mockRejectedValue(new Error('Apollo API error 500'))
       vi.mocked(textSearch).mockResolvedValue({
         places: [
           {
@@ -636,8 +567,8 @@ describe('discovery.actions', () => {
           googlePlacesQueries: [{ query: 'SaaS Wien', region: 'at' }],
         }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [],
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({
@@ -683,73 +614,69 @@ describe('discovery.actions', () => {
       })
     })
 
-    it('enriches Apollo people who lack email', async () => {
-      setupFullPipelineMocks()
-      const personWithoutEmail = makeApolloPerson({ email: null })
-      const enrichedPerson = makeApolloPerson({ email: 'enriched@example.com' })
+    it('handles multiple Apollo organizations', async () => {
+      const { insertChain } = setupFullPipelineMocks()
+      const org1 = makeApolloOrg({ id: 'org-1', name: 'TechCorp GmbH' })
+      const org2 = makeApolloOrg({ id: 'org-2', name: 'DataHub AG' })
 
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [personWithoutEmail],
-        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-      })
-      vi.mocked(enrichPerson).mockResolvedValue({ person: enrichedPerson })
-      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
-
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
-
-      expect(enrichPerson).toHaveBeenCalledOnce()
-      expect(enrichPerson).toHaveBeenCalledWith({
-        first_name: 'Max',
-        last_name: 'Mustermann',
-        domain: 'https://techcorp.at',
-        linkedin_url: 'https://linkedin.com/in/max',
-      })
-    })
-
-    it('skips enrichment for people who already have email', async () => {
-      setupFullPipelineMocks()
-      const personWithEmail = makeApolloPerson({ email: 'existing@example.com' })
-
-      vi.mocked(optimizeSearchQuery).mockResolvedValue(
-        makeOptimizedQuery({ googlePlacesQueries: [] }),
-      )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [personWithEmail],
-        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-      })
-      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
-
-      await startDiscoveryAction(DEFAULT_FORM_DATA)
-
-      expect(enrichPerson).not.toHaveBeenCalled()
-    })
-
-    it('continues when enrichment fails for a person', async () => {
-      setupFullPipelineMocks()
-      const person1 = makeApolloPerson({ id: 'p1', email: null })
-      const person2 = makeApolloPerson({ id: 'p2', email: null, first_name: 'Lisa' })
-
-      vi.mocked(optimizeSearchQuery).mockResolvedValue(
-        makeOptimizedQuery({ googlePlacesQueries: [] }),
-      )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [person1, person2],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [org1, org2],
         pagination: { page: 1, per_page: 25, total_entries: 2, total_pages: 1 },
       })
-      vi.mocked(enrichPerson)
-        .mockRejectedValueOnce(new Error('Enrichment failed'))
-        .mockResolvedValueOnce({
-          person: makeApolloPerson({ id: 'p2', email: 'lisa@example.com' }),
-        })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      // Should still succeed — enrichment failures are non-fatal
       expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 2 } })
+      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
+        Record<string, unknown>
+      >
+      expect(insertedLeads).toHaveLength(2)
+      expect(insertedLeads[0]?.company_name).toBe('TechCorp GmbH')
+      expect(insertedLeads[1]?.company_name).toBe('DataHub AG')
+    })
+
+    it('sets apollo_id from organization id', async () => {
+      const { insertChain } = setupFullPipelineMocks()
+
+      vi.mocked(optimizeSearchQuery).mockResolvedValue(
+        makeOptimizedQuery({ googlePlacesQueries: [] }),
+      )
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [makeApolloOrg({ id: 'unique-org-id' })],
+        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
+      })
+      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
+
+      await startDiscoveryAction(DEFAULT_FORM_DATA)
+
+      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
+        Record<string, unknown>
+      >
+      expect(insertedLeads[0]?.apollo_id).toBe('unique-org-id')
+    })
+
+    it('maps linkedin_url from organization', async () => {
+      const { insertChain } = setupFullPipelineMocks()
+
+      vi.mocked(optimizeSearchQuery).mockResolvedValue(
+        makeOptimizedQuery({ googlePlacesQueries: [] }),
+      )
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [makeApolloOrg({ linkedin_url: 'https://linkedin.com/company/test' })],
+        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
+      })
+      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
+
+      await startDiscoveryAction(DEFAULT_FORM_DATA)
+
+      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
+        Record<string, unknown>
+      >
+      expect(insertedLeads[0]?.linkedin_url).toBe('https://linkedin.com/company/test')
     })
 
     it('does not insert leads when none are found', async () => {
@@ -757,8 +684,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [],
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -775,8 +702,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [makeApolloPerson()],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [makeApolloOrg()],
         pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -794,8 +721,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [makeApolloPerson()],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [makeApolloOrg()],
         pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
@@ -812,8 +739,8 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(
         makeOptimizedQuery({ googlePlacesQueries: [] }),
       )
-      vi.mocked(searchPeople).mockResolvedValue({
-        people: [],
+      vi.mocked(searchOrganizations).mockResolvedValue({
+        organizations: [],
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })

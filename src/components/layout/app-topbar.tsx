@@ -22,14 +22,15 @@ export function AppTopbar({ title, actions, initials = 'BG' }: AppTopbarProps) {
           <input
             type="text"
             placeholder="Suchen..."
-            className="h-9 w-64 rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Leads durchsuchen"
+            className="min-h-12 w-64 rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
         <NotificationBell />
 
         <div
-          className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-white"
+          className="flex min-h-12 min-w-12 items-center justify-center rounded-full bg-accent text-xs font-medium text-white"
           aria-label="Benutzermenü"
         >
           {initials}

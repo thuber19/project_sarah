@@ -1,7 +1,8 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { calculateRuleScore, totalFromBreakdown } from '@/lib/scoring/rule-engine'
-import { getGradeForScore, type Lead } from '@/types/lead'
+import type { Lead } from '@/types/lead'
+import { getGradeForScore } from '@/lib/scoring/grade'
 import type { ICP } from '@/lib/scoring/rule-engine'
 import { logToolAction, type ToolContext } from './context'
 
