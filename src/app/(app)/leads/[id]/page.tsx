@@ -49,8 +49,8 @@ export default async function LeadDetailPage({ params }: Props) {
         .limit(5)
     : { data: [] }
 
-  const displayName =
-    lead.full_name ?? [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unbekannt'
+  const joinedName = [lead.first_name, lead.last_name].filter(Boolean).join(' ')
+  const displayName = (lead.full_name ?? joinedName) || 'Unbekannt'
   const grade = (score?.grade ?? null) as Grade | null
 
   const scoreColor =
