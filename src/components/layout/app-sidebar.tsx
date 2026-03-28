@@ -102,6 +102,16 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
           <LogOut className="size-4" />
         </button>
       </div>
+
+      {/* Legal links */}
+      <div className="flex gap-3 px-2 pb-1">
+        <Link href="/impressum" className="text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors">
+          Impressum
+        </Link>
+        <Link href="/datenschutz" className="text-[10px] text-sidebar-muted hover:text-sidebar-foreground transition-colors">
+          Datenschutz
+        </Link>
+      </div>
     </aside>
   );
 }
