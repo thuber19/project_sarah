@@ -1,0 +1,55 @@
+'use server'
+
+import { requireAuth } from '@/lib/supabase/server'
+import { ok, fail, type ApiResponse } from '@/lib/api-response'
+
+export interface NotificationEntry {
+  id: string
+  message: string
+  relativeTime: string
+  dotColor: 'bg-success' | 'bg-accent' | 'bg-destructive'
+}
+
+function relativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'gerade eben'
+  if (minutes < 60) return `vor ${minutes} Min.`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `vor ${hours} Std.`
+  return `vor ${Math.floor(hours / 24)} Tagen`
+}
+
+function dotColor(actionType: string): NotificationEntry['dotColor'] {
+  if (actionType === 'campaign_failed') return 'bg-destructive'
+  if (actionType === 'lead_scored' || actionType === 'campaign_completed') return 'bg-success'
+  return 'bg-accent'
+}
+
+export async function getRecentNotificationsAction(): Promise<
+  ApiResponse<NotificationEntry[]>
+> {
+  try {
+    const { supabase, user } = await requireAuth()
+
+    const { data, error } = await supabase
+      .from('agent_logs')
+      .select('id, action_type, message, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(6)
+
+    if (error) return fail('INTERNAL_ERROR', 'Benachrichtigungen konnten nicht geladen werden')
+
+    const notifications: NotificationEntry[] = (data ?? []).map((log) => ({
+      id: log.id,
+      message: log.message,
+      relativeTime: relativeTime(log.created_at),
+      dotColor: dotColor(log.action_type),
+    }))
+
+    return ok(notifications)
+  } catch {
+    return fail('INTERNAL_ERROR', 'Benachrichtigungen konnten nicht geladen werden')
+  }
+}
