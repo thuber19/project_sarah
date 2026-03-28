@@ -47,6 +47,17 @@ paths:
 - Test both paths explicitly: verify `success` boolean, `data` shape on success, `error` message on failure.
 - Use Zod schema validation on response: `expect(() => ResponseSchema.parse(result)).not.toThrow()`.
 
+### Project Test Utilities
+- Use `src/lib/testing/` for project-specific mock helpers:
+  - `createMockQueryBuilder(resolvedValue)` — chainable Supabase query mock
+  - `createMockSupabaseClient(queryBuilder)` — wraps in `.from()` mock
+  - `TEST_USER` — standard test user object
+  - `mockRequireAuth(supabaseClient)` — creates requireAuth mock
+  - `assertSuccess<T>(result)` — unwraps successful ApiResponse, throws on failure
+  - `assertFail(result)` — asserts failure, returns error object
+- Import: `import { createMockQueryBuilder, TEST_USER, assertSuccess } from '@/lib/testing'`
+- All new server action tests SHOULD use these shared helpers instead of inline mock setup.
+
 ### Testing Zod Validation
 - Test with valid inputs (happy path).
 - Test with missing required fields: expect `{ success: false, error: 'Validation failed' }`.

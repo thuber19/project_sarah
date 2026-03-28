@@ -51,3 +51,10 @@ All data pages use `EmptyState` from `src/components/shared/empty-state.tsx`:
 - Never use `font-family: Inter` directly — use `font-sans` class
 - Score colors MUST use `--score-*` tokens, not semantic red/orange/yellow
 - shadcn/ui `Button` uses `@base-ui/react` — no `asChild` prop available. Use `Link` with Tailwind classes for link-as-button patterns.
+
+## Pencil Design File Sync
+- Design tokens are synced from `globals.css` to `sarahdesign.pen` via Pencil MCP `set_variables()`.
+- 53 CSS custom properties are mapped (core palette, surfaces, score colors, sidebar theme, charts).
+- Pencil frames reference tokens via `$--variable-name` syntax (e.g., `$--primary`, `$--accent`).
+- After changing tokens in `globals.css`, re-sync to Pencil using `set_variables()` with `replace: true`.
+- Source of truth: `globals.css` → Pencil (one-way sync, CSS is authoritative).
