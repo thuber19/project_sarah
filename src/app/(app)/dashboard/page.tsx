@@ -8,13 +8,20 @@ import { requireAuth } from '@/lib/supabase/server'
 async function getDashboardData(userId: string) {
   const { supabase } = await requireAuth()
 
-  const [leadsResult, scoresResult] = await Promise.all([
+  const [leadsResult, scoresResult, feedResult] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lead_scores').select('grade, total_score').eq('user_id', userId),
+    supabase
+      .from('agent_logs')
+      .select('id, action_type, message, metadata, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(8),
   ])
 
   const totalLeads = leadsResult.count ?? 0
   const scores = scoresResult.data ?? []
+  const feedItems = feedResult.data ?? []
 
   const hotLeads = scores.filter((s) => s.grade === 'HOT').length
   const qualifiedLeads = scores.filter((s) => ['HOT', 'QUALIFIED'].includes(s.grade)).length
@@ -34,12 +41,12 @@ async function getDashboardData(userId: string) {
     if (s.grade in gradeCounts) gradeCounts[s.grade]++
   }
 
-  return { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored: scores.length }
+  return { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored: scores.length }
 }
 
 export default async function DashboardPage() {
   const { user } = await requireAuth()
-  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored } =
+  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored } =
     await getDashboardData(user.id)
 
   return (
@@ -75,7 +82,7 @@ export default async function DashboardPage() {
         <DashboardEmptyState />
       ) : (
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" changeBgColor="#DBEAFE" />
             <StatCard label="Qualifizierte Leads" value={String(qualifiedLeads)} changeType="positive" />
             <StatCard
@@ -93,8 +100,8 @@ export default async function DashboardPage() {
             />
           </div>
 
-          <div className="flex h-[400px] gap-6">
-            <LiveFeed />
+          <div className="flex flex-col gap-6 lg:h-[400px] lg:flex-row">
+            <LiveFeed items={feedItems} />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
         </div>
@@ -138,14 +145,14 @@ function DashboardEmptyState() {
         </p>
         <Link
           href="/discovery"
-          className="mt-4 inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+          className="mt-4 inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Erste Discovery starten
         </Link>
       </div>
 
       {/* Zero stat cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Leads gesamt" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
         <StatCard label="Qualifizierte Leads" value="0" changeType="neutral" />
         <StatCard label="Hot Leads" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
@@ -153,7 +160,7 @@ function DashboardEmptyState() {
       </div>
 
       {/* Onboarding hint cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {hintCards.map((card) => (
           <Link
             key={card.href}

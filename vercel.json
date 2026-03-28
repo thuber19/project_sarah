@@ -1,0 +1,26 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "regions": ["fra1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
+  "functions": {
+    "src/app/api/campaign/start/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/scrape/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/scoring/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "crons": []
+}

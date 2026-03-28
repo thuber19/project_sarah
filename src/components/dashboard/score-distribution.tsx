@@ -13,7 +13,7 @@ const gradeConfig = [
 
 export function ScoreDistribution({ counts, total }: ScoreDistributionProps) {
   return (
-    <div className="flex w-[340px] flex-col rounded-[--radius-card] border border-border bg-white">
+    <div className="flex w-full flex-col rounded-[--radius-card] border border-border bg-white lg:w-[340px]">
       <div className="border-b border-border px-5 py-4">
         <span className="text-[15px] font-semibold text-foreground">Lead Score Verteilung</span>
       </div>

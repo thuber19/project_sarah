@@ -1,8 +1,10 @@
 import { generateObject } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod/v4'
+import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import type { Lead, ScoreBreakdown } from '@/types/lead'
 import type { ICP } from './rule-engine'
+import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 const aiScoringSchema = z.object({
   reasoning: z.string().describe('Ausführliche Begründung des Scores auf Deutsch (2-3 Sätze)'),
@@ -31,13 +33,20 @@ export async function getAIScoring(
   lead: Lead,
   breakdown: ScoreBreakdown,
   totalScore: number,
-  icp: ICP,
+  _icp: ICP,
+  context?: { business?: BusinessProfile | null; icp?: IcpProfile | null },
 ): Promise<AIScoringResult> {
+  const systemPrompt = buildSystemPrompt('ein B2B Sales-Experte für Lead-Bewertung', {
+    business: context?.business,
+    icp: context?.icp,
+  })
+
   return withRetry(async () => {
     const { object } = await generateObject({
       model: anthropic('claude-sonnet-4-20250514'),
+      system: systemPrompt,
       schema: aiScoringSchema,
-      prompt: `Du bist ein B2B Sales-Experte für den DACH-Markt. Analysiere diesen Lead und gib eine Bewertung auf Deutsch.
+      prompt: `Analysiere diesen Lead und gib eine Bewertung.
 
 ## Lead-Daten
 - Name: ${lead.first_name} ${lead.last_name}
@@ -54,13 +63,6 @@ export async function getAIScoring(
 - Contact Fit: ${breakdown.contact_fit}/20
 - Buying Signals: ${breakdown.buying_signals}/25
 - Timing: ${breakdown.timing}/15
-
-## Ideal Customer Profile (ICP)
-- Zielbranchen: ${icp.target_industries.join(', ')}
-- Zielgrößen: ${icp.target_company_sizes.join(', ')}
-- Zielländer: ${icp.target_countries.join(', ')}
-- Ziel-Seniority: ${icp.target_seniorities.join(', ')}
-- Ziel-Titel: ${icp.target_titles.join(', ')}
 
 Gib eine kurze, prägnante Begründung warum dieser Lead gut oder schlecht passt, und eine klare Handlungsempfehlung.`,
     })
