@@ -94,7 +94,8 @@ Schreibe NUR das Skript, keine Erklärungen oder Anmerkungen.`
       prompt: scriptPrompt,
     })
     script = result.text.trim()
-  } catch {
+  } catch (err) {
+    console.error('[voice] Script generation failed:', err)
     return new Response('Fehler bei der Script-Generierung', { status: 500 })
   }
 
@@ -124,7 +125,8 @@ Schreibe NUR das Skript, keine Erklärungen oder Anmerkungen.`
     }
 
     audioBuffer = await elevenLabsRes.arrayBuffer()
-  } catch {
+  } catch (err) {
+    console.error('[voice] ElevenLabs fetch failed:', err)
     return new Response('ElevenLabs nicht erreichbar', { status: 502 })
   }
 
