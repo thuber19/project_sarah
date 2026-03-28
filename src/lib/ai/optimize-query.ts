@@ -1,5 +1,5 @@
 import { generateObject } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { model } from '@/lib/ai/provider'
 import { z } from 'zod/v4'
 import { buildSystemPrompt } from './system-prompt'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
@@ -35,7 +35,7 @@ export async function optimizeSearchQuery(
   })
 
   const { object } = await generateObject({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: model,
     system: systemPrompt,
     schema: optimizedQuerySchema,
     prompt: `Optimiere die Suchparameter für die Lead-Suche basierend auf dem Unternehmensprofil und ICP.

@@ -1,5 +1,5 @@
 import { generateObject } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { model } from '@/lib/ai/provider'
 import { z } from 'zod/v4'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import type { Lead, ScoreBreakdown } from '@/types/lead'
@@ -43,7 +43,7 @@ export async function getAIScoring(
 
   return withRetry(async () => {
     const { object } = await generateObject({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: model,
       system: systemPrompt,
       schema: aiScoringSchema,
       prompt: `Analysiere diesen Lead und gib eine Bewertung.

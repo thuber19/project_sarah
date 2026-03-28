@@ -1,5 +1,5 @@
 import { generateObject } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { model } from '@/lib/ai/provider'
 import { z } from 'zod/v4'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import type { ScrapedContent } from '@/lib/scraper'
@@ -40,7 +40,7 @@ export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAn
     .join('\n\n')
 
   const { object } = await generateObject({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: model,
     system: systemPrompt,
     schema: analysisSchema,
     prompt: `Analysiere diesen Website-Inhalt und extrahiere strukturierte Informationen.

@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { model } from '@/lib/ai/provider'
 import { createClient } from '@/lib/supabase/server'
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/text-to-speech'
@@ -77,7 +77,7 @@ Schreibe NUR das Skript, keine Erklärungen oder Anmerkungen.`
   let script: string
   try {
     const result = await generateText({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: model,
       prompt: scriptPrompt,
     })
     script = result.text.trim()

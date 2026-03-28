@@ -1,5 +1,5 @@
 import { streamText, stepCountIs } from 'ai'
-import { anthropic } from '@ai-sdk/anthropic'
+import { model } from '@/lib/ai/provider'
 import { createClient } from '@/lib/supabase/server'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import {
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const ctx: ToolContext = { supabase, userId: user.id }
 
   const result = streamText({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: model,
     system: systemPrompt,
     messages,
     stopWhen: stepCountIs(8),
