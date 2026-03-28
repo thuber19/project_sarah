@@ -32,7 +32,7 @@ pnpm db:seed      # supabase db reset (applies migrations + seed data)
 - **Server Actions** — `src/app/actions/*.actions.ts` (e.g. `leads.actions.ts`).
 - **Auth** — Supabase Auth (magic link). Guard server actions with `requireAuth()` from `src/lib/supabase/server.ts`. Never trust client-side auth alone.
 - **RLS** — Every Supabase table has row-level security. Policies reference `auth.uid()`.
-- **Styling** — Tailwind CSS 4 + shadcn/ui. Design tokens in `globals.css` (Slate palette + score colors). Font: Inter.
+- **Styling** — Tailwind CSS 4 + shadcn/ui. Design tokens in `globals.css` (Slate palette + score colors + status tokens + brand tokens). Font: Inter.
 - **Layouts** — App sidebar (dark, 240px, `hidden lg:flex`) + Mobile Tab Bar (`lg:hidden`) in `(app)/layout.tsx`. Marketing navbar (hamburger on mobile) in `(marketing)/layout.tsx`. Onboarding wizard in `(app)/onboarding/layout.tsx`.
 - **Security** — `proxy.ts` handles CSP headers, rate limiting, auth redirects, AND onboarding guard. Next.js 16 does NOT allow both `proxy.ts` and `middleware.ts` — all logic is in `proxy.ts`.
 - **Toasts** — Sonner `<Toaster />` in root layout (`app/layout.tsx`). Use `toast.success/error/info` from `sonner`.
@@ -40,7 +40,7 @@ pnpm db:seed      # supabase db reset (applies migrations + seed data)
 - **Tests** — 528 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
 - **Analytics** — Vercel Analytics + Speed Insights in root layout. Core Web Vitals tracked automatically.
 - **Seed Data** — `supabase/seed.sql` with 10 DACH-realistic leads, scores, ICP, business profile. Run `pnpm db:seed`.
-- **Design Token Sync** — 53 CSS variables from `globals.css` synced to Pencil via MCP `set_variables()`. CSS is source of truth.
+- **Design Token Sync** — 68 CSS variables from `globals.css` synced to Pencil via MCP `set_variables()`. CSS is source of truth. Includes `--status-{level}-bg/text`, `--stat-*-text`, `--brand-hubspot`.
 - **Streaming Scoring** — `streamObject()` + `useObject()` pattern for progressive AI analysis on lead detail page.
 - **Shared Test Mocks** — `src/lib/testing/` with `createMockQueryBuilder`, `TEST_USER`, `assertSuccess/assertFail` for consistent test setup.
 - **Accessibility** — WCAG 2.1 AA quick wins: focus-visible, ARIA live regions, score badge contrast (4.5:1+), form labels.
