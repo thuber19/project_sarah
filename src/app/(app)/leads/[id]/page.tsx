@@ -49,7 +49,7 @@ export default async function LeadDetailPage({ params }: Props) {
     : { data: [] }
 
   const displayName =
-    lead.full_name ?? [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unbekannt'
+    lead.full_name ?? ([lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unbekannt')
   const grade = (score?.grade ?? null) as Grade | null
 
   const scoreColor =

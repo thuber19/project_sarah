@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-6 lg:h-[400px] lg:flex-row">
-            <LiveFeed items={feedItems} />
+            <LiveFeed />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
         </div>
