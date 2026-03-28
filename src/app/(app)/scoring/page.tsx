@@ -2,6 +2,7 @@ import { Bell, Building2, Code, Globe, Play, Search, Settings2, Star, TrendingUp
 import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreBadge } from "@/components/leads/score-badge";
 import { ScoringRulesToggle } from "./scoring-rules-toggle";
+import { requireAuth } from "@/lib/supabase/server";
 
 type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR";
 
@@ -12,44 +13,6 @@ interface DistributionItem {
   percent: number;
   barColor: string;
 }
-
-const distributionData: DistributionItem[] = [
-  {
-    grade: "HOT",
-    range: "80-100",
-    count: 15,
-    percent: 12,
-    barColor: "bg-score-hot",
-  },
-  {
-    grade: "QUALIFIED",
-    range: "65-79",
-    count: 31,
-    percent: 24,
-    barColor: "bg-score-qualified",
-  },
-  {
-    grade: "ENGAGED",
-    range: "48-64",
-    count: 28,
-    percent: 22,
-    barColor: "bg-score-engaged",
-  },
-  {
-    grade: "POTENTIAL",
-    range: "30-47",
-    count: 38,
-    percent: 30,
-    barColor: "bg-score-potential",
-  },
-  {
-    grade: "POOR",
-    range: "0-29",
-    count: 18,
-    percent: 14,
-    barColor: "bg-score-poor-fit",
-  },
-];
 
 interface ScoringRule {
   name: string;
@@ -62,14 +25,14 @@ const scoringRules: ScoringRule[] = [
   {
     name: "Company Fit",
     description:
-      "Unternehmensgröße, Branche und Standort passen zum Ideal Customer Profile",
+      "Unternehmensgr\u00f6\u00dfe, Branche und Standort passen zum Ideal Customer Profile",
     weight: "40%",
     icon: "building",
   },
   {
     name: "Technology Match",
     description:
-      "Technologie-Stack des Unternehmens passt zu unserer Lösung",
+      "Technologie-Stack des Unternehmens passt zu unserer L\u00f6sung",
     weight: "25%",
     icon: "code",
   },
@@ -82,7 +45,7 @@ const scoringRules: ScoringRule[] = [
   },
   {
     name: "Market Relevance",
-    description: "Relevanz im DACH-Markt und regionale Marktpräsenz",
+    description: "Relevanz im DACH-Markt und regionale Marktpr\u00e4senz",
     weight: "10%",
     icon: "globe",
   },
@@ -95,10 +58,49 @@ const iconMap = {
   globe: Globe,
 } as const;
 
-// TODO: Replace with real data check from Supabase
-const hasScores = true;
+const gradeConfig: { grade: Grade; range: string; barColor: string }[] = [
+  { grade: "HOT", range: "90-100", barColor: "bg-score-hot" },
+  { grade: "QUALIFIED", range: "75-89", barColor: "bg-score-qualified" },
+  { grade: "ENGAGED", range: "60-74", barColor: "bg-score-engaged" },
+  { grade: "POTENTIAL", range: "40-59", barColor: "bg-score-potential" },
+  { grade: "POOR_FIT", range: "0-39", barColor: "bg-score-poor-fit" },
+];
 
-export default function ScoringPage() {
+export default async function ScoringPage() {
+  const { user, supabase } = await requireAuth();
+
+  // Fetch all lead scores for this user
+  const { data: scores } = await supabase
+    .from("lead_scores")
+    .select("grade, total_score")
+    .eq("user_id", user.id);
+
+  // Calculate distribution from real data
+  const gradeCounts: Record<Grade, number> = {
+    HOT: 0,
+    QUALIFIED: 0,
+    ENGAGED: 0,
+    POTENTIAL: 0,
+    POOR_FIT: 0,
+  };
+  for (const s of scores ?? []) {
+    const g = s.grade as Grade;
+    if (g in gradeCounts) gradeCounts[g]++;
+  }
+  const total = scores?.length ?? 0;
+  const hasScores = total > 0;
+
+  const distributionData: DistributionItem[] = gradeConfig.map(
+    ({ grade, range, barColor }) => ({
+      grade,
+      range,
+      count: gradeCounts[grade],
+      percent:
+        total > 0 ? Math.round((gradeCounts[grade] / total) * 100) : 0,
+      barColor,
+    }),
+  );
+
   return (
     <div className="flex h-full flex-1 flex-col">
       {/* Top bar */}
@@ -261,7 +263,9 @@ export default function ScoringPage() {
           <div className="mt-6 flex justify-end">
             <button
               type="button"
-              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+              disabled
+              className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground opacity-50 cursor-not-allowed"
+              title="Demnächst verfügbar"
             >
               Regeln aktualisieren
             </button>

@@ -3,7 +3,31 @@ import type {
   PlaceTextSearchResponse,
   PlaceDetails,
   Place,
+  PlaceReview,
+  OpeningHours,
 } from './types'
+
+/** Raw place object as returned by the Google Places API (New) before normalization. */
+interface GooglePlaceRaw {
+  id?: string
+  displayName?: { text: string; languageCode?: string } | string
+  formattedAddress?: string
+  websiteUri?: string
+  nationalPhoneNumber?: string
+  internationalPhoneNumber?: string
+  rating?: number
+  userRatingCount?: number
+  businessStatus?: string
+  types?: string[]
+  location?: { latitude: number; longitude: number }
+}
+
+/** Raw detail response includes review / hours / summary fields on top of the base place. */
+interface GooglePlaceDetailRaw extends GooglePlaceRaw {
+  reviews?: PlaceReview[]
+  regularOpeningHours?: OpeningHours
+  editorialSummary?: string
+}
 
 const PLACES_BASE_URL = 'https://places.googleapis.com/v1'
 const MAX_RETRIES = 2
@@ -90,8 +114,7 @@ export async function textSearch(params: PlaceTextSearchParams): Promise<PlaceTe
     body.pageToken = params.pageToken
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await placesFetch<{ places?: any[]; nextPageToken?: string }>(
+  const response = await placesFetch<{ places?: GooglePlaceRaw[]; nextPageToken?: string }>(
     '/places:searchText',
     {
       method: 'POST',
@@ -107,8 +130,7 @@ export async function textSearch(params: PlaceTextSearchParams): Promise<PlaceTe
 }
 
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const response = await placesFetch<any>(
+  const response = await placesFetch<GooglePlaceDetailRaw>(
     `/places/${placeId}`,
     {
       method: 'GET',
@@ -124,8 +146,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizePlace(raw: any): Place {
+function normalizePlace(raw: GooglePlaceRaw): Place {
   const displayName = raw.displayName
   return {
     id: raw.id ?? '',

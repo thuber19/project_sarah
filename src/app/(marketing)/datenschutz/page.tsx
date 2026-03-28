@@ -107,7 +107,7 @@ export default function DatenschutzPage() {
           <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
             <li><strong className="text-foreground">Auskunft</strong> — Welche Daten wir über Sie gespeichert haben</li>
             <li><strong className="text-foreground">Berichtigung</strong> — Korrektur unrichtiger Daten</li>
-            <li><strong className="text-foreground">Löschung</strong> — Löschung Ihrer Daten ("Recht auf Vergessenwerden")</li>
+            <li><strong className="text-foreground">Löschung</strong> — Löschung Ihrer Daten (&quot;Recht auf Vergessenwerden&quot;)</li>
             <li><strong className="text-foreground">Einschränkung</strong> — Einschränkung der Verarbeitung</li>
             <li><strong className="text-foreground">Datenübertragbarkeit</strong> — Export Ihrer Daten im maschinenlesbaren Format</li>
             <li><strong className="text-foreground">Widerspruch</strong> — Widerspruch gegen die Verarbeitung</li>

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, requireAuth } from '@/lib/supabase/server'
 import { searchPeople, enrichPerson } from '@/lib/apollo/client'
 import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
@@ -84,12 +84,7 @@ function categorizeSize(employees: number): string {
 export async function startDiscoveryAction(
   formData: DiscoveryFormData,
 ): Promise<DiscoveryResult | { error: string }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'Nicht eingeloggt' }
+  const { user, supabase } = await requireAuth()
 
   // Fetch business profile + ICP
   const { data: profile } = await supabase
@@ -294,9 +289,7 @@ export interface IcpDefaults {
 }
 
 export async function getIcpDefaultsAction(): Promise<IcpDefaults> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { industries: '', companySize: '', region: '', technologies: '', keywords: '' }
+  const { user, supabase } = await requireAuth()
 
   const { data } = await supabase
     .from('icp_profiles')
@@ -329,9 +322,7 @@ export interface DiscoveryLead {
 export async function getDiscoveryLeadsAction(
   campaignId: string,
 ): Promise<DiscoveryLead[]> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
+  const { user, supabase } = await requireAuth()
 
   const { data } = await supabase
     .from('leads')

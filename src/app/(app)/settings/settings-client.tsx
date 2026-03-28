@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +10,7 @@ import {
   updateIcpAction,
   type SettingsIcpData,
 } from '@/app/actions/settings.actions'
+import { profileSchema } from '@/lib/validation/schemas'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 function PlaceholderContent() {
@@ -44,7 +46,6 @@ interface SettingsClientProps {
 
 export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [isPending, startTransition] = useTransition()
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Profile fields
   const [companyName, setCompanyName] = useState(profile?.company_name ?? '')
@@ -62,7 +63,18 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
   const [icpTechStack, setIcpTechStack] = useState(toCommaStr(icp?.tech_stack))
 
   function handleSave() {
-    setMessage(null)
+    const validation = profileSchema.safeParse({
+      company_name: companyName,
+      industry: industry || undefined,
+      description: description || undefined,
+      target_market: targetMarket || undefined,
+      website_url: websiteUrl || undefined,
+    })
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message)
+      return
+    }
+
     startTransition(async () => {
       const profileResult = await updateProfileAction({
         company_name: companyName,
@@ -73,7 +85,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
       })
 
       if (profileResult.error) {
-        setMessage({ type: 'error', text: profileResult.error })
+        toast.error(profileResult.error)
         return
       }
 
@@ -88,12 +100,12 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
         }
         const icpResult = await updateIcpAction(icpData)
         if (icpResult.error) {
-          setMessage({ type: 'error', text: icpResult.error })
+          toast.error(icpResult.error)
           return
         }
       }
 
-      setMessage({ type: 'success', text: 'Einstellungen gespeichert' })
+      toast.success('Einstellungen gespeichert')
     })
   }
 
@@ -102,13 +114,6 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
         <span className="text-base font-semibold text-foreground">Einstellungen</span>
         <div className="flex items-center gap-3">
-          {message && (
-            <span
-              className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}
-            >
-              {message.text}
-            </span>
-          )}
           <button
             type="button"
             onClick={handleSave}

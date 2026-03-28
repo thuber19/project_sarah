@@ -1,116 +1,96 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/supabase/server'
+import { z } from 'zod/v4'
+import type { LeadListResult } from '@/types/lead'
+
+const leadsQuerySchema = z.object({
+  grade: z.enum(['ALL', 'HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR_FIT']).optional().default('ALL'),
+  q: z.string().max(100).optional().default(''),
+  sort: z.enum(['total_score', 'company_name', 'created_at']).optional().default('total_score'),
+  dir: z.enum(['asc', 'desc']).optional().default('desc'),
+  page: z.coerce.number().int().min(1).optional().default(1),
+})
 
 const PAGE_SIZE = 20
 
-export type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
-const VALID_GRADES: Grade[] = ['HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR']
+export async function getLeadsAction(
+  params: Record<string, string | undefined>,
+): Promise<LeadListResult> {
+  const { user, supabase } = await requireAuth()
 
-export interface LeadWithScore {
-  id: string
-  company_name: string | null
-  full_name: string | null
-  industry: string | null
-  location: string | null
-  created_at: string
-  total_score: number | null
-  grade: Grade | null
-}
+  const parsed = leadsQuerySchema.safeParse(params)
+  if (!parsed.success) {
+    return { leads: [], totalCount: 0 }
+  }
 
-export interface GetLeadsResult {
-  leads: LeadWithScore[]
-  total: number
-  page: number
-  pageCount: number
-}
-
-export async function getLeadsAction(params: {
-  page?: number
-  grade?: string
-  search?: string
-  sort?: string
-} = {}): Promise<GetLeadsResult | { error: string }> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Nicht eingeloggt' }
-
-  const page = Math.max(1, params.page ?? 1)
+  const { grade, q, sort, dir, page } = parsed.data
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  // Grade filter: fetch matching lead_ids from lead_scores first
-  const gradeFilter = VALID_GRADES.includes(params.grade as Grade)
-    ? (params.grade as Grade)
-    : null
-
-  let filteredIds: string[] | null = null
-  if (gradeFilter) {
-    const { data: scoreData } = await supabase
-      .from('lead_scores')
-      .select('lead_id')
-      .eq('user_id', user.id)
-      .eq('grade', gradeFilter)
-
-    filteredIds = (scoreData ?? []).map((s) => s.lead_id)
-    if (filteredIds.length === 0) {
-      return { leads: [], total: 0, page: 1, pageCount: 1 }
-    }
-  }
+  // Use !inner join when grade filter is active to enforce INNER JOIN
+  const selectClause =
+    grade !== 'ALL'
+      ? 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores!inner(total_score, grade)'
+      : 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores(total_score, grade)'
 
   let query = supabase
     .from('leads')
-    .select(
-      'id, company_name, full_name, industry, location, created_at, lead_scores(total_score, grade)',
-      { count: 'exact' },
-    )
+    .select(selectClause, { count: 'exact' })
     .eq('user_id', user.id)
 
-  if (filteredIds) {
-    query = query.in('id', filteredIds)
+  // Grade filter
+  if (grade !== 'ALL') {
+    const dbGrade = grade === 'POOR_FIT' ? 'POOR' : grade
+    query = query.eq('lead_scores.grade', dbGrade)
   }
 
-  if (params.search) {
+  // Text search
+  if (q) {
     query = query.or(
-      `company_name.ilike.%${params.search}%,full_name.ilike.%${params.search}%`,
+      `company_name.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`,
     )
   }
 
-  if (params.sort === 'name_asc') {
-    query = query.order('company_name', { ascending: true, nullsFirst: false })
+  // Sort
+  if (sort === 'total_score') {
+    query = query.order('total_score', {
+      ascending: dir === 'asc',
+      referencedTable: 'lead_scores',
+    })
   } else {
-    query = query.order('created_at', { ascending: false })
+    query = query.order(sort, { ascending: dir === 'asc' })
   }
 
-  const { data, count, error } = await query.range(from, to)
+  // Pagination
+  query = query.range(from, to)
+
+  const { data, count, error } = await query
 
   if (error) {
-    console.error('[Leads] getLeadsAction failed:', error)
-    return { error: 'Leads konnten nicht geladen werden' }
+    console.error('[Leads] Query failed:', error)
+    return { leads: [], totalCount: 0 }
   }
 
-  const leads: LeadWithScore[] = (data ?? []).map((row) => {
-    const scores = row.lead_scores as Array<{ total_score: number; grade: string }> | null
-    const score = Array.isArray(scores) ? scores[0] : null
+  // Flatten the nested lead_scores
+  const leads = (data ?? []).map((row: Record<string, unknown>) => {
+    const scores = row.lead_scores as
+      | Array<{ total_score: number | null; grade: string | null }>
+      | { total_score: number | null; grade: string | null }
+      | null
+    const score = Array.isArray(scores) ? scores[0] : scores
     return {
-      id: row.id,
-      company_name: row.company_name,
-      full_name: row.full_name,
-      industry: row.industry,
-      location: row.location,
-      created_at: row.created_at,
+      id: row.id as string,
+      company_name: row.company_name as string | null,
+      first_name: row.first_name as string | null,
+      last_name: row.last_name as string | null,
+      industry: row.industry as string | null,
+      location: row.location as string | null,
       total_score: score?.total_score ?? null,
-      grade: (score?.grade ?? null) as Grade | null,
+      grade: score?.grade ?? null,
+      updated_at: row.updated_at as string,
     }
   })
 
-  const total = count ?? 0
-  return {
-    leads,
-    total,
-    page,
-    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
-  }
+  return { leads, totalCount: count ?? 0 }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { analyzeWebsiteAction } from '@/app/actions/onboarding.actions'
@@ -19,14 +20,17 @@ export default function OnboardingStep1() {
     }
     setError(null)
 
+    toast.info('Website wird analysiert...')
     startTransition(async () => {
       const result = await analyzeWebsiteAction(url)
 
       if ('error' in result) {
         setError(result.error)
+        toast.error('Website konnte nicht analysiert werden.')
         return
       }
 
+      toast.success('Analyse abgeschlossen!')
       sessionStorage.setItem('onboarding_profile', JSON.stringify(result.profile))
       sessionStorage.setItem('onboarding_icp', JSON.stringify(result.icp))
       router.push('/onboarding/step-2')

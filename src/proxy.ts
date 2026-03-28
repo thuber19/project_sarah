@@ -152,18 +152,44 @@ export async function proxy(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
 
   const { pathname } = request.nextUrl
-  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/auth/')
+  const isPublic =
+    pathname === '/' ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/magic-link-sent') ||
+    pathname.startsWith('/pricing') ||
+    pathname.startsWith('/impressum') ||
+    pathname.startsWith('/datenschutz') ||
+    pathname.startsWith('/api/')
 
+  // Gate 1: Auth — redirect unauthenticated users to login
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
   }
 
+  // Redirect logged-in users away from login page
   if (user && pathname === '/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  // Gate 2: Onboarding completion — only for authenticated non-public routes
+  if (user && !isPublic && !pathname.startsWith('/onboarding')) {
+    const { data: profile } = await supabase
+      .from('business_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!profile) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding/step-1'
+      return NextResponse.redirect(url)
+    }
   }
 
   supabaseResponse.headers.set('Content-Security-Policy', buildCsp(nonce))
