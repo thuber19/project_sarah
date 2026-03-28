@@ -85,45 +85,51 @@ export async function saveOnboardingAction(
   const icpValidation = icpSchema.safeParse(icp)
   if (!icpValidation.success) return fail('VALIDATION_ERROR', 'Ungültige ICP-Daten')
 
+  // Check if user already has a business profile — don't overwrite existing data
+  const { data: existingProfile } = await supabase
+    .from('business_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (existingProfile) {
+    // Profile already exists — skip onboarding save, redirect to dashboard
+    redirect('/dashboard')
+  }
+
   const { data: businessProfile, error: profileError } = await supabase
     .from('business_profiles')
-    .upsert(
-      {
-        user_id: user.id,
-        website_url: profileValidation.data.website_url,
-        company_name: profileValidation.data.company_name,
-        description: profileValidation.data.description,
-        industry: profileValidation.data.industry,
-        product_summary: profileValidation.data.product_summary,
-        value_proposition: profileValidation.data.value_proposition,
-        target_market: profileValidation.data.target_market,
-        raw_scraped_content: profileValidation.data.raw_scraped_content,
-      },
-      { onConflict: 'user_id' },
-    )
+    .insert({
+      user_id: user.id,
+      website_url: profileValidation.data.website_url,
+      company_name: profileValidation.data.company_name,
+      description: profileValidation.data.description,
+      industry: profileValidation.data.industry,
+      product_summary: profileValidation.data.product_summary,
+      value_proposition: profileValidation.data.value_proposition,
+      target_market: profileValidation.data.target_market,
+      raw_scraped_content: profileValidation.data.raw_scraped_content,
+    })
     .select('id')
     .single()
 
   if (profileError || !businessProfile) {
-    console.error('[Onboarding] Business profile upsert failed:', profileError)
+    console.error('[Onboarding] Business profile insert failed:', profileError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des Profils')
   }
 
-  const { error: icpError } = await supabase.from('icp_profiles').upsert(
-    {
-      user_id: user.id,
-      business_profile_id: businessProfile.id,
-      job_titles: icpValidation.data.job_titles,
-      seniority_levels: icpValidation.data.seniority_levels,
-      industries: icpValidation.data.industries,
-      company_sizes: icpValidation.data.company_sizes,
-      regions: icpValidation.data.regions,
-    },
-    { onConflict: 'user_id' },
-  )
+  const { error: icpError } = await supabase.from('icp_profiles').insert({
+    user_id: user.id,
+    business_profile_id: businessProfile.id,
+    job_titles: icpValidation.data.job_titles,
+    seniority_levels: icpValidation.data.seniority_levels,
+    industries: icpValidation.data.industries,
+    company_sizes: icpValidation.data.company_sizes,
+    regions: icpValidation.data.regions,
+  })
 
   if (icpError) {
-    console.error('[Onboarding] ICP profile upsert failed:', icpError)
+    console.error('[Onboarding] ICP profile insert failed:', icpError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des ICP')
   }
 
