@@ -86,7 +86,7 @@ export default function LoginPage() {
                 )}
                 <Button
                   type="submit"
-                  disabled={isPending || !email}
+                  disabled={isPending}
                   className="w-full bg-accent py-2.5 text-sm font-semibold text-white hover:bg-accent/90"
                 >
                   {isPending ? 'Wird gesendet…' : 'Magic Link senden'}
