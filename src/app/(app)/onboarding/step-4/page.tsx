@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { redirect } from 'next/navigation'
 import { toast } from 'sonner'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import {
   saveOnboardingAction,
+  trackOnboardingEventAction,
   type ProfileData,
   type IcpData,
 } from '@/app/actions/onboarding.actions'
@@ -32,12 +33,21 @@ export default function OnboardingStep4() {
   const scoreThreshold = stored?.threshold ?? 60
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const startTimeRef = useRef(0)
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+    trackOnboardingEventAction(4, 'started')
+  }, [])
 
   function handleComplete() {
     if (!profile || !icp) return
     setError(null)
 
     startTransition(async () => {
+      trackOnboardingEventAction(4, 'completed', {
+        duration_ms: Date.now() - startTimeRef.current,
+      })
       const result = await saveOnboardingAction(profile, icp)
       if (result && !result.success) {
         setError(result.error.message)

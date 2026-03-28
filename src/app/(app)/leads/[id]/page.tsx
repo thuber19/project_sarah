@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Bell, ExternalLink, Mail, Search, User } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Mail, User } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
 import { OutreachVoice } from '@/components/leads/outreach-voice'
+import { OutreachDraft } from '@/components/leads/outreach-draft'
 import { AnimatedScore } from '@/components/leads/animated-score'
+import { AppTopbar } from '@/components/layout/app-topbar'
+import { LeadResearch } from '@/components/leads/lead-research'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
@@ -30,15 +33,36 @@ export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params
   const { user, supabase } = await requireAuth()
 
-  const [leadResult, scoreResult] = await Promise.all([
-    supabase.from('leads').select('*').eq('id', id).eq('user_id', user.id).single(),
-    supabase.from('lead_scores').select('*').eq('lead_id', id).eq('user_id', user.id).maybeSingle(),
+  const [leadResult, scoreResult, researchResult] = await Promise.all([
+    supabase
+      .from('leads')
+      .select(
+        'id, first_name, last_name, full_name, company_name, email, linkedin_url, job_title, industry, company_size, revenue_range, funding_stage, location, country, company_website, company_domain, campaign_id',
+      )
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('lead_scores')
+      .select(
+        'total_score, grade, company_fit_score, contact_fit_score, buying_signals_score, timing_score, ai_reasoning, recommended_action',
+      )
+      .eq('lead_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('lead_research')
+      .select('full_report')
+      .eq('lead_id', id)
+      .eq('user_id', user.id)
+      .maybeSingle(),
   ])
 
   if (leadResult.error || !leadResult.data) notFound()
 
   const lead = leadResult.data
   const score = scoreResult.data
+  const research = researchResult.data
 
   const { data: logs } = lead.campaign_id
     ? await supabase
@@ -62,31 +86,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Lead-Detail</span>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
-            />
-          </div>
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            {user.email?.slice(0, 2).toUpperCase() ?? 'SP'}
-          </div>
-        </div>
-      </div>
+      <AppTopbar title="Lead-Detail" initials={user.email?.slice(0, 2).toUpperCase() ?? 'SP'} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">
@@ -128,6 +128,8 @@ export default async function LeadDetailPage({ params }: Props) {
         <div className="mt-8 flex flex-col gap-8 lg:flex-row">
           {/* Left column */}
           <div className="flex flex-1 flex-col gap-8">
+            <LeadResearch leadId={id} cachedReport={research?.full_report ?? null} />
+            <OutreachDraft leadId={id} />
             <OutreachVoice leadId={id} companyName={lead.company_name ?? null} />
             {score && (
               <div className="rounded-xl border border-border bg-white p-6">

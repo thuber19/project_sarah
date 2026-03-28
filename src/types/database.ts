@@ -297,6 +297,13 @@ export type Database = {
             | 'query_optimized'
             | 'website_scraped'
             | 'website_analyzed'
+            | 'lead_exported'
+            | 'onboarding_started'
+            | 'onboarding_completed'
+            | 'research_started'
+            | 'research_completed'
+            | 'outreach_generated'
+            | 'conversation_created'
           message: string
           metadata: Json | null
           created_at: string
@@ -314,6 +321,13 @@ export type Database = {
             | 'query_optimized'
             | 'website_scraped'
             | 'website_analyzed'
+            | 'lead_exported'
+            | 'onboarding_started'
+            | 'onboarding_completed'
+            | 'research_started'
+            | 'research_completed'
+            | 'outreach_generated'
+            | 'conversation_created'
           message: string
           metadata?: Json | null
           created_at?: string
@@ -331,9 +345,133 @@ export type Database = {
             | 'query_optimized'
             | 'website_scraped'
             | 'website_analyzed'
+            | 'lead_exported'
+            | 'onboarding_started'
+            | 'onboarding_completed'
+            | 'research_started'
+            | 'research_completed'
+            | 'outreach_generated'
+            | 'conversation_created'
           message?: string
           metadata?: Json | null
           created_at?: string
+        }
+      }
+      agent_conversations: {
+        Row: {
+          id: string
+          user_id: string
+          title: string | null
+          model: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string | null
+          model?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string | null
+          model?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      agent_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          user_id: string
+          role: 'user' | 'assistant' | 'system' | 'tool'
+          content: string
+          parts: Json | null
+          tool_invocations: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          user_id: string
+          role: 'user' | 'assistant' | 'system' | 'tool'
+          content: string
+          parts?: Json | null
+          tool_invocations?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          user_id?: string
+          role?: 'user' | 'assistant' | 'system' | 'tool'
+          content?: string
+          parts?: Json | null
+          tool_invocations?: Json | null
+          created_at?: string
+        }
+      }
+      lead_research: {
+        Row: {
+          id: string
+          user_id: string
+          lead_id: string
+          tech_stack: string[] | null
+          hiring_info: string | null
+          pricing_model: string | null
+          news_summary: string | null
+          impressum: Json | null
+          handelsregister: string | null
+          locations: string[] | null
+          full_report: string
+          sources: Json
+          status: 'in_progress' | 'completed' | 'failed'
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          lead_id: string
+          tech_stack?: string[] | null
+          hiring_info?: string | null
+          pricing_model?: string | null
+          news_summary?: string | null
+          impressum?: Json | null
+          handelsregister?: string | null
+          locations?: string[] | null
+          full_report: string
+          sources?: Json
+          status?: 'in_progress' | 'completed' | 'failed'
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          lead_id?: string
+          tech_stack?: string[] | null
+          hiring_info?: string | null
+          pricing_model?: string | null
+          news_summary?: string | null
+          impressum?: Json | null
+          handelsregister?: string | null
+          locations?: string[] | null
+          full_report?: string
+          sources?: Json
+          status?: 'in_progress' | 'completed' | 'failed'
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
         }
       }
     }
@@ -350,3 +488,6 @@ export type SearchCampaign = Database['public']['Tables']['search_campaigns']['R
 export type Lead = Database['public']['Tables']['leads']['Row']
 export type LeadScore = Database['public']['Tables']['lead_scores']['Row']
 export type AgentLog = Database['public']['Tables']['agent_logs']['Row']
+export type AgentConversation = Database['public']['Tables']['agent_conversations']['Row']
+export type AgentMessage = Database['public']['Tables']['agent_messages']['Row']
+export type LeadResearch = Database['public']['Tables']['lead_research']['Row']

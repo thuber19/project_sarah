@@ -3,10 +3,16 @@ import { model } from '@/lib/ai/provider'
 import { websiteAnalysisSchema, type WebsiteAnalysis } from './schemas'
 import { buildSystemPrompt } from './system-prompt'
 import type { ScrapedContent } from '@/lib/scraper'
+import type { TokenUsage } from '@/lib/ai/usage-tracker'
+import { buildUsageMetadata } from '@/lib/ai/usage-tracker'
 
 export type { WebsiteAnalysis }
 
-export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAnalysis> {
+export type WebsiteAnalysisResult = WebsiteAnalysis & {
+  usage?: TokenUsage
+}
+
+export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAnalysisResult> {
   const systemPrompt = buildSystemPrompt('ein B2B Sales-Experte für Website-Analyse')
 
   const context = [
@@ -21,7 +27,7 @@ export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAn
     .filter(Boolean)
     .join('\n\n')
 
-  const { object } = await generateObject({
+  const { object, usage } = await generateObject({
     model: model,
     system: systemPrompt,
     schema: websiteAnalysisSchema,
@@ -32,5 +38,8 @@ ${context.slice(0, 15_000)}
 Wenn Informationen nicht eindeutig erkennbar sind, mache sinnvolle Annahmen basierend auf dem Kontext.`,
   })
 
-  return object
+  return {
+    ...object,
+    usage: buildUsageMetadata(usage),
+  }
 }

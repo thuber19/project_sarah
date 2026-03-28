@@ -5,12 +5,9 @@ import { toast } from 'sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  updateProfileAction,
-  updateIcpAction,
-  type SettingsIcpData,
-} from '@/app/actions/settings.actions'
-import { profileSchema } from '@/lib/validation/schemas'
+import { AppTopbar } from '@/components/layout/app-topbar'
+import { updateProfileAction, updateIcpAction } from '@/app/actions/settings.actions'
+import { profileSchema, type SettingsIcpData } from '@/lib/validation/schemas'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 function PlaceholderContent() {
@@ -120,9 +117,9 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Einstellungen</span>
-        <div className="flex items-center gap-3">
+      <AppTopbar
+        title="Einstellungen"
+        actions={
           <button
             type="button"
             onClick={handleSave}
@@ -131,8 +128,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
           >
             {isPending ? 'Speichere...' : 'Speichern'}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
         <Tabs defaultValue="profil">
@@ -266,8 +263,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     Ideal Customer Profile
                   </h2>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    Mehrere Werte mit Komma trennen (z.&nbsp;B. &bdquo;SaaS,
-                    FinTech&ldquo;). Gilt für alle zukünftigen Discovery-Suchen.
+                    Mehrere Werte mit Komma trennen (z.&nbsp;B. &bdquo;SaaS, FinTech&ldquo;). Gilt
+                    für alle zukünftigen Discovery-Suchen.
                   </p>
                 </div>
 

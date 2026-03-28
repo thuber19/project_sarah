@@ -3,16 +3,14 @@ import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
+import { getBusinessProfile } from '@/lib/queries/cached'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, supabase } = await requireAuth()
+  const { user } = await requireAuth()
 
   // Best-effort display name: business profile → user metadata → email prefix
-  const { data: profile } = await supabase
-    .from('business_profiles')
-    .select('company_name')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  // Uses React.cache() — deduplicated if child pages also call getBusinessProfile()
+  const profile = await getBusinessProfile()
 
   // Onboarding redirect: new users without a business profile go to onboarding
   const headersList = await headers()

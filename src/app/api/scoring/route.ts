@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   // Fetch ICP for user
   const { data: icpData, error: icpError } = await supabase
     .from('icp_profiles')
-    .select('*')
+    .select('industries, company_sizes, regions, seniority_levels, job_titles')
     .eq('user_id', user.id)
     .single()
 
@@ -33,11 +33,11 @@ export async function POST(request: Request) {
   }
 
   const icp: ICP = {
-    target_industries: icpData.target_industries ?? [],
-    target_company_sizes: icpData.target_company_sizes ?? [],
-    target_countries: icpData.target_countries ?? [],
-    target_seniorities: icpData.target_seniorities ?? [],
-    target_titles: icpData.target_titles ?? [],
+    target_industries: icpData.industries ?? [],
+    target_company_sizes: icpData.company_sizes ?? [],
+    target_countries: icpData.regions ?? [],
+    target_seniorities: icpData.seniority_levels ?? [],
+    target_titles: icpData.job_titles ?? [],
   }
 
   // Fetch leads to score

@@ -27,8 +27,20 @@ export async function POST(req: Request) {
 
   // Load business profile + ICP for system prompt
   const [profileResult, icpResult] = await Promise.all([
-    supabase.from('business_profiles').select('*').eq('user_id', user.id).single(),
-    supabase.from('icp_profiles').select('*').eq('user_id', user.id).single(),
+    supabase
+      .from('business_profiles')
+      .select(
+        'company_name, industry, description, product_summary, value_proposition, target_market, website_url',
+      )
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('icp_profiles')
+      .select(
+        'industries, company_sizes, regions, job_titles, seniority_levels, tech_stack, revenue_ranges, funding_stages, keywords',
+      )
+      .eq('user_id', user.id)
+      .single(),
   ])
 
   if (!profileResult.data) {

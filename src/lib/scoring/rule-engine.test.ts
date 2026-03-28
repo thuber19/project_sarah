@@ -12,21 +12,26 @@ function makeLead(overrides: Partial<Lead> = {}): Lead {
   return {
     id: 'test-1',
     user_id: 'u-1',
+    campaign_id: null,
     first_name: null,
     last_name: null,
+    full_name: null,
     email: null,
-    phone: null,
-    title: null,
+    linkedin_url: null,
+    photo_url: null,
+    job_title: null,
     seniority: null,
     company_name: null,
     company_domain: null,
-    company_industry: null,
+    company_website: null,
+    industry: null,
     company_size: null,
-    company_revenue: null,
-    company_country: null,
-    company_city: null,
+    revenue_range: null,
+    funding_stage: null,
+    location: null,
+    country: null,
     source: 'apollo',
-    source_id: null,
+    apollo_id: null,
     raw_data: null,
     created_at: '',
     updated_at: '',
@@ -62,49 +67,49 @@ describe('calculateRuleScore', () => {
     })
 
     it('gives 15 for matching industry', () => {
-      const lead = makeLead({ company_industry: 'Enterprise SaaS' })
+      const lead = makeLead({ industry: 'Enterprise SaaS' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(15)
     })
 
     it('does not score industry when there is no match', () => {
-      const lead = makeLead({ company_industry: 'Healthcare' })
+      const lead = makeLead({ industry: 'Healthcare' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(0)
     })
 
     it('industry match is case-insensitive', () => {
-      const lead = makeLead({ company_industry: 'fintech' })
+      const lead = makeLead({ industry: 'fintech' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(15)
     })
 
     it('gives 10 for DACH country (Austria)', () => {
-      const lead = makeLead({ company_country: 'austria' })
+      const lead = makeLead({ country: 'austria' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(10)
     })
 
     it('gives 10 for DACH country using German spelling (Österreich)', () => {
-      const lead = makeLead({ company_country: 'Österreich' })
+      const lead = makeLead({ country: 'Österreich' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(10)
     })
 
     it('gives 10 for DACH country using ISO code (DE)', () => {
-      const lead = makeLead({ company_country: 'DE' })
+      const lead = makeLead({ country: 'DE' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(10)
     })
 
     it('gives 10 for DACH country (Deutschland)', () => {
-      const lead = makeLead({ company_country: 'Deutschland' })
+      const lead = makeLead({ country: 'Deutschland' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(10)
     })
 
     it('gives 10 for DACH country (Switzerland)', () => {
-      const lead = makeLead({ company_country: 'Switzerland' })
+      const lead = makeLead({ country: 'Switzerland' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(10)
     })
@@ -114,13 +119,13 @@ describe('calculateRuleScore', () => {
         ...defaultIcp,
         target_countries: ['austria', 'germany', 'netherlands'],
       }
-      const lead = makeLead({ company_country: 'Netherlands' })
+      const lead = makeLead({ country: 'Netherlands' })
       const breakdown = calculateRuleScore(lead, icp)
       expect(breakdown.company_fit).toBe(7)
     })
 
     it('gives 0 for a country not in DACH and not in ICP targets', () => {
-      const lead = makeLead({ company_country: 'Japan' })
+      const lead = makeLead({ country: 'Japan' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.company_fit).toBe(0)
     })
@@ -156,9 +161,9 @@ describe('calculateRuleScore', () => {
 
     it('caps company_fit at 40 for a perfect match', () => {
       const lead = makeLead({
-        company_industry: 'SaaS Platform',
+        industry: 'SaaS Platform',
         company_size: '11-50',
-        company_country: 'Austria',
+        country: 'Austria',
         company_domain: 'example.at',
       })
       // industry=15 + size=10 + DACH=10 + domain=5 = 40
@@ -170,9 +175,9 @@ describe('calculateRuleScore', () => {
       // '51-200' is in ICP targets and has a higher internal score (15)
       // but as a target size it scores 10 regardless. Total: 15+10+10+5=40
       const lead = makeLead({
-        company_industry: 'FinTech Solutions',
+        industry: 'FinTech Solutions',
         company_size: '51-200',
-        company_country: 'germany',
+        country: 'germany',
         company_domain: 'fintech.de',
       })
       const breakdown = calculateRuleScore(lead, defaultIcp)
@@ -232,25 +237,25 @@ describe('calculateRuleScore', () => {
     })
 
     it('gives 8 for matching title from ICP targets', () => {
-      const lead = makeLead({ title: 'CTO' })
+      const lead = makeLead({ job_title: 'CTO' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(8)
     })
 
     it('title match is case-insensitive', () => {
-      const lead = makeLead({ title: 'head of engineering' })
+      const lead = makeLead({ job_title: 'head of engineering' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(8)
     })
 
     it('gives 5 for executive title not in ICP targets', () => {
-      const lead = makeLead({ title: 'CEO' })
+      const lead = makeLead({ job_title: 'CEO' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(5)
     })
 
     it('gives 17 for Geschaeftsfuehrer title (DACH seniority 12 + executive fallback 5)', () => {
-      const lead = makeLead({ title: 'Geschäftsführer' })
+      const lead = makeLead({ job_title: 'Geschäftsführer' })
       // No seniority set → DACH_TITLE_SENIORITY fallback: geschäftsführer=20, min(20,12)=12
       // Title also matches executive fallback list: +5
       // Total: 12 + 5 = 17
@@ -260,13 +265,13 @@ describe('calculateRuleScore', () => {
 
     it('gives 8 for Director title that substring-matches CTO in ICP', () => {
       // Note: "director" contains the substring "cto", so the ICP title match fires
-      const lead = makeLead({ title: 'Director of Sales' })
+      const lead = makeLead({ job_title: 'Director of Sales' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(8)
     })
 
     it('gives 5 for VP title not in ICP targets', () => {
-      const lead = makeLead({ title: 'VP of Marketing' })
+      const lead = makeLead({ job_title: 'VP of Marketing' })
       // 'VP of Marketing' does not match 'CTO' or 'Head of Engineering'
       // but contains 'vp' => executive fallback 5
       const breakdown = calculateRuleScore(lead, defaultIcp)
@@ -274,20 +279,20 @@ describe('calculateRuleScore', () => {
     })
 
     it('gives 0 for a non-executive title not in ICP', () => {
-      const lead = makeLead({ title: 'Junior Developer' })
+      const lead = makeLead({ job_title: 'Junior Developer' })
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(0)
     })
 
     it('caps contact_fit at 20 with max seniority + matching title', () => {
-      const lead = makeLead({ seniority: 'owner', title: 'CTO' })
+      const lead = makeLead({ seniority: 'owner', job_title: 'CTO' })
       // seniority: min(20,12)=12, title match=8 => 20
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(20)
     })
 
     it('does not exceed 20 even with high seniority + executive fallback', () => {
-      const lead = makeLead({ seniority: 'founder', title: 'CEO' })
+      const lead = makeLead({ seniority: 'founder', job_title: 'CEO' })
       // seniority: min(20,12)=12, title fallback=5 => 17, capped at 20 => 17
       const breakdown = calculateRuleScore(lead, defaultIcp)
       expect(breakdown.contact_fit).toBe(17)
@@ -570,12 +575,12 @@ describe('calculateRuleScore', () => {
       vi.setSystemTime(new Date('2026-03-28T12:00:00Z'))
 
       const lead = makeLead({
-        company_industry: 'SaaS',
+        industry: 'SaaS',
         company_size: '11-50',
-        company_country: 'Austria',
+        country: 'Austria',
         company_domain: 'example.at',
         seniority: 'owner',
-        title: 'CTO',
+        job_title: 'CTO',
         raw_data: {
           latest_funding_round: 'Series A',
           is_hiring: true,

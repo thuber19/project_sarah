@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Bell, Compass, Upload, Users } from 'lucide-react'
+import { Compass, Upload, Users } from 'lucide-react'
 import { getLeadsAction } from '@/app/actions/leads.actions'
 import { requireAuth } from '@/lib/supabase/server'
 import { PAGE_SIZE } from '@/lib/constants'
@@ -7,7 +7,9 @@ import { LeadFilters } from '@/components/leads/lead-filters'
 import { LeadTable } from '@/components/leads/lead-table'
 import { LeadSearchInput } from '@/components/leads/lead-search-input'
 import { LeadPagination } from '@/components/leads/lead-pagination'
+import { LeadExportButton } from '@/components/leads/lead-export-button'
 import { EmptyState } from '@/components/shared/empty-state'
+import { AppTopbar } from '@/components/layout/app-topbar'
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -42,45 +44,25 @@ export default async function LeadsPage({ searchParams }: Props) {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Lead-Liste</span>
-
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-          >
-            <Upload className="h-4 w-4" />
-            Export
-          </button>
-
-          {/* Search input (client component) */}
-          <Suspense
-            fallback={
-              <div className="relative">
-                <div className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-muted-foreground">
-                  Suchen...
+      <AppTopbar
+        title="Lead-Liste"
+        actions={
+          <>
+            <LeadExportButton grade={grade} q={params.q} />
+            <Suspense
+              fallback={
+                <div className="relative">
+                  <div className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-muted-foreground">
+                    Suchen...
+                  </div>
                 </div>
-              </div>
-            }
-          >
-            <LeadSearchInput />
-          </Suspense>
-
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
-          </div>
-        </div>
-      </div>
+              }
+            >
+              <LeadSearchInput />
+            </Suspense>
+          </>
+        }
+      />
 
       {hasLeads ? (
         /* Content area */

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { redirect, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { X } from 'lucide-react'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import type { IcpData } from '@/app/actions/onboarding.actions'
+import { trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
 
 function TagPill({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
@@ -53,6 +54,12 @@ function deriveRegions(icpRegions: string[]): Record<string, boolean> {
 export default function OnboardingStep3() {
   const router = useRouter()
   const [storedIcp] = useState(getStoredIcp)
+  const startTimeRef = useRef(0)
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+    trackOnboardingEventAction(3, 'started')
+  }, [])
   const [industries, setIndustries] = useState<string[]>(storedIcp?.industries ?? [])
   const [companySize, setCompanySize] = useState('10-100')
   const [regions, setRegions] = useState<Record<string, boolean>>(() =>
@@ -77,6 +84,9 @@ export default function OnboardingStep3() {
 
     sessionStorage.setItem('onboarding_icp', JSON.stringify(icpData))
     sessionStorage.setItem('onboarding_score_threshold', String(scoreThreshold))
+    trackOnboardingEventAction(3, 'completed', {
+      duration_ms: Date.now() - startTimeRef.current,
+    })
     router.push('/onboarding/step-4')
   }
 

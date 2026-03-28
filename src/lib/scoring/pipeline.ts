@@ -3,7 +3,9 @@ import type { Lead, LeadScore } from '@/types/lead'
 import { getGradeForScore } from '@/types/lead'
 import { calculateRuleScore, totalFromBreakdown, type ICP } from './rule-engine'
 import { getAIScoring } from './ai-scoring'
-import { logAgentEvent } from '@/lib/agent-log'
+import { logAgentAction } from '@/lib/agent-log'
+import type { TokenUsage } from '@/lib/ai/usage-tracker'
+import { PipelineTimer } from '@/lib/pipeline/timer'
 
 const CONCURRENCY_LIMIT = 5
 
@@ -27,11 +29,13 @@ async function scoreOneLead(
   // Step 2: AI scoring (with fallback)
   let aiReasoning: string | null = null
   let aiRecommendation: string | null = null
+  let tokenUsage: TokenUsage | undefined
 
   try {
     const aiResult = await getAIScoring(lead, breakdown, totalScore, icp)
     aiReasoning = aiResult.reasoning
     aiRecommendation = aiResult.recommendation_text
+    tokenUsage = aiResult.usage
   } catch (error) {
     console.error(`[ScoringPipeline] AI scoring failed for lead ${lead.id}:`, error)
   }
@@ -44,11 +48,13 @@ async function scoreOneLead(
         lead_id: lead.id,
         user_id: userId,
         total_score: totalScore,
+        company_fit_score: breakdown.company_fit,
+        contact_fit_score: breakdown.contact_fit,
+        buying_signals_score: breakdown.buying_signals,
+        timing_score: breakdown.timing,
         grade,
-        breakdown,
         ai_reasoning: aiReasoning,
-        ai_recommendation: aiRecommendation,
-        scored_at: new Date().toISOString(),
+        recommended_action: aiRecommendation,
       },
       { onConflict: 'lead_id' },
     )
@@ -61,12 +67,16 @@ async function scoreOneLead(
   }
 
   // Step 4: Agent log
-  await logAgentEvent(
-    supabase,
-    userId,
+  await logAgentAction(
+    { supabase, userId },
     'lead_scored',
     `Lead ${lead.first_name} ${lead.last_name} (${lead.company_name}) bewertet: ${totalScore}/100 - ${grade}`,
-    { lead_id: lead.id, score: totalScore, grade },
+    {
+      lead_id: lead.id,
+      score: totalScore,
+      grade,
+      ...(tokenUsage ? { token_usage: tokenUsage } : {}),
+    },
   )
 
   return data as LeadScore
@@ -92,26 +102,31 @@ export async function runScoringPipeline(
   icp: ICP,
   userId: string,
 ): Promise<ScoringPipelineResult> {
-  await logAgentEvent(
-    supabase,
-    userId,
-    'pipeline_started',
+  const timer = new PipelineTimer()
+  timer.start('total_scoring_ms')
+
+  await logAgentAction(
+    { supabase, userId },
+    'campaign_started',
     `Scoring Pipeline gestartet für ${leads.length} Leads`,
   )
 
+  timer.start('batch_processing_ms')
   const rawResults = await processInBatches(leads, CONCURRENCY_LIMIT, (lead) =>
     scoreOneLead(supabase, lead, icp, userId),
   )
+  timer.stop('batch_processing_ms')
 
   const results = rawResults.filter((r): r is LeadScore => r !== null)
   const failed = rawResults.length - results.length
 
-  await logAgentEvent(
-    supabase,
-    userId,
-    'pipeline_completed',
+  timer.stop('total_scoring_ms')
+
+  await logAgentAction(
+    { supabase, userId },
+    'campaign_completed',
     `Scoring Pipeline abgeschlossen: ${results.length} bewertet, ${failed} fehlgeschlagen`,
-    { scored: results.length, failed },
+    { scored: results.length, failed, pipeline_timing: timer.getMetrics() },
   )
 
   return { scored: results.length, failed, results }

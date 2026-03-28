@@ -1,8 +1,8 @@
 import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 interface SystemPromptContext {
-  business?: BusinessProfile | null
-  icp?: IcpProfile | null
+  business?: Partial<BusinessProfile> | null
+  icp?: Partial<IcpProfile> | null
 }
 
 const DACH_KNOWLEDGE = `## DACH-Markt Expertise
@@ -34,7 +34,7 @@ const DACH_KNOWLEDGE = `## DACH-Markt Expertise
 - Mittlere Unternehmen: 50-249 Mitarbeiter (KMU-Grenze)
 - Großunternehmen: 250+ Mitarbeiter`
 
-function buildBusinessContext(business: BusinessProfile): string {
+function buildBusinessContext(business: Partial<BusinessProfile>): string {
   const lines = ['## Unternehmensprofil']
   if (business.company_name) lines.push(`- Firma: ${business.company_name}`)
   if (business.industry) lines.push(`- Branche: ${business.industry}`)
@@ -46,9 +46,9 @@ function buildBusinessContext(business: BusinessProfile): string {
   return lines.length > 1 ? lines.join('\n') : ''
 }
 
-function buildIcpContext(icp: IcpProfile): string {
+function buildIcpContext(icp: Partial<IcpProfile>): string {
   const lines = ['## Ideal Customer Profile (ICP)']
-  const fields: { label: string; value: string[] | null }[] = [
+  const fields: { label: string; value: string[] | null | undefined }[] = [
     { label: 'Zielbranchen', value: icp.industries },
     { label: 'Firmengrößen', value: icp.company_sizes },
     { label: 'Regionen', value: icp.regions },

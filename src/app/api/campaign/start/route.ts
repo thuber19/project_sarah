@@ -20,7 +20,9 @@ export async function POST() {
   // Fetch business profile
   const { data: profile, error: profileError } = await supabase
     .from('business_profiles')
-    .select('*')
+    .select(
+      'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, created_at, updated_at',
+    )
     .eq('user_id', user.id)
     .single()
 
@@ -31,7 +33,9 @@ export async function POST() {
   // Fetch ICP
   const { data: icpData, error: icpError } = await supabase
     .from('icp_profiles')
-    .select('*')
+    .select(
+      'id, user_id, business_profile_id, industries, company_sizes, regions, job_titles, seniority_levels, tech_stack, revenue_ranges, funding_stages, keywords, created_at, updated_at',
+    )
     .eq('user_id', user.id)
     .single()
 

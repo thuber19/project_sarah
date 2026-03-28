@@ -29,7 +29,7 @@ function buildCsp(nonce: string): string {
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob:`,
     `font-src 'self'`,
-    `connect-src 'self' ${supabaseUrl} ${supabaseWs}`.trimEnd(),
+    `connect-src 'self' ${supabaseUrl} ${supabaseWs} https://*.ingest.sentry.io`.trimEnd(),
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

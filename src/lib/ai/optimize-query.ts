@@ -3,6 +3,8 @@ import { model } from '@/lib/ai/provider'
 import { z } from 'zod/v4'
 import { buildSystemPrompt } from './system-prompt'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
+import type { TokenUsage } from '@/lib/ai/usage-tracker'
+import { buildUsageMetadata } from '@/lib/ai/usage-tracker'
 
 const optimizedQuerySchema = z.object({
   apolloParams: z.object({
@@ -36,18 +38,20 @@ const optimizedQuerySchema = z.object({
   reasoning: z.string().describe('Kurze Erklärung der Strategie auf Deutsch (2-3 Sätze)'),
 })
 
-export type OptimizedQuery = z.infer<typeof optimizedQuerySchema>
+export type OptimizedQuery = z.infer<typeof optimizedQuerySchema> & {
+  usage?: TokenUsage
+}
 
 export async function optimizeSearchQuery(
-  businessProfile: BusinessProfile,
-  icpProfile: IcpProfile,
+  businessProfile: Partial<BusinessProfile>,
+  icpProfile: Partial<IcpProfile>,
 ): Promise<OptimizedQuery> {
   const systemPrompt = buildSystemPrompt('ein B2B Sales-Stratege für Lead-Recherche', {
     business: businessProfile,
     icp: icpProfile,
   })
 
-  const { object } = await generateObject({
+  const { object, usage } = await generateObject({
     model: model,
     system: systemPrompt,
     schema: optimizedQuerySchema,
@@ -65,5 +69,8 @@ Wichtig:
 - Branchen auf Englisch für Apollo, auf Deutsch für Google Places`,
   })
 
-  return object
+  return {
+    ...object,
+    usage: buildUsageMetadata(usage),
+  }
 }

@@ -80,8 +80,8 @@ function scoreCompanyFit(lead: Lead, icp: ICP): number {
   let score = 0
 
   // Industry match (0-15)
-  if (lead.company_industry) {
-    const industry = lead.company_industry.toLowerCase()
+  if (lead.industry) {
+    const industry = lead.industry.toLowerCase()
     if (icp.target_industries.some((t) => industry.includes(t.toLowerCase()))) {
       score += 15
     }
@@ -97,8 +97,8 @@ function scoreCompanyFit(lead: Lead, icp: ICP): number {
   }
 
   // Geography - DACH bonus (0-10)
-  if (lead.company_country) {
-    const country = lead.company_country.toLowerCase()
+  if (lead.country) {
+    const country = lead.country.toLowerCase()
     if (DACH_COUNTRIES.includes(country)) {
       score += 10
     } else if (icp.target_countries.some((c) => country.includes(c.toLowerCase()))) {
@@ -132,9 +132,9 @@ function scoreContactFit(lead: Lead, icp: ICP): number {
     if (seniorityScore) {
       score += Math.min(seniorityScore, 12)
     }
-  } else if (lead.title) {
+  } else if (lead.job_title) {
     // German title fallback when Apollo seniority is not set
-    const title = lead.title.toLowerCase()
+    const title = lead.job_title.toLowerCase()
     for (const [keyword, s] of DACH_TITLE_SENIORITY) {
       if (title.includes(keyword)) {
         score += Math.min(s, 12)
@@ -144,8 +144,8 @@ function scoreContactFit(lead: Lead, icp: ICP): number {
   }
 
   // Title match (0-8)
-  if (lead.title) {
-    const title = lead.title.toLowerCase()
+  if (lead.job_title) {
+    const title = lead.job_title.toLowerCase()
     if (icp.target_titles.some((t) => title.includes(t.toLowerCase()))) {
       score += 8
     } else if (

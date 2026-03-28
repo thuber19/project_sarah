@@ -3,34 +3,24 @@
 import { requireAuth } from '@/lib/supabase/server'
 import { scrapeWebsite } from '@/lib/scraper'
 import { analyzeWebsite } from '@/lib/ai/analyze-website'
+import { logAgentAction } from '@/lib/agent-log'
 import { redirect } from 'next/navigation'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
 import { z } from 'zod/v4'
+import {
+  onboardingProfileSchema,
+  onboardingIcpSchema,
+  type OnboardingProfileData,
+  type OnboardingIcpData,
+} from '@/lib/validation/schemas'
 
 const urlSchema = z.string().url('Bitte eine gültige URL eingeben')
+const profileSchema = onboardingProfileSchema
+const icpSchema = onboardingIcpSchema
 
-const profileSchema = z.object({
-  website_url: z.string().min(1),
-  company_name: z.string().min(1, 'Firmenname ist erforderlich'),
-  description: z.string().min(1),
-  industry: z.string().min(1),
-  product_summary: z.string().min(1),
-  value_proposition: z.string().min(1),
-  target_market: z.string().min(1),
-  raw_scraped_content: z.string(),
-})
-
-const icpSchema = z.object({
-  job_titles: z.array(z.string()),
-  seniority_levels: z.array(z.string()),
-  industries: z.array(z.string()),
-  company_sizes: z.array(z.string()),
-  regions: z.array(z.string()),
-})
-
-export type ProfileData = z.infer<typeof profileSchema>
-export type IcpData = z.infer<typeof icpSchema>
+export type ProfileData = OnboardingProfileData
+export type IcpData = OnboardingIcpData
 
 interface AnalyzeData {
   profile: ProfileData
@@ -134,4 +124,24 @@ export async function saveOnboardingAction(
   }
 
   redirect('/dashboard')
+}
+
+export async function trackOnboardingEventAction(
+  step: number,
+  event: 'started' | 'completed',
+  metadata?: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { user, supabase } = await requireAuth()
+    const actionType = event === 'started' ? 'onboarding_started' : 'onboarding_completed'
+    await logAgentAction(
+      { supabase, userId: user.id },
+      actionType,
+      `Onboarding Schritt ${step} ${event === 'started' ? 'gestartet' : 'abgeschlossen'}`,
+      { step, ...metadata },
+    )
+  } catch {
+    // Non-critical — don't break onboarding if tracking fails
+    console.error('[Onboarding] Tracking failed')
+  }
 }

@@ -31,7 +31,7 @@ export function useAgentLogs({ limit = 50 }: UseAgentLogsOptions = {}) {
 
       const { data } = await supabase
         .from('agent_logs')
-        .select('*')
+        .select('id, user_id, action_type, message, metadata, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(limit)

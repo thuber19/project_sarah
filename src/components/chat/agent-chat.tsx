@@ -1,9 +1,11 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
-import { Bot, CheckCircle, Loader2, MessageCircle, Send, X, XCircle } from 'lucide-react'
+import { Bot, CheckCircle, History, Loader2, MessageCircle, Send, X, XCircle } from 'lucide-react'
+import { getConversationMessagesAction } from '@/app/actions/conversations.actions'
+import { ConversationList } from './conversation-list'
 
 const TOOL_LABELS: Record<string, string> = {
   searchLeads: 'Lead-Suche via Apollo.io',
@@ -12,6 +14,7 @@ const TOOL_LABELS: Record<string, string> = {
   analyzeWebsite: 'Website-Analyse',
   getIcpProfile: 'ICP-Profil laden',
   getLeadDetails: 'Lead-Details laden',
+  researchLead: 'Lead-Recherche',
 }
 
 interface ToolPart {
@@ -35,19 +38,46 @@ function extractToolParts(msg: UIMessage): ToolPart[] {
   return parts
 }
 
-export function AgentChat() {
+interface AgentChatProps {
+  conversationId?: string
+}
+
+export function AgentChat({ conversationId: initialConversationId }: AgentChatProps = {}) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { messages, status, sendMessage, stop } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
+  const transport = useMemo(() => new DefaultChatTransport({ api: '/api/chat' }), [])
+
+  const { messages, setMessages, status, sendMessage, stop } = useChat({
+    transport,
     onError: (error: Error) => {
       console.error('[Chat] Stream error:', error.message)
     },
   })
 
   const isLoading = status === 'submitted' || status === 'streaming'
+
+  // Load messages for a conversation
+  const loadConversation = useCallback(
+    async (id: string) => {
+      const result = await getConversationMessagesAction(id)
+      if (result.success) {
+        const uiMessages: UIMessage[] = result.data.map((msg) => ({
+          id: msg.id,
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          parts: [{ type: 'text' as const, text: msg.content }],
+        }))
+        setMessages(uiMessages)
+        setConversationId(id)
+        setShowHistory(false)
+      }
+    },
+    [setMessages],
+  )
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -61,13 +91,19 @@ export function AgentChat() {
     if (isOpen) inputRef.current?.focus()
   }, [isOpen])
 
+  function handleNewConversation(id: string) {
+    setConversationId(id)
+    setMessages([])
+    setShowHistory(false)
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
     const input = form.elements.namedItem('message') as HTMLInputElement
     const text = input.value.trim()
     if (!text || isLoading) return
-    sendMessage({ text })
+    sendMessage({ text }, { body: { conversationId } })
     input.value = ''
   }
 
@@ -97,15 +133,36 @@ export function AgentChat() {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setIsOpen(false)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-          aria-label="Chat schließen"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Gesprächsverlauf"
+          >
+            <History className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Chat schließen"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Conversation History Panel */}
+      {showHistory && (
+        <div className="border-b border-border bg-white px-2 py-2">
+          <ConversationList
+            activeId={conversationId}
+            onSelect={loadConversation}
+            onNew={handleNewConversation}
+          />
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">

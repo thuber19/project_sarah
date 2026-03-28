@@ -1,21 +1,26 @@
 export interface Lead {
   id: string
   user_id: string
+  campaign_id: string | null
   first_name: string | null
   last_name: string | null
+  full_name: string | null
   email: string | null
-  phone: string | null
-  title: string | null
+  linkedin_url: string | null
+  photo_url: string | null
+  job_title: string | null
   seniority: string | null
   company_name: string | null
   company_domain: string | null
-  company_industry: string | null
+  company_website: string | null
+  industry: string | null
   company_size: string | null
-  company_revenue: string | null
-  company_country: string | null
-  company_city: string | null
-  source: 'apollo' | 'google_places' | 'manual'
-  source_id: string | null
+  revenue_range: string | null
+  funding_stage: string | null
+  location: string | null
+  country: string | null
+  source: 'apollo' | 'google_places' | 'enriched' | null
+  apollo_id: string | null
   raw_data: Record<string, unknown> | null
   created_at: string
   updated_at: string
@@ -34,24 +39,34 @@ export interface LeadScore {
   id: string
   lead_id: string
   user_id: string
+  campaign_id: string | null
   total_score: number // 0-100
+  company_fit_score: number
+  contact_fit_score: number
+  buying_signals_score: number
+  timing_score: number
   grade: ScoreGrade
-  breakdown: ScoreBreakdown
   ai_reasoning: string | null
-  ai_recommendation: string | null
-  scored_at: string
+  recommended_action: string | null
+  confidence: number | null
+  dach_notes: string | null
+  key_insights: string[] | null
+  created_at: string
+  updated_at: string
 }
 
 export interface AgentLog {
   id: string
   user_id: string
-  event_type:
-    | 'lead_discovered'
+  action_type:
+    | 'campaign_started'
+    | 'campaign_completed'
+    | 'campaign_failed'
+    | 'leads_discovered'
     | 'lead_scored'
-    | 'lead_enriched'
-    | 'pipeline_started'
-    | 'pipeline_completed'
-    | 'error'
+    | 'query_optimized'
+    | 'website_scraped'
+    | 'website_analyzed'
   message: string
   metadata: Record<string, unknown> | null
   created_at: string

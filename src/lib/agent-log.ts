@@ -1,23 +1,27 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { AgentLog } from '@/types/lead'
+import type { Database } from '@/types/database'
 
-type AgentEventType = AgentLog['event_type']
+type ActionType = Database['public']['Tables']['agent_logs']['Insert']['action_type']
 
-export async function logAgentEvent(
-  supabase: SupabaseClient,
-  userId: string,
-  eventType: AgentEventType,
+export interface LogContext {
+  supabase: SupabaseClient
+  userId: string
+}
+
+export async function logAgentAction(
+  ctx: LogContext,
+  actionType: ActionType,
   message: string,
   metadata?: Record<string, unknown>,
 ) {
-  const { error } = await supabase.from('agent_logs').insert({
-    user_id: userId,
-    event_type: eventType,
+  const { error } = await ctx.supabase.from('agent_logs').insert({
+    user_id: ctx.userId,
+    action_type: actionType,
     message,
     metadata: metadata ?? null,
   })
 
   if (error) {
-    console.error('[AgentLog] Failed to log event:', error.message)
+    console.error('[AgentLog] Failed to log action:', error.message)
   }
 }

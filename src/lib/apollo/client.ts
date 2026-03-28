@@ -1,3 +1,4 @@
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
   ApolloPersonSearchParams,
   ApolloSearchResponse,
@@ -8,8 +9,6 @@ import type {
 } from './types'
 
 const APOLLO_BASE_URL = 'https://api.apollo.io'
-const MAX_RETRIES = 2
-const RETRY_DELAY_MS = 1000
 const MIN_REQUEST_INTERVAL_MS = 1200 // ~50 req/min
 
 let lastRequestTime = 0
@@ -32,48 +31,26 @@ async function rateLimit() {
 async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
   await rateLimit()
 
-  const url = `${APOLLO_BASE_URL}${endpoint}`
-  console.log(`[Apollo] → ${endpoint}`, JSON.stringify(body, null, 2))
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const response = await fetch(url, {
+  const response = await fetchWithRetry(
+    `${APOLLO_BASE_URL}${endpoint}`,
+    {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Api-Key': getApiKey(),
       },
       body: JSON.stringify(body),
-    })
+    },
+    {
+      maxRetries: 2,
+      baseDelayMs: 1000,
+      onRateLimited: (retryAfterSeconds) => {
+        console.warn(`[Apollo] Rate limited, waiting ${retryAfterSeconds}s`)
+      },
+    },
+  )
 
-    console.log(`[Apollo] ← ${endpoint} attempt=${attempt} status=${response.status}`)
-
-    if (response.status === 429) {
-      const retryAfter = Number(response.headers.get('retry-after') || 60)
-      console.warn(`[Apollo] Rate limited, waiting ${retryAfter}s`)
-      await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000))
-      continue
-    }
-
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.error(`[Apollo] Error ${response.status} on ${endpoint}:`, errorBody)
-      if (attempt < MAX_RETRIES && response.status >= 500) {
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)))
-        continue
-      }
-      throw new Error(`Apollo API error ${response.status}: ${errorBody}`)
-    }
-
-    const data = (await response.json()) as T
-    const count =
-      (data as Record<string, unknown>).people
-        ? ((data as Record<string, { length: number }>).people?.length ?? 0)
-        : ((data as Record<string, { length: number }>).organizations?.length ?? 0)
-    console.log(`[Apollo] ✓ ${endpoint} returned ${count} results`)
-    return data
-  }
-
-  throw new Error('Apollo API: max retries exceeded')
+  return (await response.json()) as T
 }
 
 export async function searchPeople(

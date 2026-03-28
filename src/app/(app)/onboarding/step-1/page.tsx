@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Globe, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { analyzeWebsiteAction } from '@/app/actions/onboarding.actions'
+import { analyzeWebsiteAction, trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
 import { urlSchema } from '@/lib/validation/schemas'
 
 export default function OnboardingStep1() {
@@ -13,6 +13,12 @@ export default function OnboardingStep1() {
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const startTimeRef = useRef(0)
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+    trackOnboardingEventAction(1, 'started')
+  }, [])
 
   function handleSubmit() {
     setError(null)
@@ -35,6 +41,9 @@ export default function OnboardingStep1() {
       toast.success('Analyse abgeschlossen!')
       sessionStorage.setItem('onboarding_profile', JSON.stringify(result.data.profile))
       sessionStorage.setItem('onboarding_icp', JSON.stringify(result.data.icp))
+      trackOnboardingEventAction(1, 'completed', {
+        duration_ms: Date.now() - startTimeRef.current,
+      })
       router.push('/onboarding/step-2')
     })
   }

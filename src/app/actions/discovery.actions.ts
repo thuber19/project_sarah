@@ -8,6 +8,7 @@ import type { ApolloPerson } from '@/lib/apollo/types'
 import type { Database } from '@/types/database'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
+import { PipelineTimer } from '@/lib/pipeline/timer'
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert']
 type AgentLogInsert = Database['public']['Tables']['agent_logs']['Insert']
@@ -91,13 +92,17 @@ export async function startDiscoveryAction(
   // Fetch business profile + ICP
   const { data: profile } = await supabase
     .from('business_profiles')
-    .select('*')
+    .select(
+      'id, user_id, website_url, company_name, description, industry, product_summary, value_proposition, target_market, created_at, updated_at',
+    )
     .eq('user_id', user.id)
     .single()
 
   const { data: icpData } = await supabase
     .from('icp_profiles')
-    .select('*')
+    .select(
+      'id, user_id, business_profile_id, industries, company_sizes, regions, job_titles, seniority_levels, tech_stack, revenue_ranges, funding_stages, keywords, created_at, updated_at',
+    )
     .eq('user_id', user.id)
     .single()
 
@@ -117,10 +122,14 @@ export async function startDiscoveryAction(
     return fail('INTERNAL_ERROR', 'Campaign konnte nicht erstellt werden')
   }
 
+  const timer = new PipelineTimer()
+  timer.start('total_pipeline_ms')
+
   try {
     await logAgent(supabase, user.id, campaign.id, 'campaign_started', 'Lead Discovery gestartet')
 
     // Step 1: Optimize search queries with AI
+    timer.start('query_optimization_ms')
     await logAgent(
       supabase,
       user.id,
@@ -182,6 +191,7 @@ export async function startDiscoveryAction(
     }
 
     const optimizedQuery = await optimizeSearchQuery(effectiveProfile, effectiveIcp)
+    timer.stop('query_optimization_ms')
 
     await logAgent(
       supabase,
@@ -194,6 +204,7 @@ export async function startDiscoveryAction(
     const allLeads: LeadInsert[] = []
 
     // Step 2: Apollo People Search
+    timer.start('apollo_search_ms')
     await logAgent(
       supabase,
       user.id,
@@ -260,8 +271,10 @@ export async function startDiscoveryAction(
         `Apollo-Suche fehlgeschlagen: ${apolloErrMsg}`,
       )
     }
+    timer.stop('apollo_search_ms')
 
     // Step 3: Google Places Search
+    timer.start('google_places_ms')
     await logAgent(
       supabase,
       user.id,
@@ -292,6 +305,7 @@ export async function startDiscoveryAction(
         console.error(`[Discovery] Google Places failed for "${query.query}":`, error)
       }
     }
+    timer.stop('google_places_ms')
 
     await logAgent(
       supabase,
@@ -320,13 +334,15 @@ export async function startDiscoveryAction(
       })
       .eq('id', campaign.id)
 
+    timer.stop('total_pipeline_ms')
+
     await logAgent(
       supabase,
       user.id,
       campaign.id,
       'campaign_completed',
       `Fertig! ${allLeads.length} Leads gefunden.`,
-      { leads_found: allLeads.length },
+      { leads_found: allLeads.length, pipeline_timing: timer.getMetrics() },
     )
 
     return ok({ campaignId: campaign.id, leadsFound: allLeads.length })

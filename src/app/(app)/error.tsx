@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorProps {
@@ -10,7 +11,7 @@ interface ErrorProps {
 
 export default function AppError({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Log error to monitoring service (e.g. Sentry) here
+    Sentry.captureException(error)
     console.error(error)
   }, [error])
 

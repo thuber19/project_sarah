@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, Compass, Play, Search, SlidersHorizontal } from 'lucide-react'
+import { Compass, Play, Search, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
+import { AppTopbar } from '@/components/layout/app-topbar'
 import {
   startDiscoveryAction,
   type IcpDefaults,
@@ -76,55 +77,27 @@ export function DiscoveryClient({
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Lead Discovery</span>
-
-        <div className="flex items-center gap-3">
-          {/* Discovery starten button */}
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleDiscovery}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
-          >
-            {isPending ? 'Suche laeuft...' : 'Discovery starten'}
-          </button>
-
-          {/* Verlauf button */}
-          <button
-            type="button"
-            className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-          >
-            Verlauf
-          </button>
-
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
-            />
-          </div>
-
-          {/* Bell icon */}
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-
-          {/* Avatar */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
-          </div>
-        </div>
-      </div>
+      <AppTopbar
+        title="Lead Discovery"
+        actions={
+          <>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleDiscovery}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+            >
+              {isPending ? 'Suche laeuft...' : 'Discovery starten'}
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+            >
+              Verlauf
+            </button>
+          </>
+        }
+      />
 
       {!hasDiscovery && latestLeads.length === 0 ? (
         <div className="flex flex-1 items-center justify-center p-8">

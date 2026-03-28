@@ -1,19 +1,22 @@
+'use client'
+
 import { Search } from 'lucide-react'
 import { NotificationBell } from '@/components/layout/notification-dropdown'
 
 interface AppTopbarProps {
   title: string
+  actions?: React.ReactNode
+  initials?: string
 }
 
-export function AppTopbar({ title }: AppTopbarProps) {
+export function AppTopbar({ title, actions, initials = 'BG' }: AppTopbarProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-      {/* Left: Page title */}
       <h1 className="text-base font-semibold text-foreground">{title}</h1>
 
-      {/* Right: Search, notifications, avatar */}
       <div className="flex items-center gap-4">
-        {/* Search input */}
+        {actions}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -23,16 +26,27 @@ export function AppTopbar({ title }: AppTopbarProps) {
           />
         </div>
 
-        {/* Notification bell with dropdown */}
         <NotificationBell />
 
-        {/* User avatar */}
         <div
           className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-white"
           aria-label="Benutzerprofil"
         >
-          BG
+          {initials}
         </div>
+      </div>
+    </header>
+  )
+}
+
+export function AppTopbarSkeleton() {
+  return (
+    <header className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
+      <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+      <div className="flex items-center gap-4">
+        <div className="h-9 w-64 animate-pulse rounded-lg bg-muted" />
+        <div className="size-8 animate-pulse rounded-full bg-muted" />
+        <div className="size-8 animate-pulse rounded-full bg-muted" />
       </div>
     </header>
   )

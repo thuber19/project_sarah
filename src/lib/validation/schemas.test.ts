@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { emailSchema, urlSchema, profileSchema, icpSchema, discoveryFormSchema } from './schemas'
+import {
+  emailSchema,
+  urlSchema,
+  profileSchema,
+  icpSchema,
+  discoveryFormSchema,
+  onboardingProfileSchema,
+  onboardingIcpSchema,
+} from './schemas'
 
 // ---------------------------------------------------------------------------
 // emailSchema
@@ -229,6 +237,173 @@ describe('icpSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data).toEqual(validIcp)
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// onboardingProfileSchema
+// ---------------------------------------------------------------------------
+
+describe('onboardingProfileSchema', () => {
+  const validOnboardingProfile = {
+    website_url: 'https://acme.at',
+    company_name: 'Acme GmbH',
+    description: 'We build things',
+    industry: 'Software',
+    product_summary: 'SaaS platform for lead scoring',
+    value_proposition: 'Automate your lead pipeline',
+    target_market: 'DACH SMBs',
+    raw_scraped_content: 'Some scraped content from the website',
+  }
+
+  it('accepts valid onboarding profile with all fields', () => {
+    const result = onboardingProfileSchema.safeParse(validOnboardingProfile)
+    expect(result.success).toBe(true)
+  })
+
+  it('requires website_url', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      website_url: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires company_name', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      company_name: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires description', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      description: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires industry', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      industry: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires product_summary', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      product_summary: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires value_proposition', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      value_proposition: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('requires target_market', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      target_market: '',
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts empty raw_scraped_content', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      raw_scraped_content: '',
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects missing fields', () => {
+    const result = onboardingProfileSchema.safeParse({ company_name: 'Acme GmbH' })
+    expect(result.success).toBe(false)
+  })
+
+  it('returns German error for empty company_name', () => {
+    const result = onboardingProfileSchema.safeParse({
+      ...validOnboardingProfile,
+      company_name: '',
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const messages = result.error.issues.map((i) => i.message)
+      expect(messages).toContain('Firmenname ist erforderlich')
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// onboardingIcpSchema
+// ---------------------------------------------------------------------------
+
+describe('onboardingIcpSchema', () => {
+  const validOnboardingIcp = {
+    job_titles: ['CTO', 'VP Engineering'],
+    seniority_levels: ['C-Level'],
+    industries: ['SaaS'],
+    company_sizes: ['10-50'],
+    regions: ['DACH'],
+  }
+
+  it('accepts valid onboarding ICP with all fields', () => {
+    const result = onboardingIcpSchema.safeParse(validOnboardingIcp)
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts all empty arrays', () => {
+    const result = onboardingIcpSchema.safeParse({
+      job_titles: [],
+      seniority_levels: [],
+      industries: [],
+      company_sizes: [],
+      regions: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects missing fields', () => {
+    const result = onboardingIcpSchema.safeParse({ job_titles: ['CTO'] })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects non-string items in arrays', () => {
+    const result = onboardingIcpSchema.safeParse({
+      ...validOnboardingIcp,
+      job_titles: [123],
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('does not accept tech_stack field (not in onboarding schema)', () => {
+    const result = onboardingIcpSchema.safeParse({
+      ...validOnboardingIcp,
+      tech_stack: ['React'],
+    })
+    // Zod strips unknown keys by default, so it parses successfully
+    // but the output should not include tech_stack
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect('tech_stack' in result.data).toBe(false)
+    }
+  })
+
+  it('parses output shape correctly', () => {
+    const result = onboardingIcpSchema.safeParse(validOnboardingIcp)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual(validOnboardingIcp)
     }
   })
 })

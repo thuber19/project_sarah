@@ -4,27 +4,14 @@ import { requireAuth } from '@/lib/supabase/server'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
 import type { BusinessProfile, IcpProfile } from '@/types/database'
-import { z } from 'zod/v4'
+import {
+  profileSchema,
+  settingsIcpSchema,
+  type SettingsProfileData,
+  type SettingsIcpData,
+} from '@/lib/validation/schemas'
 
-const profileSchema = z.object({
-  company_name: z.string().min(1, 'Firmenname ist erforderlich'),
-  industry: z.string().optional(),
-  description: z.string().optional(),
-  target_market: z.string().optional(),
-  website_url: z.string().optional(),
-})
-
-const icpSchema = z.object({
-  industries: z.array(z.string()),
-  company_sizes: z.array(z.string()),
-  regions: z.array(z.string()),
-  job_titles: z.array(z.string()),
-  seniority_levels: z.array(z.string()),
-  tech_stack: z.array(z.string()),
-})
-
-export type SettingsProfileData = z.infer<typeof profileSchema>
-export type SettingsIcpData = z.infer<typeof icpSchema>
+// Types re-exported from @/lib/validation/schemas — import directly from there in client code
 
 interface SettingsData {
   profile: BusinessProfile | null
@@ -72,7 +59,7 @@ export async function updateProfileAction(data: SettingsProfileData): Promise<Ap
 export async function updateIcpAction(data: SettingsIcpData): Promise<ApiResponse<null>> {
   const { user, supabase } = await requireAuth()
 
-  const parsed = icpSchema.safeParse(data)
+  const parsed = settingsIcpSchema.safeParse(data)
   if (!parsed.success) return fail('VALIDATION_ERROR', 'Ungültige ICP-Daten')
 
   const { error } = await supabase

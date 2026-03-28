@@ -1,17 +1,10 @@
 import { Skeleton } from '@/components/ui/skeleton'
+import { AppTopbarSkeleton } from '@/components/layout/app-topbar'
 
 export default function LeadsLoading() {
   return (
     <div className="flex h-full flex-1 flex-col">
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <Skeleton className="h-5 w-24" />
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-9 w-24 rounded-lg" />
-          <Skeleton className="h-9 w-64 rounded-lg" />
-          <Skeleton className="h-9 w-9 rounded-lg" />
-          <Skeleton className="h-8 w-8 rounded-full" />
-        </div>
-      </div>
+      <AppTopbarSkeleton />
 
       <div className="flex flex-1 flex-col gap-4 p-8">
         {/* Filters */}

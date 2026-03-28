@@ -1,3 +1,4 @@
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import type {
   PlaceTextSearchParams,
   PlaceTextSearchResponse,
@@ -30,8 +31,6 @@ interface GooglePlaceDetailRaw extends GooglePlaceRaw {
 }
 
 const PLACES_BASE_URL = 'https://places.googleapis.com/v1'
-const MAX_RETRIES = 2
-const RETRY_DELAY_MS = 1000
 
 const TEXT_SEARCH_FIELDS = [
   'places.id',
@@ -77,8 +76,9 @@ async function placesFetch<T>(
 ): Promise<T> {
   const { fieldMask, ...fetchOptions } = options
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const response = await fetch(`${PLACES_BASE_URL}${endpoint}`, {
+  const response = await fetchWithRetry(
+    `${PLACES_BASE_URL}${endpoint}`,
+    {
       ...fetchOptions,
       headers: {
         'Content-Type': 'application/json',
@@ -86,21 +86,14 @@ async function placesFetch<T>(
         'X-Goog-FieldMask': fieldMask,
         ...fetchOptions.headers,
       },
-    })
+    },
+    {
+      maxRetries: 2,
+      baseDelayMs: 1000,
+    },
+  )
 
-    if (!response.ok) {
-      const errorBody = await response.text()
-      if (attempt < MAX_RETRIES && response.status >= 500) {
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)))
-        continue
-      }
-      throw new Error(`Google Places API error ${response.status}: ${errorBody}`)
-    }
-
-    return (await response.json()) as T
-  }
-
-  throw new Error('Google Places API: max retries exceeded')
+  return (await response.json()) as T
 }
 
 export async function textSearch(params: PlaceTextSearchParams): Promise<PlaceTextSearchResponse> {

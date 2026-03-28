@@ -1,17 +1,9 @@
-import {
-  Bell,
-  Building2,
-  Code,
-  Globe,
-  Play,
-  Search,
-  Settings2,
-  Star,
-  TrendingUp,
-} from 'lucide-react'
+import { Building2, Code, Globe, Play, Settings2, Star, TrendingUp } from 'lucide-react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScoreBadge } from '@/components/leads/score-badge'
 import { ScoringRulesToggle } from './scoring-rules-toggle'
+import { ScoringRescoreSection } from './scoring-rescore-section'
+import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
 type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
@@ -90,11 +82,13 @@ const gradeConfig: { grade: Grade; displayGrade: DisplayGrade; range: string; ba
 export default async function ScoringPage() {
   const { user, supabase } = await requireAuth()
 
-  // Fetch all lead scores for this user
-  const { data: scores } = await supabase
-    .from('lead_scores')
-    .select('grade, total_score')
-    .eq('user_id', user.id)
+  // Fetch all lead scores and lead IDs for this user
+  const [{ data: scores }, { data: leads }] = await Promise.all([
+    supabase.from('lead_scores').select('grade, total_score').eq('user_id', user.id),
+    supabase.from('leads').select('id').eq('user_id', user.id),
+  ])
+
+  const leadIds = (leads ?? []).map((l) => l.id)
 
   // Calculate distribution from real data
   const gradeCounts: Record<Grade, number> = {
@@ -124,37 +118,7 @@ export default async function ScoringPage() {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">Scoring-Übersicht</span>
-
-        <div className="flex items-center gap-4">
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
-            />
-          </div>
-
-          {/* Bell icon */}
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-
-          {/* Avatar */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
-          </div>
-        </div>
-      </div>
+      <AppTopbar title="Scoring-Übersicht" />
 
       {!hasScores ? (
         <div className="flex flex-1 items-center justify-center p-8">
@@ -263,14 +227,7 @@ export default async function ScoringPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                disabled
-                className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground opacity-50 cursor-not-allowed"
-                title="Demnächst verfügbar"
-              >
-                Regeln aktualisieren
-              </button>
+              <ScoringRescoreSection leadIds={leadIds} />
             </div>
           </div>
         </div>

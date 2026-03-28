@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   images: {
@@ -19,4 +20,17 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  // Suppress Sentry build logs
+  silent: true,
+  // Include dependency source maps for readable stack traces
+  widenClientFileUpload: true,
+  // Delete source maps after upload (hides them from browser devtools)
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  // Remove Sentry debug statements to reduce bundle size
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+  },
+})

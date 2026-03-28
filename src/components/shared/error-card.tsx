@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorCardProps {
@@ -10,6 +11,7 @@ interface ErrorCardProps {
 
 export function ErrorCard({ error, reset }: ErrorCardProps) {
   useEffect(() => {
+    Sentry.captureException(error)
     console.error(error)
   }, [error])
 

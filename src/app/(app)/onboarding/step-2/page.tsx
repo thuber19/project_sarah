@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import type { ProfileData } from '@/app/actions/onboarding.actions'
+import { trackOnboardingEventAction } from '@/app/actions/onboarding.actions'
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
@@ -33,7 +35,21 @@ function getStoredProfile(): ProfileData | null {
 }
 
 export default function OnboardingStep2() {
+  const router = useRouter()
   const [profile] = useState<ProfileData | null>(getStoredProfile)
+  const startTimeRef = useRef(0)
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+    trackOnboardingEventAction(2, 'started')
+  }, [])
+
+  function handleContinue() {
+    trackOnboardingEventAction(2, 'completed', {
+      duration_ms: Date.now() - startTimeRef.current,
+    })
+    router.push('/onboarding/step-3')
+  }
 
   if (!profile) return null
 
@@ -73,12 +89,13 @@ export default function OnboardingStep2() {
         >
           Zurück
         </Link>
-        <Link
-          href="/onboarding/step-3"
+        <button
+          type="button"
+          onClick={handleContinue}
           className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground"
         >
           Bestätigen &amp; Weiter
-        </Link>
+        </button>
       </div>
     </div>
   )

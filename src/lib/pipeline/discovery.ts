@@ -7,7 +7,8 @@ import type { ApolloPerson, ApolloOrganization } from '@/lib/apollo/types'
 import { textSearch } from '@/lib/google-places/client'
 import { runScoringPipeline } from '@/lib/scoring/pipeline'
 import type { ICP } from '@/lib/scoring/rule-engine'
-import { logAgentEvent } from '@/lib/agent-log'
+import { logAgentAction } from '@/lib/agent-log'
+import { PipelineTimer } from '@/lib/pipeline/timer'
 
 // Max number of top organizations to fetch contacts for (one people search request)
 const MAX_CONTACT_ORGS = 10
@@ -32,25 +33,30 @@ function apolloPersonToLead(
   const org = person.organization
   return {
     user_id: userId,
+    campaign_id: null,
     first_name: person.first_name,
     last_name: person.last_name,
+    full_name: [person.first_name, person.last_name].filter(Boolean).join(' ') || null,
     email: person.email,
-    phone: person.phone_numbers?.[0]?.sanitized_number ?? null,
-    title: person.title,
+    linkedin_url: person.linkedin_url ?? null,
+    photo_url: null,
+    job_title: person.title,
     seniority: person.seniority,
     company_name: org?.name ?? null,
     company_domain: org?.website_url ?? null,
-    company_industry: org?.industry ?? null,
+    company_website: org?.website_url ?? null,
+    industry: org?.industry ?? null,
     company_size: org?.estimated_num_employees
       ? categorizeCompanySize(org.estimated_num_employees)
       : null,
-    company_revenue: org?.annual_revenue_printed ?? null,
-    company_country: org?.country ?? null,
-    company_city: org?.city ?? null,
+    revenue_range: org?.annual_revenue_printed ?? null,
+    funding_stage: org?.latest_funding_round_type ?? null,
+    country: org?.country ?? null,
+    location: org?.city ?? null,
     source: 'apollo' as const,
-    source_id: person.id,
+    apollo_id: person.id,
     raw_data: {
-      linkedin_url: person.linkedin_url,
+      phone: person.phone_numbers?.[0]?.sanitized_number,
       twitter_url: org?.twitter_url,
       technologies: org?.technologies,
       total_funding: org?.total_funding_printed,
@@ -82,22 +88,29 @@ function placesToLeads(
 ): Omit<Lead, 'id' | 'created_at' | 'updated_at'> {
   return {
     user_id: userId,
+    campaign_id: null,
     first_name: null,
     last_name: null,
+    full_name: null,
     email: null,
-    phone: places.nationalPhoneNumber,
-    title: null,
+    linkedin_url: null,
+    photo_url: null,
+    job_title: null,
     seniority: null,
     company_name: places.displayName,
     company_domain: places.websiteUri,
-    company_industry: null,
+    company_website: places.websiteUri,
+    industry: null,
     company_size: null,
-    company_revenue: null,
-    company_country: null,
-    company_city: places.formattedAddress,
+    revenue_range: null,
+    funding_stage: null,
+    country: null,
+    location: places.formattedAddress,
     source: 'google_places' as const,
-    source_id: places.id,
-    raw_data: null,
+    apollo_id: places.id,
+    raw_data: {
+      phone: places.nationalPhoneNumber,
+    },
   }
 }
 
@@ -157,22 +170,31 @@ export async function runDiscoveryPipeline(
   businessProfile: BusinessProfile,
   icpProfile: IcpProfile,
 ): Promise<DiscoveryResult> {
+  const timer = new PipelineTimer()
+  timer.start('total_pipeline_ms')
+
   try {
     // Step 1: Campaign running
     await setCampaignStatus(supabase, campaignId, 'running')
 
     // Step 2: Optimize search queries
-    await logAgentEvent(supabase, userId, 'pipeline_started', 'Optimiere Suchparameter mit AI...')
+    timer.start('query_optimization_ms')
+    await logAgentAction(
+      { supabase, userId },
+      'campaign_started',
+      'Optimiere Suchparameter mit AI...',
+    )
     const optimizedQuery = await optimizeSearchQuery(businessProfile, icpProfile)
-    await logAgentEvent(
-      supabase,
-      userId,
-      'lead_discovered',
+    timer.stop('query_optimization_ms')
+    await logAgentAction(
+      { supabase, userId },
+      'leads_discovered',
       `Suchstrategie: ${optimizedQuery.reasoning}`,
     )
 
     // Step 3: Apollo (org search → people search) + Google Places in parallel
-    await logAgentEvent(supabase, userId, 'lead_discovered', 'Suche Leads via Apollo.io...')
+    timer.start('apollo_search_ms')
+    await logAgentAction({ supabase, userId }, 'leads_discovered', 'Suche Leads via Apollo.io...')
 
     const [apolloPeople, placesLeadData] = await Promise.all([
       // Apollo: org search then single people search for top orgs
@@ -193,10 +215,9 @@ export async function runDiscoveryPipeline(
         userId,
       ).catch((error) => {
         console.error('[Discovery] Apollo search failed:', error)
-        logAgentEvent(
-          supabase,
-          userId,
-          'error',
+        logAgentAction(
+          { supabase, userId },
+          'campaign_failed',
           `Apollo-Suche fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
         )
         return [] as ApolloPerson[]
@@ -214,11 +235,11 @@ export async function runDiscoveryPipeline(
         results.flatMap((r) => r.places.map((place) => placesToLeads(place, userId))),
       ),
     ])
+    timer.stop('apollo_search_ms')
 
-    await logAgentEvent(
-      supabase,
-      userId,
-      'lead_discovered',
+    await logAgentAction(
+      { supabase, userId },
+      'leads_discovered',
       `${apolloPeople.length} Apollo-Kontakte, ${placesLeadData.length} Google Places Treffer`,
       { apollo: apolloPeople.length, places: placesLeadData.length },
     )
@@ -231,23 +252,28 @@ export async function runDiscoveryPipeline(
 
     if (allLeadData.length === 0) {
       await setCampaignStatus(supabase, campaignId, 'completed')
-      await logAgentEvent(supabase, userId, 'pipeline_completed', 'Keine Leads gefunden.')
+      await logAgentAction({ supabase, userId }, 'campaign_completed', 'Keine Leads gefunden.')
       return { leadsFound: 0, leadsScored: 0, failed: 0 }
     }
 
     const { data: savedLeads, error: saveError } = await supabase
       .from('leads')
-      .upsert(allLeadData, { onConflict: 'user_id,source,source_id' })
+      .upsert(allLeadData, { onConflict: 'user_id,source,apollo_id' })
       .select()
 
     if (saveError || !savedLeads) {
       throw new Error(`Failed to save leads: ${saveError?.message}`)
     }
 
-    await logAgentEvent(supabase, userId, 'lead_discovered', `${savedLeads.length} Leads gespeichert`)
+    await logAgentAction(
+      { supabase, userId },
+      'leads_discovered',
+      `${savedLeads.length} Leads gespeichert`,
+    )
 
     // Step 5: Score all leads
-    await logAgentEvent(supabase, userId, 'lead_scored', 'Bewerte und score Leads...')
+    timer.start('scoring_ms')
+    await logAgentAction({ supabase, userId }, 'lead_scored', 'Bewerte und score Leads...')
     const icp: ICP = {
       target_industries: icpProfile.industries ?? [],
       target_company_sizes: icpProfile.company_sizes ?? [],
@@ -256,15 +282,20 @@ export async function runDiscoveryPipeline(
       target_titles: icpProfile.job_titles ?? [],
     }
     const scoringResult = await runScoringPipeline(supabase, savedLeads as Lead[], icp, userId)
+    timer.stop('scoring_ms')
 
     // Step 6: Campaign completed
+    timer.stop('total_pipeline_ms')
     await setCampaignStatus(supabase, campaignId, 'completed')
-    await logAgentEvent(
-      supabase,
-      userId,
-      'pipeline_completed',
+    await logAgentAction(
+      { supabase, userId },
+      'campaign_completed',
       `Fertig! ${savedLeads.length} Leads gefunden und ${scoringResult.scored} bewertet.`,
-      { leads_found: savedLeads.length, leads_scored: scoringResult.scored },
+      {
+        leads_found: savedLeads.length,
+        leads_scored: scoringResult.scored,
+        pipeline_timing: timer.getMetrics(),
+      },
     )
 
     return {
@@ -275,10 +306,9 @@ export async function runDiscoveryPipeline(
   } catch (error) {
     console.error('[Discovery] Pipeline failed:', error)
     await setCampaignStatus(supabase, campaignId, 'failed')
-    await logAgentEvent(
-      supabase,
-      userId,
-      'error',
+    await logAgentAction(
+      { supabase, userId },
+      'campaign_failed',
       `Pipeline fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
     )
     throw error
