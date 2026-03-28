@@ -39,7 +39,7 @@ paths:
 - 8pt spacing grid. Use Tailwind spacing scale (`p-2` = 8px, `p-4` = 16px, etc.).
 
 ## Accessibility (WCAG 2.1 AA)
-- Touch targets: minimum 48x48px (WCAG 2.5.8).
+- Touch targets: minimum 48x48px (WCAG 2.5.8). Enforce with Tailwind `min-h-12 min-w-12` on buttons and interactive elements. Never use fixed sizes below 48px (e.g., `size-7`, `size-8`, `h-9`) on standalone interactive elements.
 - Color contrast: minimum 4.5:1 for text, 3:1 for large text.
 - All interactive elements keyboard-accessible.
 - Meaningful alt text on images. Decorative images: `alt=""`.

@@ -32,6 +32,11 @@ All API responses and server action returns MUST use the canonical envelope from
 - Never return raw error objects or `error.message` to client (SEC-009). Map to standard code + user-friendly message.
 - Import: `import { ok, fail, type ApiResponse } from '@/lib/api-response'`
 
+### Validation Error Handling
+- Validation failures MUST return `fail('VALIDATION_ERROR', message)`. Never return `ok()` with empty/null data on validation failure — this silently masks errors.
+- Pattern: `if (!parsed.success) return fail('VALIDATION_ERROR', 'Ungültige Eingabe')`
+- Tests must verify validation errors return `{ success: false, error: { code: 'VALIDATION_ERROR' } }`.
+
 ## API Routes (Next.js)
 - Use for webhooks, external API endpoints, cron jobs only.
 - Server Actions preferred over API routes for internal mutations.

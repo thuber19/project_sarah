@@ -37,10 +37,12 @@ pnpm db:seed      # supabase db reset (applies migrations + seed data)
 - **Security** — `proxy.ts` handles CSP headers, rate limiting, auth redirects, AND onboarding guard. Next.js 16 does NOT allow both `proxy.ts` and `middleware.ts` — all logic is in `proxy.ts`.
 - **Toasts** — Sonner `<Toaster />` in root layout (`app/layout.tsx`). Use `toast.success/error/info` from `sonner`.
 - **Validation** — Shared Zod schemas in `src/lib/validation/schemas.ts`. Use client-side before server actions.
-- **Tests** — 396 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
+- **Tests** — 388 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
 - **Analytics** — Vercel Analytics + Speed Insights in root layout. Core Web Vitals tracked automatically.
 - **Seed Data** — `supabase/seed.sql` with 10 DACH-realistic leads, scores, ICP, business profile. Run `pnpm db:seed`.
+- **Design Token Sync** — 53 CSS variables from `globals.css` synced to Pencil via MCP `set_variables()`. CSS is source of truth.
 - **Streaming Scoring** — `streamObject()` + `useObject()` pattern for progressive AI analysis on lead detail page.
+- **Shared Test Mocks** — `src/lib/testing/` with `createMockQueryBuilder`, `TEST_USER`, `assertSuccess/assertFail` for consistent test setup.
 - **Accessibility** — WCAG 2.1 AA quick wins: focus-visible, ARIA live regions, score badge contrast (4.5:1+), form labels.
 
 ## API Response Envelope
@@ -80,7 +82,8 @@ src/components/
 ├── auth/                       # AuthLeftPanel (shared left panel for auth pages)
 ├── marketing/                  # PricingCard
 ├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution, DashboardEmpty
-└── leads/                      # ScoreBadge, LeadTable, LeadFilters, LeadSearchInput, LeadPagination, ScoreBreakdown
+├── scoring/                    # ScoringProgress, RescoreButton
+└── leads/                      # ScoreBadge, LeadTable, LeadFilters, LeadSearchInput, LeadPagination, ScoreBreakdown, StreamingScoreBreakdown
 ```
 
 Most data pages are wired to real Supabase queries (dashboard, leads, lead detail, scoring, agent-logs, discovery, settings).

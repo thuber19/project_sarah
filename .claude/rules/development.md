@@ -8,6 +8,11 @@
 - Prefer `satisfies` over `as` for type assertions.
 - Path aliases: `@/*` → `src/*` (Next.js), `~/*` → `src/*` (alternative).
 
+## File Organization
+- `types/` files contain type definitions ONLY (interfaces, type aliases, enums). No functions, no business logic.
+- Business logic belongs in `lib/` (e.g., `getGradeForScore()` → `lib/scoring/grade.ts`, not `types/lead.ts`).
+- Type aliases for form/API data MUST derive from Zod schemas: `type FooData = z.infer<typeof fooSchema>`. Never manually duplicate types that mirror Zod schemas.
+
 ## Package Management
 - pnpm is the standard package manager for all JS/TS projects.
 - Always use `pnpm` commands, never `npm` or `yarn`.
