@@ -280,3 +280,66 @@ export async function startDiscoveryAction(
     return { error: message }
   }
 }
+
+// ---------------------------------------------------------------------------
+// ICP prefill for the discovery form
+// ---------------------------------------------------------------------------
+
+export interface IcpDefaults {
+  industries: string
+  companySize: string
+  region: string
+  technologies: string
+  keywords: string
+}
+
+export async function getIcpDefaultsAction(): Promise<IcpDefaults> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { industries: '', companySize: '', region: '', technologies: '', keywords: '' }
+
+  const { data } = await supabase
+    .from('icp_profiles')
+    .select('industries, company_sizes, regions, tech_stack, keywords')
+    .eq('user_id', user.id)
+    .single()
+
+  return {
+    industries: data?.industries?.join(', ') ?? 'SaaS, FinTech, E-Commerce',
+    companySize: data?.company_sizes?.join(', ') ?? '10-500 Mitarbeiter',
+    region: data?.regions?.join(', ') ?? 'DACH (AT, DE, CH)',
+    technologies: data?.tech_stack?.join(', ') ?? '',
+    keywords: data?.keywords?.join(', ') ?? '',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fetch leads discovered by a campaign
+// ---------------------------------------------------------------------------
+
+export interface DiscoveryLead {
+  id: string
+  company_name: string | null
+  full_name: string | null
+  industry: string | null
+  location: string | null
+  source: string | null
+}
+
+export async function getDiscoveryLeadsAction(
+  campaignId: string,
+): Promise<DiscoveryLead[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('leads')
+    .select('id, company_name, full_name, industry, location, source')
+    .eq('campaign_id', campaignId)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  return data ?? []
+}
