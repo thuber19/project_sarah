@@ -1,13 +1,15 @@
 import { tool } from 'ai'
 import { z } from 'zod'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { logToolAction, type ToolContext } from './context'
 
-export function createGetIcpProfile(supabase: SupabaseClient, userId: string) {
+export function createGetIcpProfile(ctx: ToolContext) {
+  const { supabase, userId } = ctx
   return tool({
     description:
       'Lädt das Ideal Customer Profile (ICP) und Firmenprofil des Users aus der Datenbank. Enthält Zielbranchen, Firmengrößen, Regionen, Jobtitel und Seniority-Level.',
     inputSchema: z.object({}),
     execute: async () => {
+      await logToolAction(ctx, 'query_optimized', 'ICP-Profil wird geladen')
       try {
         const [profileResult, icpResult] = await Promise.all([
           supabase

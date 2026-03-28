@@ -1,8 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { logToolAction, type ToolContext } from './context'
 
-export function createGetLeadDetails(supabase: SupabaseClient, userId: string) {
+export function createGetLeadDetails(ctx: ToolContext) {
+  const { supabase, userId } = ctx
   return tool({
     description:
       'Lädt Details eines Leads inkl. Score und Breakdown aus der Datenbank. Benötigt die Lead-ID.',
@@ -10,6 +11,7 @@ export function createGetLeadDetails(supabase: SupabaseClient, userId: string) {
       leadId: z.string().uuid().describe('UUID des Leads'),
     }),
     execute: async (params) => {
+      await logToolAction(ctx, 'query_optimized', `Lead-Details laden: ${params.leadId}`)
       try {
         const [leadResult, scoreResult] = await Promise.all([
           supabase
