@@ -2,6 +2,7 @@
 paths:
   - src/app/actions/**
   - src/app/api/**
+  - src/lib/supabase/**
   - src/routes/**
   - src/lib/errors/**
   - src/lib/http/**
