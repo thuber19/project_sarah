@@ -5,9 +5,11 @@ import { ScoringRulesToggle } from "./scoring-rules-toggle";
 import { requireAuth } from "@/lib/supabase/server";
 
 type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR";
+type DisplayGrade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
 
 interface DistributionItem {
   grade: Grade;
+  displayGrade: DisplayGrade;
   range: string;
   count: number;
   percent: number;
@@ -58,12 +60,12 @@ const iconMap = {
   globe: Globe,
 } as const;
 
-const gradeConfig: { grade: Grade; range: string; barColor: string }[] = [
-  { grade: "HOT", range: "90-100", barColor: "bg-score-hot" },
-  { grade: "QUALIFIED", range: "75-89", barColor: "bg-score-qualified" },
-  { grade: "ENGAGED", range: "60-74", barColor: "bg-score-engaged" },
-  { grade: "POTENTIAL", range: "40-59", barColor: "bg-score-potential" },
-  { grade: "POOR_FIT", range: "0-39", barColor: "bg-score-poor-fit" },
+const gradeConfig: { grade: Grade; displayGrade: DisplayGrade; range: string; barColor: string }[] = [
+  { grade: "HOT", displayGrade: "HOT", range: "90-100", barColor: "bg-score-hot" },
+  { grade: "QUALIFIED", displayGrade: "QUALIFIED", range: "75-89", barColor: "bg-score-qualified" },
+  { grade: "ENGAGED", displayGrade: "ENGAGED", range: "60-74", barColor: "bg-score-engaged" },
+  { grade: "POTENTIAL", displayGrade: "POTENTIAL", range: "40-59", barColor: "bg-score-potential" },
+  { grade: "POOR", displayGrade: "POOR_FIT", range: "0-39", barColor: "bg-score-poor-fit" },
 ];
 
 export default async function ScoringPage() {
@@ -81,7 +83,7 @@ export default async function ScoringPage() {
     QUALIFIED: 0,
     ENGAGED: 0,
     POTENTIAL: 0,
-    POOR_FIT: 0,
+    POOR: 0,
   };
   for (const s of scores ?? []) {
     const g = s.grade as Grade;
@@ -91,8 +93,9 @@ export default async function ScoringPage() {
   const hasScores = total > 0;
 
   const distributionData: DistributionItem[] = gradeConfig.map(
-    ({ grade, range, barColor }) => ({
+    ({ grade, displayGrade, range, barColor }) => ({
       grade,
+      displayGrade,
       range,
       count: gradeCounts[grade],
       percent:
@@ -185,7 +188,7 @@ export default async function ScoringPage() {
               >
                 {/* Grade badge */}
                 <div className="w-[100px]">
-                  <ScoreBadge grade={item.grade} />
+                  <ScoreBadge grade={item.displayGrade} />
                 </div>
 
                 {/* Range text */}

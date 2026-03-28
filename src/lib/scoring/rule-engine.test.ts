@@ -249,10 +249,13 @@ describe('calculateRuleScore', () => {
       expect(breakdown.contact_fit).toBe(5)
     })
 
-    it('gives 5 for Geschaeftsfuehrer title', () => {
+    it('gives 17 for Geschaeftsfuehrer title (DACH seniority 12 + executive fallback 5)', () => {
       const lead = makeLead({ title: 'Geschäftsführer' })
+      // No seniority set → DACH_TITLE_SENIORITY fallback: geschäftsführer=20, min(20,12)=12
+      // Title also matches executive fallback list: +5
+      // Total: 12 + 5 = 17
       const breakdown = calculateRuleScore(lead, defaultIcp)
-      expect(breakdown.contact_fit).toBe(5)
+      expect(breakdown.contact_fit).toBe(17)
     })
 
     it('gives 8 for Director title that substring-matches CTO in ICP', () => {
@@ -647,61 +650,61 @@ describe('totalFromBreakdown', () => {
 // ---------------------------------------------------------------------------
 
 describe('getGradeForScore', () => {
-  it('returns HOT for score >= 90', () => {
+  it('returns HOT for score >= 80', () => {
     expect(getGradeForScore(95)).toBe('HOT')
   })
 
-  it('returns QUALIFIED for score 75-89', () => {
-    expect(getGradeForScore(80)).toBe('QUALIFIED')
+  it('returns QUALIFIED for score 65-79', () => {
+    expect(getGradeForScore(70)).toBe('QUALIFIED')
   })
 
-  it('returns ENGAGED for score 60-74', () => {
-    expect(getGradeForScore(65)).toBe('ENGAGED')
+  it('returns ENGAGED for score 48-64', () => {
+    expect(getGradeForScore(55)).toBe('ENGAGED')
   })
 
-  it('returns POTENTIAL for score 40-59', () => {
-    expect(getGradeForScore(50)).toBe('POTENTIAL')
+  it('returns POTENTIAL for score 30-47', () => {
+    expect(getGradeForScore(35)).toBe('POTENTIAL')
   })
 
-  it('returns POOR_FIT for score < 40', () => {
-    expect(getGradeForScore(20)).toBe('POOR_FIT')
+  it('returns POOR for score < 30', () => {
+    expect(getGradeForScore(20)).toBe('POOR')
   })
 
   // Boundary tests
-  it('handles boundary: 90 is HOT', () => {
-    expect(getGradeForScore(90)).toBe('HOT')
+  it('handles boundary: 80 is HOT', () => {
+    expect(getGradeForScore(80)).toBe('HOT')
   })
 
-  it('handles boundary: 89 is QUALIFIED', () => {
-    expect(getGradeForScore(89)).toBe('QUALIFIED')
+  it('handles boundary: 79 is QUALIFIED', () => {
+    expect(getGradeForScore(79)).toBe('QUALIFIED')
   })
 
-  it('handles boundary: 75 is QUALIFIED', () => {
-    expect(getGradeForScore(75)).toBe('QUALIFIED')
+  it('handles boundary: 65 is QUALIFIED', () => {
+    expect(getGradeForScore(65)).toBe('QUALIFIED')
   })
 
-  it('handles boundary: 74 is ENGAGED', () => {
-    expect(getGradeForScore(74)).toBe('ENGAGED')
+  it('handles boundary: 64 is ENGAGED', () => {
+    expect(getGradeForScore(64)).toBe('ENGAGED')
   })
 
-  it('handles boundary: 60 is ENGAGED', () => {
-    expect(getGradeForScore(60)).toBe('ENGAGED')
+  it('handles boundary: 48 is ENGAGED', () => {
+    expect(getGradeForScore(48)).toBe('ENGAGED')
   })
 
-  it('handles boundary: 59 is POTENTIAL', () => {
-    expect(getGradeForScore(59)).toBe('POTENTIAL')
+  it('handles boundary: 47 is POTENTIAL', () => {
+    expect(getGradeForScore(47)).toBe('POTENTIAL')
   })
 
-  it('handles boundary: 40 is POTENTIAL', () => {
-    expect(getGradeForScore(40)).toBe('POTENTIAL')
+  it('handles boundary: 30 is POTENTIAL', () => {
+    expect(getGradeForScore(30)).toBe('POTENTIAL')
   })
 
-  it('handles boundary: 39 is POOR_FIT', () => {
-    expect(getGradeForScore(39)).toBe('POOR_FIT')
+  it('handles boundary: 29 is POOR', () => {
+    expect(getGradeForScore(29)).toBe('POOR')
   })
 
-  it('handles boundary: 0 is POOR_FIT', () => {
-    expect(getGradeForScore(0)).toBe('POOR_FIT')
+  it('handles boundary: 0 is POOR', () => {
+    expect(getGradeForScore(0)).toBe('POOR')
   })
 
   it('handles boundary: 100 is HOT', () => {
