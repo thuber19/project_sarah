@@ -42,7 +42,7 @@ export async function analyzeIcpRefinementAction() {
       .from('lead_scores')
       .select('grade, total_score, ai_reasoning, lead_id')
       .eq('user_id', user.id)
-      .order('scored_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(50),
     supabase
       .from('leads')
