@@ -2,7 +2,7 @@
 
 ## TypeScript Discipline
 - Strict mode in all projects. No `any` without `// eslint-disable-next-line` + justification.
-- Use `tsgo --noEmit` (NOT `tsc --noEmit`) for type checking — 3-5x faster.
+- Use `tsc --noEmit` for type checking (`pnpm typecheck`).
 - 0 TypeScript errors is a mandatory baseline. Never merge with errors.
 - Use Zod for runtime validation at system boundaries (user input, API responses).
 - Prefer `satisfies` over `as` for type assertions.

@@ -1,13 +1,17 @@
-"use client"
+'use client'
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Bell, Compass, Play, Search, SlidersHorizontal } from "lucide-react"
-import { toast } from "sonner"
-import { startDiscoveryAction, type IcpDefaults, type DiscoveryLead } from "@/app/actions/discovery.actions"
-import { discoveryFormSchema } from "@/lib/validation/schemas"
-import { EmptyState } from "@/components/shared/empty-state"
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { Bell, Compass, Play, Search, SlidersHorizontal } from 'lucide-react'
+import { toast } from 'sonner'
+import {
+  startDiscoveryAction,
+  type IcpDefaults,
+  type DiscoveryLead,
+} from '@/app/actions/discovery.actions'
+import { discoveryFormSchema } from '@/lib/validation/schemas'
+import { EmptyState } from '@/components/shared/empty-state'
 import {
   Table,
   TableBody,
@@ -15,7 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table'
 
 interface DiscoveryClientProps {
   icpDefaults: IcpDefaults
@@ -52,7 +56,7 @@ export function DiscoveryClient({
     }
 
     startTransition(async () => {
-      toast.info("Discovery gestartet...")
+      toast.info('Discovery gestartet...')
       const result = await startDiscoveryAction({
         industries,
         companySize,
@@ -61,10 +65,10 @@ export function DiscoveryClient({
         keywords: keywords || undefined,
       })
 
-      if ("error" in result) {
-        toast.error(result.error)
+      if (!result.success) {
+        toast.error(result.error.message)
       } else {
-        toast.success(`${result.leadsFound} Leads gefunden!`)
+        toast.success(`${result.data.leadsFound} Leads gefunden!`)
         router.refresh()
       }
     })
@@ -74,9 +78,7 @@ export function DiscoveryClient({
     <div className="flex h-full flex-1 flex-col">
       {/* Top bar */}
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">
-          Lead Discovery
-        </span>
+        <span className="text-base font-semibold text-foreground">Lead Discovery</span>
 
         <div className="flex items-center gap-3">
           {/* Discovery starten button */}
@@ -86,7 +88,7 @@ export function DiscoveryClient({
             onClick={handleDiscovery}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
           >
-            {isPending ? "Suche laeuft..." : "Discovery starten"}
+            {isPending ? 'Suche laeuft...' : 'Discovery starten'}
           </button>
 
           {/* Verlauf button */}
@@ -131,13 +133,13 @@ export function DiscoveryClient({
             title="Keine Discovery gestartet"
             description="Definiere deinen ICP und finde passende Unternehmen automatisch."
             primaryAction={{
-              label: "ICP konfigurieren",
-              href: "/settings?tab=icp",
+              label: 'ICP konfigurieren',
+              href: '/settings?tab=icp',
               icon: SlidersHorizontal,
             }}
             secondaryAction={{
-              label: "Erste Discovery starten",
-              href: "/discovery",
+              label: 'Erste Discovery starten',
+              href: '/discovery',
               icon: Play,
             }}
           />
@@ -150,9 +152,7 @@ export function DiscoveryClient({
             {/* Suchkriterien card */}
             <div className="flex flex-col gap-5 rounded-xl border border-border bg-white p-6">
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold text-foreground">
-                  Suchkriterien
-                </h2>
+                <h2 className="text-base font-semibold text-foreground">Suchkriterien</h2>
                 <span className="rounded-md bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
                   Automatisch
                 </span>
@@ -161,10 +161,7 @@ export function DiscoveryClient({
               {/* Form fields */}
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="branchen"
-                    className="text-sm font-medium text-foreground"
-                  >
+                  <label htmlFor="branchen" className="text-sm font-medium text-foreground">
                     Branchen
                   </label>
                   <input
@@ -193,10 +190,7 @@ export function DiscoveryClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="region"
-                    className="text-sm font-medium text-foreground"
-                  >
+                  <label htmlFor="region" className="text-sm font-medium text-foreground">
                     Region
                   </label>
                   <input
@@ -209,10 +203,7 @@ export function DiscoveryClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="technologien"
-                    className="text-sm font-medium text-foreground"
-                  >
+                  <label htmlFor="technologien" className="text-sm font-medium text-foreground">
                     Technologien (Optional)
                   </label>
                   <input
@@ -226,10 +217,7 @@ export function DiscoveryClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="keywords"
-                    className="text-sm font-medium text-foreground"
-                  >
+                  <label htmlFor="keywords" className="text-sm font-medium text-foreground">
                     Keywords (Optional)
                   </label>
                   <input
@@ -251,15 +239,13 @@ export function DiscoveryClient({
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
               >
                 <Search className="h-4 w-4" />
-                {isPending ? "Suche laeuft..." : "Leads finden"}
+                {isPending ? 'Suche laeuft...' : 'Leads finden'}
               </button>
             </div>
 
             {/* Datenquellen card */}
             <div className="rounded-xl border border-border bg-white p-6">
-              <h2 className="mb-3 text-base font-semibold text-foreground">
-                Datenquellen
-              </h2>
+              <h2 className="mb-3 text-base font-semibold text-foreground">Datenquellen</h2>
 
               <div className="flex flex-col gap-2">
                 {/* Apollo.io */}
@@ -267,9 +253,7 @@ export function DiscoveryClient({
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                     A
                   </div>
-                  <span className="text-sm font-medium text-foreground">
-                    Apollo.io
-                  </span>
+                  <span className="text-sm font-medium text-foreground">Apollo.io</span>
                   <span className="text-xs font-medium text-success">Aktiv</span>
                 </div>
 
@@ -278,9 +262,7 @@ export function DiscoveryClient({
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                     G
                   </div>
-                  <span className="text-sm font-medium text-foreground">
-                    Google Places
-                  </span>
+                  <span className="text-sm font-medium text-foreground">Google Places</span>
                   <span className="text-xs font-medium text-success">Aktiv</span>
                 </div>
               </div>
@@ -292,9 +274,7 @@ export function DiscoveryClient({
             {/* Header row */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold text-foreground">
-                  Ergebnisse
-                </h2>
+                <h2 className="text-base font-semibold text-foreground">Ergebnisse</h2>
                 {totalLeadsFound > 0 && (
                   <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
                     {totalLeadsFound} neue Leads gefunden
@@ -350,19 +330,23 @@ export function DiscoveryClient({
                     latestLeads.map((lead) => (
                       <TableRow key={lead.id}>
                         <TableCell className="text-sm font-medium text-foreground">
-                          {lead.company_name ?? "-"}
+                          {lead.company_name ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {lead.full_name ?? "-"}
+                          {lead.full_name ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {lead.industry ?? "-"}
+                          {lead.industry ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {lead.location ?? "-"}
+                          {lead.location ?? '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {lead.source === "apollo" ? "Apollo.io" : lead.source === "google_places" ? "Google Places" : lead.source ?? "-"}
+                          {lead.source === 'apollo'
+                            ? 'Apollo.io'
+                            : lead.source === 'google_places'
+                              ? 'Google Places'
+                              : (lead.source ?? '-')}
                         </TableCell>
                         <TableCell>
                           <Link

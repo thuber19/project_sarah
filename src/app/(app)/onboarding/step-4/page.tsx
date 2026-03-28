@@ -5,7 +5,11 @@ import { redirect } from 'next/navigation'
 import { toast } from 'sonner'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { saveOnboardingAction, type ProfileData, type IcpData } from '@/app/actions/onboarding.actions'
+import {
+  saveOnboardingAction,
+  type ProfileData,
+  type IcpData,
+} from '@/app/actions/onboarding.actions'
 
 function getStoredData(): { profile: ProfileData; icp: IcpData; threshold: number } | null {
   if (typeof window === 'undefined') return null
@@ -35,8 +39,8 @@ export default function OnboardingStep4() {
 
     startTransition(async () => {
       const result = await saveOnboardingAction(profile, icp)
-      if (result && 'error' in result) {
-        setError(result.error)
+      if (result && !result.success) {
+        setError(result.error.message)
         toast.error('Profil konnte nicht gespeichert werden.')
         return
       }

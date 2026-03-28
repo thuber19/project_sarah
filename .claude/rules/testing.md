@@ -37,8 +37,8 @@ paths:
 ## Server Action Testing
 
 ### Mocking `requireAuth()`
-- Mock the auth boundary at module level: `vi.mock('@/lib/auth', () => ({ requireAuth: vi.fn() }))`.
-- Default mock return: `{ user: { id: 'test-user-id', email: 'test@example.com' }, businessId: 'test-biz-id', supabase: createMockSupabase() }`.
+- Mock the auth boundary at module level: `vi.mock('@/lib/supabase/server', () => ({ requireAuth: vi.fn() }))`.
+- Default mock return: `{ user: { id: 'test-user-id', email: 'test@example.com' }, supabase: createMockSupabase() }`.
 - Test unauthenticated: `vi.mocked(requireAuth).mockRejectedValue(new Error('Unauthorized'))`.
 - Reset mocks in `beforeEach` to prevent state leakage.
 

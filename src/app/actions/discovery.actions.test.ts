@@ -80,9 +80,7 @@ function makeApolloPerson(overrides: Partial<ApolloPerson> = {}): ApolloPerson {
     seniority: 'c_suite',
     email: 'max@example.com',
     email_status: 'verified',
-    phone_numbers: [
-      { raw_number: '+4312345678', sanitized_number: '+4312345678', type: 'work' },
-    ],
+    phone_numbers: [{ raw_number: '+4312345678', sanitized_number: '+4312345678', type: 'work' }],
     linkedin_url: 'https://linkedin.com/in/max',
     organization_id: 'org-1',
     organization: {
@@ -150,9 +148,18 @@ function createQueryChain(data: unknown = null, error: unknown = null) {
   const result = { data, error }
 
   const methods = [
-    'select', 'insert', 'update', 'delete',
-    'eq', 'neq', 'in', 'is',
-    'order', 'limit', 'single', 'maybeSingle',
+    'select',
+    'insert',
+    'update',
+    'delete',
+    'eq',
+    'neq',
+    'in',
+    'is',
+    'order',
+    'limit',
+    'single',
+    'maybeSingle',
   ]
 
   for (const method of methods) {
@@ -165,7 +172,9 @@ function createQueryChain(data: unknown = null, error: unknown = null) {
 
   // For chains ending without .single() (like insert().select().single())
   // we resolve the chain itself as the result
-  chain['then'] = vi.fn((resolve: (v: unknown) => void) => resolve(result)) as ReturnType<typeof vi.fn>
+  chain['then'] = vi.fn((resolve: (v: unknown) => void) => resolve(result)) as ReturnType<
+    typeof vi.fn
+  >
 
   // Make the chain thenable for await
   Object.defineProperty(chain, 'then', {
@@ -217,51 +226,54 @@ describe('discovery.actions', () => {
       [100000, '5001+'],
     ]
 
-    it.each(sizeTestCases)(
-      'maps %d employees to "%s"',
-      async (employeeCount, expectedSize) => {
-        const person = makeApolloPerson({
-          organization: {
-            ...makeApolloPerson().organization!,
-            estimated_num_employees: employeeCount,
-          },
-        })
+    it.each(sizeTestCases)('maps %d employees to "%s"', async (employeeCount, expectedSize) => {
+      const person = makeApolloPerson({
+        organization: {
+          ...makeApolloPerson().organization!,
+          estimated_num_employees: employeeCount,
+        },
+      })
 
-        // Set up the full pipeline mocks needed by startDiscoveryAction
-        const campaignChain = createQueryChain({ id: 'camp-1' })
-        const profileChain = createQueryChain(null)
-        const icpChain = createQueryChain(null)
-        const insertChain = createQueryChain(null)
-        const logChain = createQueryChain(null)
+      // Set up the full pipeline mocks needed by startDiscoveryAction
+      const campaignChain = createQueryChain({ id: 'camp-1' })
+      const profileChain = createQueryChain(null)
+      const icpChain = createQueryChain(null)
+      const insertChain = createQueryChain(null)
+      const logChain = createQueryChain(null)
 
-        mockFrom.mockImplementation((table: string) => {
-          switch (table) {
-            case 'business_profiles': return profileChain
-            case 'icp_profiles': return icpChain
-            case 'search_campaigns': return campaignChain
-            case 'leads': return insertChain
-            case 'agent_logs': return logChain
-            default: return createQueryChain(null)
-          }
-        })
+      mockFrom.mockImplementation((table: string) => {
+        switch (table) {
+          case 'business_profiles':
+            return profileChain
+          case 'icp_profiles':
+            return icpChain
+          case 'search_campaigns':
+            return campaignChain
+          case 'leads':
+            return insertChain
+          case 'agent_logs':
+            return logChain
+          default:
+            return createQueryChain(null)
+        }
+      })
 
-        vi.mocked(optimizeSearchQuery).mockResolvedValue(
-          makeOptimizedQuery({ googlePlacesQueries: [] }),
-        )
-        vi.mocked(searchPeople).mockResolvedValue({
-          people: [person],
-          pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
-        })
-        vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
+      vi.mocked(optimizeSearchQuery).mockResolvedValue(
+        makeOptimizedQuery({ googlePlacesQueries: [] }),
+      )
+      vi.mocked(searchPeople).mockResolvedValue({
+        people: [person],
+        pagination: { page: 1, per_page: 25, total_entries: 1, total_pages: 1 },
+      })
+      vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
 
-        await startDiscoveryAction(DEFAULT_FORM_DATA)
+      await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-        // The leads.insert() call receives the transformed leads
-        const insertCall = insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
-        expect(insertCall).toBeDefined()
-        expect(insertCall[0]?.company_size).toBe(expectedSize)
-      },
-    )
+      // The leads.insert() call receives the transformed leads
+      const insertCall = insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
+      expect(insertCall).toBeDefined()
+      expect(insertCall[0]?.company_size).toBe(expectedSize)
+    })
   })
 
   // =========================================================================
@@ -278,12 +290,18 @@ describe('discovery.actions', () => {
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
-          case 'business_profiles': return profileChain
-          case 'icp_profiles': return icpChain
-          case 'search_campaigns': return campaignChain
-          case 'leads': return insertChain
-          case 'agent_logs': return logChain
-          default: return createQueryChain(null)
+          case 'business_profiles':
+            return profileChain
+          case 'icp_profiles':
+            return icpChain
+          case 'search_campaigns':
+            return campaignChain
+          case 'leads':
+            return insertChain
+          case 'agent_logs':
+            return logChain
+          default:
+            return createQueryChain(null)
         }
       })
 
@@ -343,23 +361,17 @@ describe('discovery.actions', () => {
     })
 
     it('handles missing last name in full_name', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({ first_name: 'Anna', last_name: null }),
-      )
+      const leads = await runWithPerson(makeApolloPerson({ first_name: 'Anna', last_name: null }))
       expect(leads[0]?.full_name).toBe('Anna')
     })
 
     it('returns null full_name when both names are null', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({ first_name: null, last_name: null }),
-      )
+      const leads = await runWithPerson(makeApolloPerson({ first_name: null, last_name: null }))
       expect(leads[0]?.full_name).toBeNull()
     })
 
     it('handles person without organization', async () => {
-      const leads = await runWithPerson(
-        makeApolloPerson({ organization: null }),
-      )
+      const leads = await runWithPerson(makeApolloPerson({ organization: null }))
       const lead = leads[0]!
       expect(lead.company_name).toBeNull()
       expect(lead.company_domain).toBeNull()
@@ -495,12 +507,18 @@ describe('discovery.actions', () => {
 
       mockFrom.mockImplementation((table: string) => {
         switch (table) {
-          case 'business_profiles': return profileChain
-          case 'icp_profiles': return icpChain
-          case 'search_campaigns': return campaignChain
-          case 'leads': return insertChain
-          case 'agent_logs': return logChain
-          default: return createQueryChain(null)
+          case 'business_profiles':
+            return profileChain
+          case 'icp_profiles':
+            return icpChain
+          case 'search_campaigns':
+            return campaignChain
+          case 'leads':
+            return insertChain
+          case 'agent_logs':
+            return logChain
+          default:
+            return createQueryChain(null)
         }
       })
 
@@ -512,7 +530,10 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ error: 'Campaign konnte nicht erstellt werden' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Campaign konnte nicht erstellt werden' },
+      })
     })
 
     it('calls requireAuth before any other work', async () => {
@@ -542,7 +563,7 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ campaignId: 'camp-1', leadsFound: 1 })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 1 } })
     })
 
     it('parses comma-separated form inputs correctly', async () => {
@@ -573,27 +594,29 @@ describe('discovery.actions', () => {
       vi.mocked(optimizeSearchQuery).mockResolvedValue(makeOptimizedQuery())
       vi.mocked(searchPeople).mockRejectedValue(new Error('Apollo API error 500'))
       vi.mocked(textSearch).mockResolvedValue({
-        places: [{
-          id: 'place-1',
-          displayName: 'Wiener SaaS GmbH',
-          formattedAddress: 'Kärntner Str. 1, 1010 Wien',
-          websiteUri: 'https://wienersaas.at',
-          nationalPhoneNumber: '+4312345678',
-          internationalPhoneNumber: null,
-          rating: 4.5,
-          userRatingCount: 10,
-          businessStatus: 'OPERATIONAL',
-          types: ['establishment'],
-          location: { latitude: 48.2, longitude: 16.37 },
-        }],
+        places: [
+          {
+            id: 'place-1',
+            displayName: 'Wiener SaaS GmbH',
+            formattedAddress: 'Kärntner Str. 1, 1010 Wien',
+            websiteUri: 'https://wienersaas.at',
+            nationalPhoneNumber: '+4312345678',
+            internationalPhoneNumber: null,
+            rating: 4.5,
+            userRatingCount: 10,
+            businessStatus: 'OPERATIONAL',
+            types: ['establishment'],
+            location: { latitude: 48.2, longitude: 16.37 },
+          },
+        ],
         nextPageToken: null,
       })
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
       // Should still succeed with Google Places leads
-      expect(result).toHaveProperty('campaignId', 'camp-1')
-      expect(result).toHaveProperty('leadsFound')
+      expect(result).toEqual(expect.objectContaining({ success: true }))
+      expect(result.success && result.data.campaignId).toBe('camp-1')
       // Apollo failure should be logged
       expect(logChain['insert']).toHaveBeenCalled()
     })
@@ -618,25 +641,29 @@ describe('discovery.actions', () => {
         pagination: { page: 1, per_page: 25, total_entries: 0, total_pages: 0 },
       })
       vi.mocked(textSearch).mockResolvedValue({
-        places: [{
-          id: 'place-1',
-          displayName: 'Wiener SaaS GmbH',
-          formattedAddress: 'Kärntner Str. 1, 1010 Wien',
-          websiteUri: 'https://wienersaas.at',
-          nationalPhoneNumber: '+4312345678',
-          internationalPhoneNumber: null,
-          rating: 4.5,
-          userRatingCount: 10,
-          businessStatus: 'OPERATIONAL',
-          types: ['establishment'],
-          location: { latitude: 48.2, longitude: 16.37 },
-        }],
+        places: [
+          {
+            id: 'place-1',
+            displayName: 'Wiener SaaS GmbH',
+            formattedAddress: 'Kärntner Str. 1, 1010 Wien',
+            websiteUri: 'https://wienersaas.at',
+            nationalPhoneNumber: '+4312345678',
+            internationalPhoneNumber: null,
+            rating: 4.5,
+            userRatingCount: 10,
+            businessStatus: 'OPERATIONAL',
+            types: ['establishment'],
+            location: { latitude: 48.2, longitude: 16.37 },
+          },
+        ],
         nextPageToken: null,
       })
 
       await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<Record<string, unknown>>
+      const insertedLeads = insertChain['insert']!.mock.calls[0]?.[0] as Array<
+        Record<string, unknown>
+      >
       expect(insertedLeads).toBeDefined()
 
       const placeLead = insertedLeads.find((l) => l.source === 'google_places')
@@ -714,14 +741,15 @@ describe('discovery.actions', () => {
       })
       vi.mocked(enrichPerson)
         .mockRejectedValueOnce(new Error('Enrichment failed'))
-        .mockResolvedValueOnce({ person: makeApolloPerson({ id: 'p2', email: 'lisa@example.com' }) })
+        .mockResolvedValueOnce({
+          person: makeApolloPerson({ id: 'p2', email: 'lisa@example.com' }),
+        })
       vi.mocked(textSearch).mockResolvedValue({ places: [], nextPageToken: null })
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
       // Should still succeed — enrichment failures are non-fatal
-      expect(result).toHaveProperty('campaignId', 'camp-1')
-      expect(result).toHaveProperty('leadsFound', 2)
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 2 } })
     })
 
     it('does not insert leads when none are found', async () => {
@@ -737,7 +765,7 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ campaignId: 'camp-1', leadsFound: 0 })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0 } })
       // leads.insert should not have been called
       expect(insertChain['insert']).not.toHaveBeenCalled()
     })
@@ -755,7 +783,10 @@ describe('discovery.actions', () => {
 
       const result = await startDiscoveryAction(DEFAULT_FORM_DATA)
 
-      expect(result).toEqual({ error: 'Leads konnten nicht gespeichert werden' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Leads konnten nicht gespeichert werden' },
+      })
     })
 
     it('updates campaign status to completed on success', async () => {
@@ -794,7 +825,7 @@ describe('discovery.actions', () => {
         // technologies and keywords omitted
       })
 
-      expect(result).toEqual({ campaignId: 'camp-1', leadsFound: 0 })
+      expect(result).toEqual({ success: true, data: { campaignId: 'camp-1', leadsFound: 0 } })
     })
   })
 
@@ -817,11 +848,14 @@ describe('discovery.actions', () => {
       const result = await getIcpDefaultsAction()
 
       expect(result).toEqual({
-        industries: 'SaaS, FinTech, E-Commerce',
-        companySize: '11-50, 51-200',
-        region: 'AT, DE, CH',
-        technologies: 'React, TypeScript, Node.js',
-        keywords: 'B2B, Lead Generation',
+        success: true,
+        data: {
+          industries: 'SaaS, FinTech, E-Commerce',
+          companySize: '11-50, 51-200',
+          region: 'AT, DE, CH',
+          technologies: 'React, TypeScript, Node.js',
+          keywords: 'B2B, Lead Generation',
+        },
       })
     })
 
@@ -832,11 +866,14 @@ describe('discovery.actions', () => {
       const result = await getIcpDefaultsAction()
 
       expect(result).toEqual({
-        industries: 'SaaS, FinTech, E-Commerce',
-        companySize: '10-500 Mitarbeiter',
-        region: 'DACH (AT, DE, CH)',
-        technologies: '',
-        keywords: '',
+        success: true,
+        data: {
+          industries: 'SaaS, FinTech, E-Commerce',
+          companySize: '10-500 Mitarbeiter',
+          region: 'DACH (AT, DE, CH)',
+          technologies: '',
+          keywords: '',
+        },
       })
     })
 
@@ -854,11 +891,14 @@ describe('discovery.actions', () => {
       const result = await getIcpDefaultsAction()
 
       expect(result).toEqual({
-        industries: 'SaaS',
-        companySize: '51-200',
-        region: 'AT',
-        technologies: '',
-        keywords: '',
+        success: true,
+        data: {
+          industries: 'SaaS',
+          companySize: '51-200',
+          region: 'AT',
+          technologies: '',
+          keywords: '',
+        },
       })
     })
 
@@ -876,11 +916,14 @@ describe('discovery.actions', () => {
       const result = await getIcpDefaultsAction()
 
       expect(result).toEqual({
-        industries: '',
-        companySize: '',
-        region: '',
-        technologies: '',
-        keywords: '',
+        success: true,
+        data: {
+          industries: '',
+          companySize: '',
+          region: '',
+          technologies: '',
+          keywords: '',
+        },
       })
     })
 
@@ -924,7 +967,7 @@ describe('discovery.actions', () => {
 
       const result = await getDiscoveryLeadsAction('camp-1')
 
-      expect(result).toEqual(leadsData)
+      expect(result).toEqual({ success: true, data: leadsData })
       expect(requireAuth).toHaveBeenCalledOnce()
       expect(mockFrom).toHaveBeenCalledWith('leads')
 
@@ -939,7 +982,7 @@ describe('discovery.actions', () => {
 
       const result = await getDiscoveryLeadsAction('camp-nonexistent')
 
-      expect(result).toEqual([])
+      expect(result).toEqual({ success: true, data: [] })
     })
 
     it('limits results to 50 and orders by created_at desc', async () => {

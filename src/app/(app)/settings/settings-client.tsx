@@ -93,8 +93,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
         website_url: websiteUrl || undefined,
       })
 
-      if (profileResult.error) {
-        toast.error(profileResult.error)
+      if (!profileResult.success) {
+        toast.error(profileResult.error.message)
         return
       }
 
@@ -108,8 +108,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
           tech_stack: fromCommaStr(icpTechStack),
         }
         const icpResult = await updateIcpAction(icpData)
-        if (icpResult.error) {
-          toast.error(icpResult.error)
+        if (!icpResult.success) {
+          toast.error(icpResult.error.message)
           return
         }
       }
@@ -221,7 +221,9 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
 
               {/* Integrations */}
               <section>
-                <h2 className="text-base font-semibold text-foreground">Verbundene Integrationen</h2>
+                <h2 className="text-base font-semibold text-foreground">
+                  Verbundene Integrationen
+                </h2>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   Verknüpfe deine API-Verbindungen und Datenquellen
                 </p>
@@ -264,8 +266,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     Ideal Customer Profile
                   </h2>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    Mehrere Werte mit Komma trennen (z. B. „SaaS, FinTech"). Gilt für alle zukünftigen
-                    Discovery-Suchen.
+                    Mehrere Werte mit Komma trennen (z.&nbsp;B. &bdquo;SaaS,
+                    FinTech&ldquo;). Gilt für alle zukünftigen Discovery-Suchen.
                   </p>
                 </div>
 
@@ -327,7 +329,8 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Klicke „Speichern" oben rechts, um die ICP-Konfiguration zu übernehmen.
+                  Klicke &bdquo;Speichern&ldquo; oben rechts, um die ICP-Konfiguration zu
+                  übernehmen.
                 </p>
               </div>
             ) : (

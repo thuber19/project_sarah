@@ -1,14 +1,13 @@
-import { Suspense } from "react"
-import { Bell, Compass, Upload, Users } from "lucide-react"
-import { getLeadsAction } from "@/app/actions/leads.actions"
-import { requireAuth } from "@/lib/supabase/server"
-import { LeadFilters } from "@/components/leads/lead-filters"
-import { LeadTable } from "@/components/leads/lead-table"
-import { LeadSearchInput } from "@/components/leads/lead-search-input"
-import { LeadPagination } from "@/components/leads/lead-pagination"
-import { EmptyState } from "@/components/shared/empty-state"
-
-const PAGE_SIZE = 20
+import { Suspense } from 'react'
+import { Bell, Compass, Upload, Users } from 'lucide-react'
+import { getLeadsAction } from '@/app/actions/leads.actions'
+import { requireAuth } from '@/lib/supabase/server'
+import { PAGE_SIZE } from '@/lib/constants'
+import { LeadFilters } from '@/components/leads/lead-filters'
+import { LeadTable } from '@/components/leads/lead-table'
+import { LeadSearchInput } from '@/components/leads/lead-search-input'
+import { LeadPagination } from '@/components/leads/lead-pagination'
+import { EmptyState } from '@/components/shared/empty-state'
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -23,7 +22,8 @@ export default async function LeadsPage({ searchParams }: Props) {
     Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as Record<string, string | undefined>
 
-  const { leads, totalCount } = await getLeadsAction(params)
+  const response = await getLeadsAction(params)
+  const { leads, totalCount } = response.success ? response.data : { leads: [], totalCount: 0 }
 
   const grade = params.grade ?? 'ALL'
   const sort = params.sort ?? 'total_score'
@@ -56,11 +56,15 @@ export default async function LeadsPage({ searchParams }: Props) {
           </button>
 
           {/* Search input (client component) */}
-          <Suspense fallback={
-            <div className="relative">
-              <div className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-muted-foreground">Suchen...</div>
-            </div>
-          }>
+          <Suspense
+            fallback={
+              <div className="relative">
+                <div className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-muted-foreground">
+                  Suchen...
+                </div>
+              </div>
+            }
+          >
             <LeadSearchInput />
           </Suspense>
 
@@ -93,11 +97,7 @@ export default async function LeadsPage({ searchParams }: Props) {
           />
 
           <Suspense>
-            <LeadPagination
-              currentPage={page}
-              totalCount={totalCount}
-              pageSize={PAGE_SIZE}
-            />
+            <LeadPagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
           </Suspense>
         </div>
       ) : (

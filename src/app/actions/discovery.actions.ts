@@ -6,6 +6,8 @@ import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
 import type { ApolloPerson } from '@/lib/apollo/types'
 import type { Database } from '@/types/database'
+import type { ApiResponse } from '@/lib/api-response'
+import { ok, fail } from '@/lib/api-response'
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert']
 type AgentLogInsert = Database['public']['Tables']['agent_logs']['Insert']
@@ -83,7 +85,7 @@ function categorizeSize(employees: number): string {
 
 export async function startDiscoveryAction(
   formData: DiscoveryFormData,
-): Promise<DiscoveryResult | { error: string }> {
+): Promise<ApiResponse<DiscoveryResult>> {
   const { user, supabase } = await requireAuth()
 
   // Fetch business profile + ICP
@@ -112,19 +114,39 @@ export async function startDiscoveryAction(
     .single()
 
   if (campaignError || !campaign) {
-    return { error: 'Campaign konnte nicht erstellt werden' }
+    return fail('INTERNAL_ERROR', 'Campaign konnte nicht erstellt werden')
   }
 
   try {
     await logAgent(supabase, user.id, campaign.id, 'campaign_started', 'Lead Discovery gestartet')
 
     // Step 1: Optimize search queries with AI
-    await logAgent(supabase, user.id, campaign.id, 'query_optimized', 'Optimiere Suchparameter mit AI...')
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'query_optimized',
+      'Optimiere Suchparameter mit AI...',
+    )
 
-    const industries = formData.industries.split(',').map((s) => s.trim()).filter(Boolean)
-    const regions = formData.region.split(',').map((s) => s.trim()).filter(Boolean)
-    const technologies = formData.technologies?.split(',').map((s) => s.trim()).filter(Boolean) ?? []
-    const keywords = formData.keywords?.split(',').map((s) => s.trim()).filter(Boolean) ?? []
+    const industries = formData.industries
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const regions = formData.region
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const technologies =
+      formData.technologies
+        ?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean) ?? []
+    const keywords =
+      formData.keywords
+        ?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean) ?? []
 
     // Build effective ICP by merging DB data with form inputs as fallback
     const effectiveIcp = {
@@ -139,7 +161,7 @@ export async function startDiscoveryAction(
       tech_stack: technologies,
       revenue_ranges: icpData?.revenue_ranges ?? null,
       funding_stages: icpData?.funding_stages ?? null,
-      keywords: keywords.length > 0 ? keywords : icpData?.keywords ?? null,
+      keywords: keywords.length > 0 ? keywords : (icpData?.keywords ?? null),
       created_at: icpData?.created_at ?? new Date().toISOString(),
       updated_at: icpData?.updated_at ?? new Date().toISOString(),
     }
@@ -161,12 +183,24 @@ export async function startDiscoveryAction(
 
     const optimizedQuery = await optimizeSearchQuery(effectiveProfile, effectiveIcp)
 
-    await logAgent(supabase, user.id, campaign.id, 'query_optimized', `Suchstrategie: ${optimizedQuery.reasoning}`)
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'query_optimized',
+      `Suchstrategie: ${optimizedQuery.reasoning}`,
+    )
 
     const allLeads: LeadInsert[] = []
 
     // Step 2: Apollo People Search
-    await logAgent(supabase, user.id, campaign.id, 'leads_discovered', 'Suche Leads via Apollo.io...')
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'leads_discovered',
+      'Suche Leads via Apollo.io...',
+    )
     try {
       const apolloResult = await searchPeople({
         person_titles: optimizedQuery.apolloParams.personTitles,
@@ -175,7 +209,10 @@ export async function startDiscoveryAction(
         organization_industry_tag_ids: optimizedQuery.apolloParams.organizationIndustries,
         organization_locations: optimizedQuery.apolloParams.organizationLocations,
         organization_keywords: [...optimizedQuery.apolloParams.organizationKeywords, ...keywords],
-        organization_technologies: technologies.length > 0 ? technologies : optimizedQuery.apolloParams.organizationTechnologies,
+        organization_technologies:
+          technologies.length > 0
+            ? technologies
+            : optimizedQuery.apolloParams.organizationTechnologies,
         per_page: 25,
       })
 
@@ -202,14 +239,32 @@ export async function startDiscoveryAction(
         allLeads.push(apolloPersonToLead(enriched, user.id, campaign.id))
       }
 
-      await logAgent(supabase, user.id, campaign.id, 'leads_discovered', `${apolloResult.people.length} Leads via Apollo gefunden`)
+      await logAgent(
+        supabase,
+        user.id,
+        campaign.id,
+        'leads_discovered',
+        `${apolloResult.people.length} Leads via Apollo gefunden`,
+      )
     } catch (error) {
       console.error('[Discovery] Apollo search failed:', error)
-      await logAgent(supabase, user.id, campaign.id, 'campaign_failed', 'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort')
+      await logAgent(
+        supabase,
+        user.id,
+        campaign.id,
+        'campaign_failed',
+        'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort',
+      )
     }
 
     // Step 3: Google Places Search
-    await logAgent(supabase, user.id, campaign.id, 'leads_discovered', 'Suche lokale Unternehmen via Google Places...')
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'leads_discovered',
+      'Suche lokale Unternehmen via Google Places...',
+    )
     for (const query of optimizedQuery.googlePlacesQueries) {
       try {
         const result = await textSearch({ query: query.query, region: query.region })
@@ -234,7 +289,13 @@ export async function startDiscoveryAction(
       }
     }
 
-    await logAgent(supabase, user.id, campaign.id, 'leads_discovered', `${allLeads.length} Leads insgesamt gefunden`)
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'leads_discovered',
+      `${allLeads.length} Leads insgesamt gefunden`,
+    )
 
     // Step 4: Save leads
     if (allLeads.length > 0) {
@@ -264,15 +325,21 @@ export async function startDiscoveryAction(
       { leads_found: allLeads.length },
     )
 
-    return { campaignId: campaign.id, leadsFound: allLeads.length }
+    return ok({ campaignId: campaign.id, leadsFound: allLeads.length })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unbekannter Fehler'
     await supabase
       .from('search_campaigns')
       .update({ status: 'failed', error_message: message })
       .eq('id', campaign.id)
-    await logAgent(supabase, user.id, campaign.id, 'campaign_failed', `Pipeline fehlgeschlagen: ${message}`)
-    return { error: message }
+    await logAgent(
+      supabase,
+      user.id,
+      campaign.id,
+      'campaign_failed',
+      `Pipeline fehlgeschlagen: ${message}`,
+    )
+    return fail('INTERNAL_ERROR', message)
   }
 }
 
@@ -288,7 +355,7 @@ export interface IcpDefaults {
   keywords: string
 }
 
-export async function getIcpDefaultsAction(): Promise<IcpDefaults> {
+export async function getIcpDefaultsAction(): Promise<ApiResponse<IcpDefaults>> {
   const { user, supabase } = await requireAuth()
 
   const { data } = await supabase
@@ -297,13 +364,13 @@ export async function getIcpDefaultsAction(): Promise<IcpDefaults> {
     .eq('user_id', user.id)
     .single()
 
-  return {
+  return ok({
     industries: data?.industries?.join(', ') ?? 'SaaS, FinTech, E-Commerce',
     companySize: data?.company_sizes?.join(', ') ?? '10-500 Mitarbeiter',
     region: data?.regions?.join(', ') ?? 'DACH (AT, DE, CH)',
     technologies: data?.tech_stack?.join(', ') ?? '',
     keywords: data?.keywords?.join(', ') ?? '',
-  }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -321,7 +388,7 @@ export interface DiscoveryLead {
 
 export async function getDiscoveryLeadsAction(
   campaignId: string,
-): Promise<DiscoveryLead[]> {
+): Promise<ApiResponse<DiscoveryLead[]>> {
   const { user, supabase } = await requireAuth()
 
   const { data } = await supabase
@@ -332,5 +399,5 @@ export async function getDiscoveryLeadsAction(
     .order('created_at', { ascending: false })
     .limit(50)
 
-  return data ?? []
+  return ok(data ?? [])
 }

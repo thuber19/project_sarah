@@ -26,12 +26,11 @@ paths:
 - Never return raw DB errors to client.
 
 ### Canonical API Response Envelope (SEC-009)
-All API responses and server action returns MUST use the canonical envelope from `@goetzendorfer/zod-schemas`:
-- **Success:** `{ success: true, data: T }` | **Error:** `{ success: false, error: { code, message, details? } }`
+All API responses and server action returns MUST use the canonical envelope from `src/lib/api-response.ts`:
+- **Success:** `{ success: true, data: T }` | **Error:** `{ success: false, error: { code, message } }`
 - **Standard codes:** `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409), `RATE_LIMITED` (429), `INTERNAL_ERROR` (500). Do not invent new codes without documenting.
 - Never return raw error objects or `error.message` to client (SEC-009). Map to standard code + user-friendly message.
-- `details` field: only for validation errors (Zod issues array). Never include stack traces.
-- Import: `import { ApiErrorSchema, apiSuccess } from '@goetzendorfer/zod-schemas'`
+- Import: `import { ok, fail, type ApiResponse } from '@/lib/api-response'`
 
 ## API Routes (Next.js)
 - Use for webhooks, external API endpoints, cron jobs only.

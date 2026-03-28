@@ -130,20 +130,19 @@ describe('onboarding.actions', () => {
     it('returns error for empty URL', async () => {
       const result = await analyzeWebsiteAction('')
 
-      expect(result).toHaveProperty('error')
-      expect('error' in result && result.error).toBeTruthy()
+      expect(result.success).toBe(false)
     })
 
     it('returns error for obviously invalid URL', async () => {
       const result = await analyzeWebsiteAction('not a url at all !!!')
 
-      expect(result).toHaveProperty('error')
+      expect(result.success).toBe(false)
     })
 
     it('returns error for URL with spaces', async () => {
       const result = await analyzeWebsiteAction('https://ex ample.com')
 
-      expect(result).toHaveProperty('error')
+      expect(result.success).toBe(false)
     })
 
     it('returns error for javascript: protocol URL', async () => {
@@ -153,7 +152,7 @@ describe('onboarding.actions', () => {
       // The action prepends https:// when input doesn't start with 'http',
       // so "javascript:alert(1)" becomes "https://javascript:alert(1)" which
       // is still invalid according to Zod's url() check.
-      expect(result).toHaveProperty('error')
+      expect(result.success).toBe(false)
     })
 
     it('accepts valid https URL and calls scrape + analyze', async () => {
@@ -162,8 +161,10 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      expect(result).toHaveProperty('profile')
-      expect(result).toHaveProperty('icp')
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data).toHaveProperty('profile')
+      expect(result.data).toHaveProperty('icp')
       expect(scrapeWebsite).toHaveBeenCalledWith('https://example.com')
       expect(analyzeWebsite).toHaveBeenCalledWith(mockScrapedContent)
     })
@@ -174,7 +175,7 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('http://example.com')
 
-      expect(result).toHaveProperty('profile')
+      expect(result.success).toBe(true)
       expect(scrapeWebsite).toHaveBeenCalledWith('http://example.com')
     })
 
@@ -184,7 +185,7 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('example.com')
 
-      expect(result).toHaveProperty('profile')
+      expect(result.success).toBe(true)
       expect(scrapeWebsite).toHaveBeenCalledWith('https://example.com')
     })
 
@@ -205,7 +206,9 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      expect('profile' in result && result.profile).toMatchObject({
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile).toMatchObject({
         website_url: 'https://example.com',
         company_name: 'Acme GmbH',
         industry: 'SaaS',
@@ -222,13 +225,11 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      if ('profile' in result) {
-        expect(result.profile.raw_scraped_content).toContain('Acme GmbH')
-        expect(result.profile.raw_scraped_content).toContain('B2B SaaS')
-        expect(result.profile.raw_scraped_content).toContain('We help sales teams.')
-      } else {
-        expect.unreachable('Expected profile result')
-      }
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile.raw_scraped_content).toContain('Acme GmbH')
+      expect(result.data.profile.raw_scraped_content).toContain('B2B SaaS')
+      expect(result.data.profile.raw_scraped_content).toContain('We help sales teams.')
     })
 
     it('constructs ICP data from analysis result', async () => {
@@ -237,7 +238,9 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      expect('icp' in result && result.icp).toEqual({
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.icp).toEqual({
         job_titles: ['Head of Sales', 'VP Sales'],
         seniority_levels: ['director', 'vp'],
         industries: ['SaaS', 'E-Commerce'],
@@ -253,7 +256,10 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      expect(result).toEqual({ error: 'Website nicht erreichbar' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Website nicht erreichbar' },
+      })
     })
 
     it('returns error message when analyzeWebsite throws', async () => {
@@ -262,7 +268,10 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      expect(result).toEqual({ error: 'AI service unavailable' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'AI service unavailable' },
+      })
     })
 
     // -- Edge cases -----------------------------------------------------------
@@ -283,12 +292,10 @@ describe('onboarding.actions', () => {
 
       const result = await analyzeWebsiteAction('https://example.com')
 
-      if ('profile' in result) {
-        // raw_scraped_content should only contain the non-empty bodyText
-        expect(result.profile.raw_scraped_content).toBe('Some content here.')
-      } else {
-        expect.unreachable('Expected profile result')
-      }
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      // raw_scraped_content should only contain the non-empty bodyText
+      expect(result.data.profile.raw_scraped_content).toBe('Some content here.')
     })
   })
 
@@ -303,7 +310,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile description is empty', async () => {
@@ -311,7 +321,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile industry is empty', async () => {
@@ -319,7 +332,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile product_summary is empty', async () => {
@@ -327,7 +343,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile value_proposition is empty', async () => {
@@ -335,7 +354,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile target_market is empty', async () => {
@@ -343,7 +365,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile website_url is empty', async () => {
@@ -351,7 +376,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(badProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('allows raw_scraped_content to be an empty string', async () => {
@@ -361,30 +389,33 @@ describe('onboarding.actions', () => {
 
       // Empty raw_scraped_content is allowed (schema is z.string() without min)
       // Should not fail validation — proceeds to DB call
-      expect(result).not.toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).not.toMatchObject({
+        success: false,
+        error: { message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile has missing required field', async () => {
       const incomplete = { ...validProfile } as Record<string, unknown>
       delete incomplete.industry
 
-      const result = await saveOnboardingAction(
-        incomplete as unknown as ProfileData,
-        validIcp,
-      )
+      const result = await saveOnboardingAction(incomplete as unknown as ProfileData, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     it('returns error when profile field has wrong type', async () => {
       const wrongType = { ...validProfile, company_name: 123 }
 
-      const result = await saveOnboardingAction(
-        wrongType as unknown as ProfileData,
-        validIcp,
-      )
+      const result = await saveOnboardingAction(wrongType as unknown as ProfileData, validIcp)
 
-      expect(result).toEqual({ error: 'Ungültige Profildaten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige Profildaten' },
+      })
     })
 
     // -- ICP validation -------------------------------------------------------
@@ -392,35 +423,35 @@ describe('onboarding.actions', () => {
     it('returns error when ICP has wrong type for job_titles', async () => {
       const badIcp = { ...validIcp, job_titles: 'not an array' }
 
-      const result = await saveOnboardingAction(
-        validProfile,
-        badIcp as unknown as IcpData,
-      )
+      const result = await saveOnboardingAction(validProfile, badIcp as unknown as IcpData)
 
-      expect(result).toEqual({ error: 'Ungültige ICP-Daten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige ICP-Daten' },
+      })
     })
 
     it('returns error when ICP is missing a required field', async () => {
       const incomplete = { ...validIcp } as Record<string, unknown>
       delete incomplete.regions
 
-      const result = await saveOnboardingAction(
-        validProfile,
-        incomplete as unknown as IcpData,
-      )
+      const result = await saveOnboardingAction(validProfile, incomplete as unknown as IcpData)
 
-      expect(result).toEqual({ error: 'Ungültige ICP-Daten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige ICP-Daten' },
+      })
     })
 
     it('returns error when ICP arrays contain non-string values', async () => {
       const badIcp = { ...validIcp, industries: [123, 456] }
 
-      const result = await saveOnboardingAction(
-        validProfile,
-        badIcp as unknown as IcpData,
-      )
+      const result = await saveOnboardingAction(validProfile, badIcp as unknown as IcpData)
 
-      expect(result).toEqual({ error: 'Ungültige ICP-Daten' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Ungültige ICP-Daten' },
+      })
     })
 
     it('accepts ICP with empty arrays', async () => {
@@ -435,7 +466,10 @@ describe('onboarding.actions', () => {
       const result = await saveOnboardingAction(validProfile, emptyIcp)
 
       // Empty arrays are valid per the schema — proceeds to DB call
-      expect(result).not.toEqual({ error: 'Ungültige ICP-Daten' })
+      expect(result).not.toMatchObject({
+        success: false,
+        error: { message: 'Ungültige ICP-Daten' },
+      })
     })
 
     // -- Supabase interaction -------------------------------------------------
@@ -449,9 +483,7 @@ describe('onboarding.actions', () => {
         throw new Error('NEXT_REDIRECT')
       })
 
-      await expect(
-        saveOnboardingAction(validProfile, validIcp),
-      ).rejects.toThrow('NEXT_REDIRECT')
+      await expect(saveOnboardingAction(validProfile, validIcp)).rejects.toThrow('NEXT_REDIRECT')
 
       expect(redirect).toHaveBeenCalledWith('/dashboard')
 
@@ -468,7 +500,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(validProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Fehler beim Speichern des Profils' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Fehler beim Speichern des Profils' },
+      })
       expect(redirect).not.toHaveBeenCalled()
     })
 
@@ -479,7 +514,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(validProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Fehler beim Speichern des Profils' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Fehler beim Speichern des Profils' },
+      })
     })
 
     it('returns error when icp_profiles upsert fails', async () => {
@@ -511,7 +549,10 @@ describe('onboarding.actions', () => {
 
       const result = await saveOnboardingAction(validProfile, validIcp)
 
-      expect(result).toEqual({ error: 'Fehler beim Speichern des ICP' })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Fehler beim Speichern des ICP' },
+      })
       expect(redirect).not.toHaveBeenCalled()
     })
 
@@ -542,15 +583,12 @@ describe('onboarding.actions', () => {
       upsertSpy.mockReturnValue({ select: selectSpy })
       selectSpy.mockReturnValue({ single: singleSpy })
 
-      await expect(
-        saveOnboardingAction(validProfile, validIcp),
-      ).rejects.toThrow('NEXT_REDIRECT')
+      await expect(saveOnboardingAction(validProfile, validIcp)).rejects.toThrow('NEXT_REDIRECT')
 
       // Verify user_id is passed in business_profiles upsert
-      expect(upsertSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ user_id: 'test-user-id' }),
-        { onConflict: 'user_id' },
-      )
+      expect(upsertSpy).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'test-user-id' }), {
+        onConflict: 'user_id',
+      })
 
       // Verify user_id and business_profile_id in icp_profiles upsert
       expect(icpUpsertSpy).toHaveBeenCalledWith(

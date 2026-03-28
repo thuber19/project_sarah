@@ -1,27 +1,31 @@
 'use server'
 
 import { requireAuth } from '@/lib/supabase/server'
+import type { ApiResponse } from '@/lib/api-response'
+import { ok, fail } from '@/lib/api-response'
+import { PAGE_SIZE } from '@/lib/constants'
 import { z } from 'zod/v4'
 import type { LeadListResult } from '@/types/lead'
 
 const leadsQuerySchema = z.object({
-  grade: z.enum(['ALL', 'HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR_FIT']).optional().default('ALL'),
+  grade: z
+    .enum(['ALL', 'HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR_FIT'])
+    .optional()
+    .default('ALL'),
   q: z.string().max(100).optional().default(''),
   sort: z.enum(['total_score', 'company_name', 'created_at']).optional().default('total_score'),
   dir: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.coerce.number().int().min(1).optional().default(1),
 })
 
-const PAGE_SIZE = 20
-
 export async function getLeadsAction(
   params: Record<string, string | undefined>,
-): Promise<LeadListResult> {
+): Promise<ApiResponse<LeadListResult>> {
   const { user, supabase } = await requireAuth()
 
   const parsed = leadsQuerySchema.safeParse(params)
   if (!parsed.success) {
-    return { leads: [], totalCount: 0 }
+    return ok({ leads: [], totalCount: 0 })
   }
 
   const { grade, q, sort, dir, page } = parsed.data
@@ -34,10 +38,7 @@ export async function getLeadsAction(
       ? 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores!inner(total_score, grade)'
       : 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores(total_score, grade)'
 
-  let query = supabase
-    .from('leads')
-    .select(selectClause, { count: 'exact' })
-    .eq('user_id', user.id)
+  let query = supabase.from('leads').select(selectClause, { count: 'exact' }).eq('user_id', user.id)
 
   // Grade filter
   if (grade !== 'ALL') {
@@ -47,9 +48,7 @@ export async function getLeadsAction(
 
   // Text search
   if (q) {
-    query = query.or(
-      `company_name.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`,
-    )
+    query = query.or(`company_name.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
   }
 
   // Sort
@@ -69,7 +68,7 @@ export async function getLeadsAction(
 
   if (error) {
     console.error('[Leads] Query failed:', error)
-    return { leads: [], totalCount: 0 }
+    return fail('INTERNAL_ERROR', 'Leads konnten nicht geladen werden')
   }
 
   // Flatten the nested lead_scores
@@ -92,5 +91,5 @@ export async function getLeadsAction(
     }
   })
 
-  return { leads, totalCount: count ?? 0 }
+  return ok({ leads, totalCount: count ?? 0 })
 }

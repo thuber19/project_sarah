@@ -26,15 +26,15 @@ export default function OnboardingStep1() {
     startTransition(async () => {
       const result = await analyzeWebsiteAction(url)
 
-      if ('error' in result) {
-        setError(result.error)
+      if (!result.success) {
+        setError(result.error.message)
         toast.error('Website konnte nicht analysiert werden.')
         return
       }
 
       toast.success('Analyse abgeschlossen!')
-      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.profile))
-      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.icp))
+      sessionStorage.setItem('onboarding_profile', JSON.stringify(result.data.profile))
+      sessionStorage.setItem('onboarding_icp', JSON.stringify(result.data.icp))
       router.push('/onboarding/step-2')
     })
   }
@@ -50,8 +50,8 @@ export default function OnboardingStep1() {
       </h1>
 
       <p className="text-center text-sm text-muted-foreground">
-        Gib deine Website-URL ein und Sarah analysiert automatisch dein Business-Profil, deine Branche
-        und ideale Zielkunden.
+        Gib deine Website-URL ein und Sarah analysiert automatisch dein Business-Profil, deine
+        Branche und ideale Zielkunden.
       </p>
 
       <div className="flex w-full flex-col gap-1.5">

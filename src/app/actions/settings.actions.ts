@@ -1,6 +1,9 @@
 'use server'
 
 import { requireAuth } from '@/lib/supabase/server'
+import type { ApiResponse } from '@/lib/api-response'
+import { ok, fail } from '@/lib/api-response'
+import type { BusinessProfile, IcpProfile } from '@/types/database'
 import { z } from 'zod/v4'
 
 const profileSchema = z.object({
@@ -23,7 +26,13 @@ const icpSchema = z.object({
 export type SettingsProfileData = z.infer<typeof profileSchema>
 export type SettingsIcpData = z.infer<typeof icpSchema>
 
-export async function loadSettingsData() {
+interface SettingsData {
+  profile: BusinessProfile | null
+  icp: IcpProfile | null
+  email: string
+}
+
+export async function loadSettingsData(): Promise<ApiResponse<SettingsData>> {
   const { user, supabase } = await requireAuth()
 
   const [profileResult, icpResult] = await Promise.all([
@@ -31,18 +40,18 @@ export async function loadSettingsData() {
     supabase.from('icp_profiles').select('*').eq('user_id', user.id).single(),
   ])
 
-  return {
+  return ok({
     profile: profileResult.data,
     icp: icpResult.data,
     email: user.email ?? '',
-  }
+  })
 }
 
-export async function updateProfileAction(data: SettingsProfileData): Promise<{ error?: string }> {
+export async function updateProfileAction(data: SettingsProfileData): Promise<ApiResponse<null>> {
   const { user, supabase } = await requireAuth()
 
   const parsed = profileSchema.safeParse(data)
-  if (!parsed.success) return { error: 'Ungültige Profildaten' }
+  if (!parsed.success) return fail('VALIDATION_ERROR', 'Ungültige Profildaten')
 
   const { error } = await supabase
     .from('business_profiles')
@@ -56,15 +65,15 @@ export async function updateProfileAction(data: SettingsProfileData): Promise<{ 
     })
     .eq('user_id', user.id)
 
-  if (error) return { error: 'Profil konnte nicht gespeichert werden' }
-  return {}
+  if (error) return fail('INTERNAL_ERROR', 'Profil konnte nicht gespeichert werden')
+  return ok(null)
 }
 
-export async function updateIcpAction(data: SettingsIcpData): Promise<{ error?: string }> {
+export async function updateIcpAction(data: SettingsIcpData): Promise<ApiResponse<null>> {
   const { user, supabase } = await requireAuth()
 
   const parsed = icpSchema.safeParse(data)
-  if (!parsed.success) return { error: 'Ungültige ICP-Daten' }
+  if (!parsed.success) return fail('VALIDATION_ERROR', 'Ungültige ICP-Daten')
 
   const { error } = await supabase
     .from('icp_profiles')
@@ -79,6 +88,6 @@ export async function updateIcpAction(data: SettingsIcpData): Promise<{ error?: 
     })
     .eq('user_id', user.id)
 
-  if (error) return { error: 'ICP konnte nicht gespeichert werden' }
-  return {}
+  if (error) return fail('INTERNAL_ERROR', 'ICP konnte nicht gespeichert werden')
+  return ok(null)
 }

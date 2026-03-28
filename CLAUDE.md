@@ -19,6 +19,7 @@ pnpm build        # production build
 pnpm typecheck    # tsc --noEmit
 pnpm lint         # eslint
 pnpm format       # prettier --write
+pnpm format:check # prettier --check
 pnpm test         # vitest unit tests
 pnpm test:e2e     # playwright e2e tests
 pnpm db:types     # supabase gen types typescript --local > src/lib/database.types.ts
@@ -28,14 +29,22 @@ pnpm db:types     # supabase gen types typescript --local > src/lib/database.typ
 - **App Router** — RSC by default; add `"use client"` only when needed.
 - **Route Groups** — `(marketing)` public pages, `(auth)` login/callback, `(app)` protected app shell.
 - **Server Actions** — `src/app/actions/*.actions.ts` (e.g. `leads.actions.ts`).
-- **Auth** — Supabase Auth (magic link). Guard server actions with `requireAuth()` from `src/lib/auth.ts`. Never trust client-side auth alone.
+- **Auth** — Supabase Auth (magic link). Guard server actions with `requireAuth()` from `src/lib/supabase/server.ts`. Never trust client-side auth alone.
 - **RLS** — Every Supabase table has row-level security. Policies reference `auth.uid()`.
 - **Styling** — Tailwind CSS 4 + shadcn/ui. Design tokens in `globals.css` (Slate palette + score colors). Font: Inter.
 - **Layouts** — App sidebar (dark, 240px) in `(app)/layout.tsx`. Marketing navbar/footer in `(marketing)/layout.tsx`. Onboarding wizard in `(app)/onboarding/layout.tsx`.
 - **Security** — `proxy.ts` handles CSP headers, rate limiting, auth redirects, AND onboarding guard. Next.js 16 does NOT allow both `proxy.ts` and `middleware.ts` — all logic is in `proxy.ts`.
 - **Toasts** — Sonner `<Toaster />` in root layout (`app/layout.tsx`). Use `toast.success/error/info` from `sonner`.
 - **Validation** — Shared Zod schemas in `src/lib/validation/schemas.ts`. Use client-side before server actions.
-- **Tests** — 273 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`.
+- **Tests** — 273 unit tests via Vitest. Co-located `*.test.ts` files. Run `pnpm vitest run`. E2E smoke tests via Playwright in `tests/e2e/`.
+
+## API Response Envelope
+All server actions use a canonical `ApiResponse<T>` envelope from `src/lib/api-response.ts`:
+- **Success:** `{ success: true, data: T }`
+- **Error:** `{ success: false, error: { code: string, message: string } }`
+- Standard codes: `VALIDATION_ERROR`, `INTERNAL_ERROR`, `UNAUTHORIZED`
+- Helper functions: `ok(data)` and `fail(code, message)`
+- Shared constants in `src/lib/constants.ts` (PAGE_SIZE, etc.)
 
 ## Frontend Structure
 ```
@@ -70,6 +79,7 @@ src/components/
 ```
 
 Most data pages are wired to real Supabase queries (dashboard, leads, lead detail, scoring, agent-logs, discovery, settings).
+All server actions use the standardized `ApiResponse<T>` envelope pattern (see above).
 Export page is still placeholder (Post-MVP). Empty state shows when no data exists.
 Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Agent Logs, Export & CRM, Settings.
 

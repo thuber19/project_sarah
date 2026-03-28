@@ -69,6 +69,12 @@ function mockAuth(
   return { supabase, query }
 }
 
+/** Unwrap a successful ApiResponse or fail the test */
+function unwrap<T>(result: { success: boolean; data?: T; error?: unknown }): T {
+  expect(result.success).toBe(true)
+  return (result as { success: true; data: T }).data
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -110,25 +116,25 @@ describe('getLeadsAction', () => {
     it('should return empty result for invalid grade value', async () => {
       mockAuth()
       const result = await getLeadsAction({ grade: 'INVALID_GRADE' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should return empty result for negative page number', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: '-1' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should return empty result for page 0', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: '0' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should return empty result for non-numeric page', async () => {
       mockAuth()
       const result = await getLeadsAction({ page: 'abc' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should accept valid params', async () => {
@@ -149,7 +155,7 @@ describe('getLeadsAction', () => {
       mockAuth()
       const longQ = 'a'.repeat(101)
       const result = await getLeadsAction({ q: longQ })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should accept q at exactly 100 chars', async () => {
@@ -162,13 +168,13 @@ describe('getLeadsAction', () => {
     it('should reject invalid sort field', async () => {
       mockAuth()
       const result = await getLeadsAction({ sort: 'nonexistent_column' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
 
     it('should reject invalid dir value', async () => {
       mockAuth()
       const result = await getLeadsAction({ dir: 'sideways' })
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({ success: true, data: { leads: [], totalCount: 0 } })
     })
   })
 
@@ -354,9 +360,10 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
+      const data = unwrap(result)
 
-      expect(result.leads).toHaveLength(1)
-      expect(result.leads[0]).toEqual({
+      expect(data.leads).toHaveLength(1)
+      expect(data.leads[0]).toEqual({
         id: 'lead-1',
         company_name: 'Acme Corp',
         first_name: 'Jane',
@@ -383,8 +390,9 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
+      const data = unwrap(result)
 
-      expect(result.leads[0]).toMatchObject({
+      expect(data.leads[0]).toMatchObject({
         total_score: 92,
         grade: 'HOT',
       })
@@ -404,8 +412,9 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
+      const data = unwrap(result)
 
-      expect(result.leads[0]).toEqual({
+      expect(data.leads[0]).toEqual({
         id: 'lead-3',
         company_name: 'NoScore GmbH',
         first_name: null,
@@ -432,8 +441,9 @@ describe('getLeadsAction', () => {
 
       mockAuth([dbRow], 1)
       const result = await getLeadsAction({})
+      const data = unwrap(result)
 
-      expect(result.leads[0]).toMatchObject({
+      expect(data.leads[0]).toMatchObject({
         total_score: null,
         grade: null,
       })
@@ -443,7 +453,7 @@ describe('getLeadsAction', () => {
       mockAuth([], 42)
       const result = await getLeadsAction({})
 
-      expect(result.totalCount).toBe(42)
+      expect(unwrap(result).totalCount).toBe(42)
     })
 
     it('should return totalCount 0 when count is null', async () => {
@@ -451,14 +461,17 @@ describe('getLeadsAction', () => {
       query.range.mockResolvedValue({ data: [], count: null, error: null })
 
       const result = await getLeadsAction({})
-      expect(result.totalCount).toBe(0)
+      expect(unwrap(result).totalCount).toBe(0)
     })
 
     it('should return empty result on query error', async () => {
       mockAuth([], 0, { message: 'relation "leads" does not exist' })
       const result = await getLeadsAction({})
 
-      expect(result).toEqual({ leads: [], totalCount: 0 })
+      expect(result).toEqual({
+        success: false,
+        error: { code: 'INTERNAL_ERROR', message: 'Leads konnten nicht geladen werden' },
+      })
     })
 
     it('should return empty leads array when data is null', async () => {
@@ -466,7 +479,7 @@ describe('getLeadsAction', () => {
       query.range.mockResolvedValue({ data: null, count: 0, error: null })
 
       const result = await getLeadsAction({})
-      expect(result.leads).toEqual([])
+      expect(unwrap(result).leads).toEqual([])
     })
 
     it('should map multiple rows correctly', async () => {
@@ -495,11 +508,12 @@ describe('getLeadsAction', () => {
 
       mockAuth(rows, 2)
       const result = await getLeadsAction({})
+      const data = unwrap(result)
 
-      expect(result.leads).toHaveLength(2)
-      expect(result.leads[0]!.id).toBe('a')
-      expect(result.leads[1]!.id).toBe('b')
-      expect(result.totalCount).toBe(2)
+      expect(data.leads).toHaveLength(2)
+      expect(data.leads[0]!.id).toBe('a')
+      expect(data.leads[1]!.id).toBe('b')
+      expect(data.totalCount).toBe(2)
     })
   })
 

@@ -46,16 +46,16 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
         keywords: keywords || undefined,
       })
 
-      if ('error' in result) {
-        setError(result.error)
+      if (!result.success) {
+        setError(result.error.message)
         return
       }
 
-      setLeadsFound(result.leadsFound)
+      setLeadsFound(result.data.leadsFound)
 
       // Load the actual leads found in this campaign
-      const discovered = await getDiscoveryLeadsAction(result.campaignId)
-      setLeads(discovered)
+      const discovered = await getDiscoveryLeadsAction(result.data.campaignId)
+      setLeads(discovered.success ? discovered.data : [])
     })
   }
 
@@ -118,14 +118,46 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
 
             <div className="flex flex-col gap-4">
               {[
-                { id: 'branchen', label: 'Branchen', value: industries, onChange: setIndustries, placeholder: '' },
-                { id: 'groesse', label: 'Unternehmensgröße', value: companySize, onChange: setCompanySize, placeholder: '' },
-                { id: 'region', label: 'Region', value: region, onChange: setRegion, placeholder: '' },
-                { id: 'tech', label: 'Technologien (Optional)', value: technologies, onChange: setTechnologies, placeholder: 'z.B. React, Python, AWS...' },
-                { id: 'keywords', label: 'Keywords (Optional)', value: keywords, onChange: setKeywords, placeholder: 'z.B. Series A, KMU, B2B...' },
+                {
+                  id: 'branchen',
+                  label: 'Branchen',
+                  value: industries,
+                  onChange: setIndustries,
+                  placeholder: '',
+                },
+                {
+                  id: 'groesse',
+                  label: 'Unternehmensgröße',
+                  value: companySize,
+                  onChange: setCompanySize,
+                  placeholder: '',
+                },
+                {
+                  id: 'region',
+                  label: 'Region',
+                  value: region,
+                  onChange: setRegion,
+                  placeholder: '',
+                },
+                {
+                  id: 'tech',
+                  label: 'Technologien (Optional)',
+                  value: technologies,
+                  onChange: setTechnologies,
+                  placeholder: 'z.B. React, Python, AWS...',
+                },
+                {
+                  id: 'keywords',
+                  label: 'Keywords (Optional)',
+                  value: keywords,
+                  onChange: setKeywords,
+                  placeholder: 'z.B. Series A, KMU, B2B...',
+                },
               ].map(({ id, label, value, onChange, placeholder }) => (
                 <div key={id} className="flex flex-col gap-1.5">
-                  <label htmlFor={id} className="text-sm font-medium text-foreground">{label}</label>
+                  <label htmlFor={id} className="text-sm font-medium text-foreground">
+                    {label}
+                  </label>
                   <input
                     id={id}
                     type="text"
@@ -145,7 +177,11 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
               disabled={isPending}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
               {isPending ? 'Suche läuft...' : 'Leads finden'}
             </button>
           </div>
@@ -159,7 +195,9 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
                 { initial: 'G', bg: 'bg-red-500', label: 'Google Places' },
               ].map(({ initial, bg, label }) => (
                 <div key={label} className="flex items-center gap-3">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-full ${bg} text-xs font-bold text-white`}>
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${bg} text-xs font-bold text-white`}
+                  >
                     {initial}
                   </div>
                   <span className="text-sm font-medium text-foreground">{label}</span>
@@ -182,10 +220,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
               )}
             </div>
             {showResults && (
-              <Link
-                href="/leads"
-                className="text-sm font-medium text-accent hover:underline"
-              >
+              <Link href="/leads" className="text-sm font-medium text-accent hover:underline">
                 Alle Leads ansehen →
               </Link>
             )}
@@ -256,7 +291,9 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
               {leadsFound > leads.length && (
                 <div className="border-t border-border px-5 py-3 text-center text-xs text-muted-foreground">
                   + {leadsFound - leads.length} weitere Leads in der{' '}
-                  <Link href="/leads" className="text-accent hover:underline">Lead-Liste</Link>
+                  <Link href="/leads" className="text-accent hover:underline">
+                    Lead-Liste
+                  </Link>
                 </div>
               )}
             </div>

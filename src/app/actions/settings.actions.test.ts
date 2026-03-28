@@ -43,11 +43,7 @@ vi.mock('next/navigation', () => ({
 
 // --- Imports (after mocks) -------------------------------------------
 
-import {
-  loadSettingsData,
-  updateProfileAction,
-  updateIcpAction,
-} from './settings.actions'
+import { loadSettingsData, updateProfileAction, updateIcpAction } from './settings.actions'
 
 // --- Helpers ---------------------------------------------------------
 
@@ -92,9 +88,11 @@ describe('settings.actions', () => {
 
       const result = await loadSettingsData()
 
-      expect(result.profile).toEqual(profileData)
-      expect(result.icp).toEqual(icpData)
-      expect(result.email).toBe('test@example.com')
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile).toEqual(profileData)
+      expect(result.data.icp).toEqual(icpData)
+      expect(result.data.email).toBe('test@example.com')
 
       // Verify correct tables were queried
       expect(mockFrom).toHaveBeenCalledWith('business_profiles')
@@ -111,9 +109,11 @@ describe('settings.actions', () => {
 
       const result = await loadSettingsData()
 
-      expect(result.profile).toBeNull()
-      expect(result.icp).toEqual({ industries: ['Tech'], company_sizes: [] })
-      expect(result.email).toBe('test@example.com')
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile).toBeNull()
+      expect(result.data.icp).toEqual({ industries: ['Tech'], company_sizes: [] })
+      expect(result.data.email).toBe('test@example.com')
     })
 
     it('returns null icp when none exists', async () => {
@@ -126,9 +126,11 @@ describe('settings.actions', () => {
 
       const result = await loadSettingsData()
 
-      expect(result.profile).toEqual({ company_name: 'Test Co' })
-      expect(result.icp).toBeNull()
-      expect(result.email).toBe('test@example.com')
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.profile).toEqual({ company_name: 'Test Co' })
+      expect(result.data.icp).toBeNull()
+      expect(result.data.email).toBe('test@example.com')
     })
 
     it('returns empty string email when user email is undefined', async () => {
@@ -142,7 +144,9 @@ describe('settings.actions', () => {
 
       const result = await loadSettingsData()
 
-      expect(result.email).toBe('')
+      expect(result.success).toBe(true)
+      if (!result.success) throw new Error('Expected success')
+      expect(result.data.email).toBe('')
 
       // Restore
       ;(mockUser as Record<string, string | undefined>).email = originalEmail
@@ -159,7 +163,10 @@ describe('settings.actions', () => {
         industry: 'SaaS',
       })
 
-      expect(result.error).toBe('Ungültige Profildaten')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('VALIDATION_ERROR')
+      expect(result.error.message).toBe('Ungültige Profildaten')
       // Should not attempt DB update
       expect(mockUpdate).not.toHaveBeenCalled()
     })
@@ -168,11 +175,14 @@ describe('settings.actions', () => {
       // Cast to bypass TS to test runtime validation
       const result = await updateProfileAction({} as Parameters<typeof updateProfileAction>[0])
 
-      expect(result.error).toBe('Ungültige Profildaten')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('VALIDATION_ERROR')
+      expect(result.error.message).toBe('Ungültige Profildaten')
       expect(mockUpdate).not.toHaveBeenCalled()
     })
 
-    it('accepts valid profile data and returns no error on success', async () => {
+    it('accepts valid profile data and returns success', async () => {
       mockUpdateEq.mockResolvedValueOnce({ error: null })
 
       const result = await updateProfileAction({
@@ -183,8 +193,7 @@ describe('settings.actions', () => {
         website_url: 'https://acme.at',
       })
 
-      expect(result).toEqual({})
-      expect(result.error).toBeUndefined()
+      expect(result).toEqual({ success: true, data: null })
 
       expect(mockFrom).toHaveBeenCalledWith('business_profiles')
       expect(mockUpdate).toHaveBeenCalledWith(
@@ -206,7 +215,7 @@ describe('settings.actions', () => {
         company_name: 'Minimal Co',
       })
 
-      expect(result).toEqual({})
+      expect(result).toEqual({ success: true, data: null })
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           company_name: 'Minimal Co',
@@ -227,7 +236,10 @@ describe('settings.actions', () => {
         company_name: 'Acme GmbH',
       })
 
-      expect(result.error).toBe('Profil konnte nicht gespeichert werden')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('INTERNAL_ERROR')
+      expect(result.error.message).toBe('Profil konnte nicht gespeichert werden')
     })
 
     it('sets updated_at timestamp on update', async () => {
@@ -257,13 +269,12 @@ describe('settings.actions', () => {
       tech_stack: ['React', 'Node.js'],
     }
 
-    it('accepts valid ICP arrays and returns no error', async () => {
+    it('accepts valid ICP arrays and returns success', async () => {
       mockUpdateEq.mockResolvedValueOnce({ error: null })
 
       const result = await updateIcpAction(validIcp)
 
-      expect(result).toEqual({})
-      expect(result.error).toBeUndefined()
+      expect(result).toEqual({ success: true, data: null })
 
       expect(mockFrom).toHaveBeenCalledWith('icp_profiles')
       expect(mockUpdate).toHaveBeenCalledWith(
@@ -293,7 +304,7 @@ describe('settings.actions', () => {
 
       const result = await updateIcpAction(emptyIcp)
 
-      expect(result).toEqual({})
+      expect(result).toEqual({ success: true, data: null })
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           industries: [],
@@ -313,7 +324,10 @@ describe('settings.actions', () => {
 
       const result = await updateIcpAction(validIcp)
 
-      expect(result.error).toBe('ICP konnte nicht gespeichert werden')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('INTERNAL_ERROR')
+      expect(result.error.message).toBe('ICP konnte nicht gespeichert werden')
     })
 
     it('rejects invalid data — missing required arrays', async () => {
@@ -321,7 +335,10 @@ describe('settings.actions', () => {
         industries: ['SaaS'],
       } as Parameters<typeof updateIcpAction>[0])
 
-      expect(result.error).toBe('Ungültige ICP-Daten')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('VALIDATION_ERROR')
+      expect(result.error.message).toBe('Ungültige ICP-Daten')
       expect(mockUpdate).not.toHaveBeenCalled()
     })
 
@@ -335,7 +352,10 @@ describe('settings.actions', () => {
         tech_stack: ['OK'],
       })
 
-      expect(result.error).toBe('Ungültige ICP-Daten')
+      expect(result.success).toBe(false)
+      if (result.success) throw new Error('Expected failure')
+      expect(result.error.code).toBe('VALIDATION_ERROR')
+      expect(result.error.message).toBe('Ungültige ICP-Daten')
       expect(mockUpdate).not.toHaveBeenCalled()
     })
 

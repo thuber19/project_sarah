@@ -41,7 +41,15 @@ async function getDashboardData(userId: string) {
     if (s.grade in gradeCounts) gradeCounts[s.grade]++
   }
 
-  return { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored: scores.length }
+  return {
+    totalLeads,
+    hotLeads,
+    qualifiedLeads,
+    avgScore,
+    gradeCounts,
+    feedItems,
+    totalScored: scores.length,
+  }
 }
 
 export default async function DashboardPage() {
@@ -83,20 +91,22 @@ export default async function DashboardPage() {
       ) : (
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" changeBgColor="#DBEAFE" />
-            <StatCard label="Qualifizierte Leads" value={String(qualifiedLeads)} changeType="positive" />
+            <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" />
+            <StatCard
+              label="Qualifizierte Leads"
+              value={String(qualifiedLeads)}
+              changeType="positive"
+            />
             <StatCard
               label="Hot Leads"
               value={String(hotLeads)}
               changeType={hotLeads > 0 ? 'positive' : 'neutral'}
-              changeBgColor={hotLeads > 0 ? '#FEE2E2' : '#DBEAFE'}
             />
             <StatCard
               label="Ø Score"
               value={totalScored > 0 ? String(avgScore) : '—'}
               change={totalScored > 0 ? `${totalScored} bewertet` : 'Noch keine Scores'}
               changeType="neutral"
-              changeBgColor="#DBEAFE"
             />
           </div>
 
@@ -141,7 +151,8 @@ function DashboardEmptyState() {
       <div className="rounded-xl border border-border bg-white p-8 text-center">
         <h2 className="text-xl font-bold text-foreground">Willkommen bei Sarah</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit Daten zu füllen.
+          Dein AI Sales Agent ist bereit. Starte deine erste Lead-Discovery, um das Dashboard mit
+          Daten zu füllen.
         </p>
         <Link
           href="/discovery"
@@ -153,10 +164,10 @@ function DashboardEmptyState() {
 
       {/* Zero stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Leads gesamt" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
+        <StatCard label="Leads gesamt" value="0" changeType="neutral" />
         <StatCard label="Qualifizierte Leads" value="0" changeType="neutral" />
-        <StatCard label="Hot Leads" value="0" changeType="neutral" changeBgColor="#DBEAFE" />
-        <StatCard label="Ø Score" value="—" change="Noch keine Scores" changeType="neutral" changeBgColor="#DBEAFE" />
+        <StatCard label="Hot Leads" value="0" changeType="neutral" />
+        <StatCard label="Ø Score" value="—" change="Noch keine Scores" changeType="neutral" />
       </div>
 
       {/* Onboarding hint cards */}

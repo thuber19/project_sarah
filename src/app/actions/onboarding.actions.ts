@@ -4,6 +4,8 @@ import { requireAuth } from '@/lib/supabase/server'
 import { scrapeWebsite } from '@/lib/scraper'
 import { analyzeWebsite } from '@/lib/ai/analyze-website'
 import { redirect } from 'next/navigation'
+import type { ApiResponse } from '@/lib/api-response'
+import { ok, fail } from '@/lib/api-response'
 import { z } from 'zod/v4'
 
 const urlSchema = z.string().url('Bitte eine gültige URL eingeben')
@@ -30,15 +32,17 @@ const icpSchema = z.object({
 export type ProfileData = z.infer<typeof profileSchema>
 export type IcpData = z.infer<typeof icpSchema>
 
-type AnalyzeResult =
-  | { profile: ProfileData; icp: IcpData }
-  | { error: string }
+interface AnalyzeData {
+  profile: ProfileData
+  icp: IcpData
+}
 
-export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResult> {
+export async function analyzeWebsiteAction(rawUrl: string): Promise<ApiResponse<AnalyzeData>> {
   await requireAuth()
 
   const parsed = urlSchema.safeParse(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`)
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ungültige URL' }
+  if (!parsed.success)
+    return fail('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Ungültige URL')
 
   const websiteUrl = parsed.data
 
@@ -46,7 +50,9 @@ export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResul
     const scraped = await scrapeWebsite(websiteUrl)
     const analysis = await analyzeWebsite(scraped)
 
-    const rawContent = [scraped.title, scraped.metaDescription, scraped.bodyText].filter(Boolean).join('\n\n')
+    const rawContent = [scraped.title, scraped.metaDescription, scraped.bodyText]
+      .filter(Boolean)
+      .join('\n\n')
 
     const profile: ProfileData = {
       website_url: websiteUrl,
@@ -67,23 +73,23 @@ export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResul
       regions: analysis.suggestedRegions,
     }
 
-    return { profile, icp }
+    return ok({ profile, icp })
   } catch (err) {
-    return { error: (err as Error).message }
+    return fail('INTERNAL_ERROR', (err as Error).message)
   }
 }
 
 export async function saveOnboardingAction(
   profile: ProfileData,
   icp: IcpData,
-): Promise<{ error: string } | never> {
+): Promise<ApiResponse<null>> {
   const { user, supabase } = await requireAuth()
 
   const profileValidation = profileSchema.safeParse(profile)
-  if (!profileValidation.success) return { error: 'Ungültige Profildaten' }
+  if (!profileValidation.success) return fail('VALIDATION_ERROR', 'Ungültige Profildaten')
 
   const icpValidation = icpSchema.safeParse(icp)
-  if (!icpValidation.success) return { error: 'Ungültige ICP-Daten' }
+  if (!icpValidation.success) return fail('VALIDATION_ERROR', 'Ungültige ICP-Daten')
 
   const { data: businessProfile, error: profileError } = await supabase
     .from('business_profiles')
@@ -105,7 +111,7 @@ export async function saveOnboardingAction(
     .single()
 
   if (profileError || !businessProfile) {
-    return { error: 'Fehler beim Speichern des Profils' }
+    return fail('INTERNAL_ERROR', 'Fehler beim Speichern des Profils')
   }
 
   const { error: icpError } = await supabase.from('icp_profiles').upsert(
@@ -122,7 +128,7 @@ export async function saveOnboardingAction(
   )
 
   if (icpError) {
-    return { error: 'Fehler beim Speichern des ICP' }
+    return fail('INTERNAL_ERROR', 'Fehler beim Speichern des ICP')
   }
 
   redirect('/dashboard')
