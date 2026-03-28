@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { Compass, Play, Search, Settings2, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 

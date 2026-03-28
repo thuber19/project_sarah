@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { redirect } from 'next/navigation'
+import { toast } from 'sonner'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { saveOnboardingAction, type ProfileData, type IcpData } from '@/app/actions/onboarding.actions'
@@ -36,6 +37,7 @@ export default function OnboardingStep4() {
       const result = await saveOnboardingAction(profile, icp)
       if (result && 'error' in result) {
         setError(result.error)
+        toast.error('Profil konnte nicht gespeichert werden.')
         return
       }
       // saveOnboardingAction redirects to /dashboard on success

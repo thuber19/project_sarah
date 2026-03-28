@@ -58,3 +58,24 @@ export function getGradeForScore(score: number): ScoreGrade {
   if (score >= 30) return 'POTENTIAL'
   return 'POOR'
 }
+
+// --- Lead List types (for leads page) ---
+export interface LeadListItem {
+  id: string
+  company_name: string | null
+  first_name: string | null
+  last_name: string | null
+  industry: string | null
+  location: string | null
+  total_score: number | null
+  grade: string | null
+  updated_at: string
+}
+
+export interface LeadListResult {
+  leads: LeadListItem[]
+  totalCount: number
+}
+
+export type LeadSortField = 'total_score' | 'company_name' | 'created_at'
+export type SortDirection = 'asc' | 'desc'

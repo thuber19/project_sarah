@@ -2,6 +2,6 @@
 
 import { ErrorCard } from '@/components/shared/error-card'
 
-export default function SegmentError({ reset }: { reset: () => void }) {
-  return <ErrorCard reset={reset} />
+export default function SegmentError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return <ErrorCard error={error} reset={reset} />
 }

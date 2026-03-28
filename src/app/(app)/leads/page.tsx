@@ -1,39 +1,44 @@
-import { Bell, Compass, Upload, Users } from 'lucide-react'
-import { Suspense } from 'react'
-import { LeadFilters } from '@/components/leads/lead-filters'
-import { LeadTable } from '@/components/leads/lead-table'
-import { LeadsPagination } from '@/components/leads/leads-pagination'
-import { LeadsSearch } from '@/components/leads/leads-search'
-import { EmptyState } from '@/components/shared/empty-state'
-import { getLeadsAction } from '@/app/actions/leads.actions'
-import { createClient } from '@/lib/supabase/server'
+import { Suspense } from "react"
+import { Bell, Compass, Upload, Users } from "lucide-react"
+import { getLeadsAction } from "@/app/actions/leads.actions"
+import { requireAuth } from "@/lib/supabase/server"
+import { LeadFilters } from "@/components/leads/lead-filters"
+import { LeadTable } from "@/components/leads/lead-table"
+import { LeadSearchInput } from "@/components/leads/lead-search-input"
+import { LeadPagination } from "@/components/leads/lead-pagination"
+import { EmptyState } from "@/components/shared/empty-state"
+
+const PAGE_SIZE = 20
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function LeadsPage({ searchParams }: Props) {
-  const params = await searchParams
-  const page = Number(params.page) || 1
-  const grade = typeof params.grade === 'string' ? params.grade : undefined
-  const search = typeof params.search === 'string' ? params.search : undefined
-  const sort = typeof params.sort === 'string' ? params.sort : undefined
+  await requireAuth()
+  const rawParams = await searchParams
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Normalize searchParams to Record<string, string | undefined>
+  const params = Object.fromEntries(
+    Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
+  ) as Record<string, string | undefined>
 
-  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'US'
+  const { leads, totalCount } = await getLeadsAction(params)
 
-  const result = await getLeadsAction({ page, grade, search, sort })
-  const { leads, total, pageCount } = 'error' in result
-    ? { leads: [], total: 0, pageCount: 1 }
-    : result
+  const grade = params.grade ?? 'ALL'
+  const sort = params.sort ?? 'total_score'
+  const dir = params.dir ?? 'desc'
+  const page = Number(params.page ?? '1')
+  const hasActiveFilters = grade !== 'ALL' || !!params.q
+  const hasLeads = totalCount > 0 || hasActiveFilters
 
-  // Show empty state only when no leads exist at all (no active filter/search)
-  const isFiltered = Boolean(grade || search)
-  const showEmptyState = !isFiltered && total === 0 && !('error' in result)
+  // Build searchParams string for sort links in LeadTable
+  const currentSearchParams = new URLSearchParams()
+  if (params.grade) currentSearchParams.set('grade', params.grade)
+  if (params.q) currentSearchParams.set('q', params.q)
+  if (params.sort) currentSearchParams.set('sort', params.sort)
+  if (params.dir) currentSearchParams.set('dir', params.dir)
+  if (params.page) currentSearchParams.set('page', params.page)
 
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -50,8 +55,13 @@ export default async function LeadsPage({ searchParams }: Props) {
             Export
           </button>
 
-          <Suspense>
-            <LeadsSearch />
+          {/* Search input (client component) */}
+          <Suspense fallback={
+            <div className="relative">
+              <div className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-muted-foreground">Suchen...</div>
+            </div>
+          }>
+            <LeadSearchInput />
           </Suspense>
 
           <button
@@ -63,12 +73,34 @@ export default async function LeadsPage({ searchParams }: Props) {
           </button>
 
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            {initials}
+            BG
           </div>
         </div>
       </div>
 
-      {showEmptyState ? (
+      {hasLeads ? (
+        /* Content area */
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
+          <Suspense>
+            <LeadFilters />
+          </Suspense>
+
+          <LeadTable
+            leads={leads}
+            sort={sort}
+            dir={dir}
+            searchParams={currentSearchParams.toString()}
+          />
+
+          <Suspense>
+            <LeadPagination
+              currentPage={page}
+              totalCount={totalCount}
+              pageSize={PAGE_SIZE}
+            />
+          </Suspense>
+        </div>
+      ) : (
         <div className="flex flex-1 items-center justify-center p-8">
           <EmptyState
             icon={Users}
@@ -85,25 +117,6 @@ export default async function LeadsPage({ searchParams }: Props) {
               icon: Upload,
             }}
           />
-        </div>
-      ) : (
-        /* Content area */
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
-          <Suspense>
-            <LeadFilters />
-          </Suspense>
-
-          {'error' in result ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              Leads konnten nicht geladen werden.
-            </div>
-          ) : (
-            <LeadTable leads={leads} />
-          )}
-
-          <Suspense>
-            <LeadsPagination page={page} pageCount={pageCount} total={total} />
-          </Suspense>
         </div>
       )}
     </div>

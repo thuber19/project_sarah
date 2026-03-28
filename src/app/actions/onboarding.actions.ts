@@ -35,7 +35,7 @@ type AnalyzeResult =
   | { error: string }
 
 export async function analyzeWebsiteAction(rawUrl: string): Promise<AnalyzeResult> {
-  const { user } = await requireAuth()
+  await requireAuth()
 
   const parsed = urlSchema.safeParse(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ungültige URL' }

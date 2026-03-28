@@ -16,7 +16,7 @@ export default function MarketingLayout({
     <div className="flex min-h-screen flex-col">
       <MarketingNavbar />
 
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
 
       <footer className="border-t border-border bg-white px-20 py-8">
         <div className="flex items-center justify-between">

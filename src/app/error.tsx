@@ -2,10 +2,6 @@
 
 import { ErrorCard } from '@/components/shared/error-card'
 
-export default function GlobalError({ reset }: { reset: () => void }) {
-  return (
-    <div className="flex h-full flex-1 flex-col">
-      <ErrorCard reset={reset} />
-    </div>
-  )
+export default function SegmentError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return <ErrorCard error={error} reset={reset} />
 }

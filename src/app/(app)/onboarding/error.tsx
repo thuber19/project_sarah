@@ -8,7 +8,7 @@ interface ErrorProps {
   reset: () => void
 }
 
-export default function LeadsError({ error, reset }: ErrorProps) {
+export default function OnboardingError({ error, reset }: ErrorProps) {
   useEffect(() => {
     console.error(error)
   }, [error])

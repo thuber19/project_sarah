@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { AuthLeftPanel } from '@/components/auth/auth-left-panel'
-import { loginSchema } from '@/schemas/login.schema'
+import { emailSchema } from '@/lib/validation/schemas'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -18,9 +19,9 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
 
-    const result = loginSchema.safeParse({ email })
-    if (!result.success) {
-      setError(result.error.issues[0]?.message ?? 'Ungültige Eingabe')
+    const emailValidation = emailSchema.safeParse(email)
+    if (!emailValidation.success) {
+      setError(emailValidation.error.issues[0]?.message ?? 'Ungültige E-Mail-Adresse')
       return
     }
 
@@ -32,8 +33,10 @@ export default function LoginPage() {
       })
       if (error) {
         setError(error.message)
+        toast.error('Magic Link konnte nicht gesendet werden.')
         return
       }
+      toast.success('Magic Link gesendet! Prüfe dein Postfach.')
       setSubmitted(true)
     })
   }

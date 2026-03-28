@@ -46,7 +46,7 @@ async function getDashboardData(userId: string) {
 
 export default async function DashboardPage() {
   const { user } = await requireAuth()
-  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, feedItems, totalScored } =
+  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored } =
     await getDashboardData(user.id)
 
   return (

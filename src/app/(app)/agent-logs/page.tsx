@@ -1,152 +1,96 @@
-"use client";
-
-import { useState } from "react";
-import {
-  AlertCircle,
-  Bell,
-  Bot,
-  Compass,
-  Play,
-  Search,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { Bell, Bot, Play, Search } from "lucide-react";
+import { requireAuth } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/shared/empty-state";
+import { AgentLogsClient } from "./agent-logs-client";
+import type { AgentLogEntry, AgentLogsStats } from "./agent-logs-client";
 
-type LogCategory = "Alle" | "Discovery" | "Scoring" | "Enrichment" | "Errors";
-type LogStatus = "Erfolg" | "Fehler" | "Info";
-type EventType = "Discovery" | "Scoring" | "Enrichment" | "Error";
+type ActionType =
+  | "campaign_started"
+  | "campaign_completed"
+  | "campaign_failed"
+  | "leads_discovered"
+  | "lead_scored"
+  | "query_optimized"
+  | "website_scraped"
+  | "website_analyzed";
 
-interface LogEntry {
-  time: string;
-  type: EventType;
-  message: string;
-  detail?: string;
-  status: LogStatus;
+function mapActionType(
+  actionType: ActionType,
+): AgentLogEntry["type"] {
+  if (actionType === "campaign_failed") return "Error";
+  if (actionType === "lead_scored") return "Scoring";
+  if (actionType === "website_scraped" || actionType === "website_analyzed")
+    return "Enrichment";
+  return "Discovery";
 }
 
-const mockLogs: LogEntry[] = [
-  {
-    time: "14:32:15",
-    type: "Discovery",
-    message: "Lead analysiert: CloudScale GmbH für Batch-4..",
-    status: "Erfolg",
-  },
-  {
-    time: "14:27:03",
-    type: "Scoring",
-    message: "Score berechnet: TechVentures GmbH = 92 (HOT)",
-    status: "Erfolg",
-  },
-  {
-    time: "14:19:52",
-    type: "Enrichment",
-    message: "Enrichment: DataFlow AG — 12 neue Datenpunkte",
-    status: "Erfolg",
-  },
-  {
-    time: "14:15:30",
-    type: "Discovery",
-    message: "Lead entdeckt: SecureNet Solutions via LinkedIn",
-    status: "Erfolg",
-  },
-  {
-    time: "14:09:24",
-    type: "Error",
-    message: "Rate Limit: Apollo API — Retry in 30s",
-    status: "Fehler",
-  },
-  {
-    time: "13:58:17",
-    type: "Scoring",
-    message: "Score berechnet: HelvetiaNet AG = 79 (QUALIFIED)",
-    status: "Erfolg",
-  },
-  {
-    time: "13:44:02",
-    type: "Discovery",
-    message: "Discovery: Batch München — 14 neue Leads gefunden",
-    status: "Erfolg",
-  },
-  {
-    time: "13:38:00",
-    type: "Error",
-    message: "API-Fehler: LinkedIn Rate Limit überschritten",
-    status: "Fehler",
-  },
-  {
-    time: "13:18:45",
-    type: "Enrichment",
-    message: "Enrichment: CloudScale GmbH — Kontakt verifiziert",
-    status: "Erfolg",
-  },
-  {
-    time: "13:07:25",
-    type: "Scoring",
-    message: "Score berechnet: BayernApp GmbH = 65 (ENGAGED)",
-    status: "Erfolg",
-  },
-];
-
-const filterTabs: LogCategory[] = [
-  "Alle",
-  "Discovery",
-  "Scoring",
-  "Enrichment",
-  "Errors",
-];
-
-function getEventIcon(type: EventType) {
-  switch (type) {
-    case "Discovery":
-      return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
-          <Compass className="h-4 w-4 text-accent" />
-        </div>
-      );
-    case "Scoring":
-      return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
-          <Target className="h-4 w-4 text-success" />
-        </div>
-      );
-    case "Enrichment":
-      return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-50">
-          <Sparkles className="h-4 w-4 text-warning" />
-        </div>
-      );
-    case "Error":
-      return (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50">
-          <AlertCircle className="h-4 w-4 text-destructive" />
-        </div>
-      );
-  }
+function mapStatus(
+  actionType: ActionType,
+): AgentLogEntry["status"] {
+  if (actionType === "campaign_failed") return "Fehler";
+  if (actionType === "campaign_started" || actionType === "query_optimized")
+    return "Info";
+  return "Erfolg";
 }
 
-function getStatusBadge(status: LogStatus) {
-  switch (status) {
-    case "Erfolg":
-      return <span className="shrink-0 text-xs font-medium text-success">Erfolg</span>;
-    case "Fehler":
-      return <span className="shrink-0 text-xs font-medium text-destructive">Fehler</span>;
-    case "Info":
-      return <span className="shrink-0 text-xs font-medium text-accent">Info</span>;
-  }
-}
-
-// TODO: Replace with real data check from Supabase
-const hasLogs = true;
-
-export default function AgentLogsPage() {
-  const [activeFilter, setActiveFilter] = useState<LogCategory>("Alle");
-
-  const filteredLogs = mockLogs.filter((log) => {
-    if (activeFilter === "Alle") return true;
-    if (activeFilter === "Errors") return log.type === "Error";
-    return log.type === activeFilter;
+function formatTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleTimeString("de-AT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
+}
+
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "gerade eben";
+  if (minutes < 60) return `vor ${minutes} Min.`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `vor ${hours} Std.`;
+  return `vor ${Math.floor(hours / 24)} Tagen`;
+}
+
+export default async function AgentLogsPage() {
+  const { user, supabase } = await requireAuth();
+
+  // Fetch last 50 agent logs for this user
+  const { data: rawLogs } = await supabase
+    .from("agent_logs")
+    .select("id, action_type, message, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const logs: AgentLogEntry[] = (rawLogs ?? []).map((log) => ({
+    id: log.id,
+    time: formatTime(log.created_at),
+    type: mapActionType(log.action_type),
+    message: log.message,
+    status: mapStatus(log.action_type),
+  }));
+
+  // Calculate stats from today's entries
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayLogs = (rawLogs ?? []).filter(
+    (l) => new Date(l.created_at) >= today,
+  );
+  const errorCount = todayLogs.filter(
+    (l) => l.action_type === "campaign_failed",
+  ).length;
+  const totalToday = todayLogs.length;
+  const successRate =
+    totalToday > 0
+      ? Math.round(((totalToday - errorCount) / totalToday) * 100 * 10) / 10
+      : 0;
+  const lastActivity = rawLogs?.[0]?.created_at
+    ? formatRelativeTime(rawLogs[0].created_at)
+    : "\u2014";
+
+  const stats: AgentLogsStats = { totalToday, successRate, lastActivity };
+  const hasLogs = logs.length > 0;
 
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -198,77 +142,7 @@ export default function AgentLogsPage() {
           />
         </div>
       ) : (
-      /* Content area */
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-white p-5">
-            <span className="text-sm text-muted-foreground">Aktionen heute</span>
-            <p className="mt-1 text-3xl font-bold text-foreground">156</p>
-          </div>
-          <div className="rounded-xl border border-border bg-white p-5">
-            <span className="text-sm text-muted-foreground">Erfolgsrate</span>
-            <p className="mt-1 text-3xl font-bold text-success">94.2%</p>
-          </div>
-          <div className="rounded-xl border border-border bg-white p-5">
-            <span className="text-sm text-muted-foreground">Letzte Aktion</span>
-            <p className="mt-1 text-3xl font-bold text-foreground">vor 2 Min.</p>
-          </div>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2">
-          {filterTabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveFilter(tab)}
-              className={`cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                activeFilter === tab
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Activity timeline */}
-        <div className="overflow-hidden rounded-xl border border-border bg-white">
-          <div className="flex flex-col">
-            {filteredLogs.map((log, index) => (
-              <div
-                key={`${log.time}-${log.message}`}
-                className={`flex items-start gap-4 px-6 py-4 ${
-                  index < filteredLogs.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                {/* Timestamp */}
-                <span className="w-[72px] shrink-0 pt-0.5 text-xs text-muted-foreground">
-                  {log.time}
-                </span>
-
-                {/* Icon */}
-                {getEventIcon(log.type)}
-
-                {/* Content */}
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">{log.message}</p>
-                  {log.detail && (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {log.detail}
-                    </p>
-                  )}
-                </div>
-
-                {/* Status badge */}
-                {getStatusBadge(log.status)}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        <AgentLogsClient logs={logs} stats={stats} />
       )}
     </div>
   );

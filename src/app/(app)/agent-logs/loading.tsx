@@ -3,8 +3,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function AgentLogsLoading() {
   return (
     <div className="flex h-full flex-1 flex-col">
+      {/* Top bar */}
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-5 w-36" />
         <div className="flex items-center gap-4">
           <Skeleton className="h-9 w-64 rounded-lg" />
           <Skeleton className="h-9 w-9 rounded-lg" />
@@ -12,27 +13,46 @@ export default function AgentLogsLoading() {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-8">
-        {/* Category filter pills */}
-        <div className="flex gap-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-24 rounded-full" />
+      <div className="flex flex-1 flex-col gap-6 p-8">
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-white p-5 space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-8 w-20" />
+            </div>
           ))}
         </div>
 
-        {/* Timeline entries */}
-        <div className="rounded-xl border border-border bg-white divide-y divide-border">
+        {/* Filter tabs */}
+        <div className="flex gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-24 rounded-lg" />
+          ))}
+        </div>
+
+        {/* Activity timeline */}
+        <div className="overflow-hidden rounded-xl border border-border bg-white">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex items-start gap-4 p-4">
-              <Skeleton className="mt-0.5 h-8 w-8 shrink-0 rounded-lg" />
-              <div className="flex-1 space-y-1.5">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-64" />
-                <Skeleton className="h-3 w-20" />
+            <div
+              key={i}
+              className={`flex items-center gap-4 px-6 py-4 ${
+                i < 7 ? 'border-b border-border' : ''
+              }`}
+            >
+              {/* Timestamp */}
+              <Skeleton className="h-4 w-[72px] shrink-0" />
+
+              {/* Icon */}
+              <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+
+              {/* Content */}
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-4 w-3/4" />
               </div>
+
+              {/* Status badge */}
+              <Skeleton className="h-4 w-14 shrink-0" />
             </div>
           ))}
         </div>
