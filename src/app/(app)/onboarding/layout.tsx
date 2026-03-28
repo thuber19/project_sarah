@@ -64,10 +64,6 @@ export default function OnboardingLayout({
         {children}
       </div>
 
-      {/* Footer */}
-      <p className="text-[13px] text-muted-foreground">
-        DSGVO-konform &middot; Deine Daten sind sicher
-      </p>
     </div>
   )
 }

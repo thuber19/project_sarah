@@ -260,7 +260,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                     Ideal Customer Profile
                   </h2>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    Mehrere Werte mit Komma trennen (z. B. „SaaS, FinTech"). Gilt für alle zukünftigen
+                    Mehrere Werte mit Komma trennen (z.&nbsp;B. &bdquo;SaaS, FinTech&ldquo;). Gilt für alle zukünftigen
                     Discovery-Suchen.
                   </p>
                 </div>
@@ -323,7 +323,7 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Klicke „Speichern" oben rechts, um die ICP-Konfiguration zu übernehmen.
+                  Klicke &bdquo;Speichern&ldquo; oben rechts, um die ICP-Konfiguration zu übernehmen.
                 </p>
               </div>
             ) : (

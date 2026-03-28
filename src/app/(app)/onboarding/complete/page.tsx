@@ -38,12 +38,6 @@ export default function OnboardingCompletePage() {
           >
             Zum Dashboard
           </Link>
-          <Link
-            href="/discovery"
-            className="inline-flex min-h-12 w-full items-center justify-center text-sm font-medium text-accent transition-colors hover:text-accent/80 sm:w-auto"
-          >
-            Erste Discovery starten
-          </Link>
         </div>
       </div>
     </div>
