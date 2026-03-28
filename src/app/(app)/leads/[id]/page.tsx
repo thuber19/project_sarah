@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ExternalLink, Mail, User } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Mail, User, Sparkles } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { DataQualityBadge } from '@/components/leads/data-quality-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
@@ -141,6 +141,13 @@ export default async function LeadDetailPage({ params }: Props) {
           <div className="flex flex-1 flex-col gap-6 lg:gap-8">
             <LeadResearch leadId={id} cachedReport={research?.full_report ?? null} />
             <OutreachDraft leadId={id} />
+            <Link
+              href={`/leads/${id}/outreach`}
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-accent bg-accent-light px-4 py-3 text-sm font-semibold text-accent transition-colors hover:bg-accent hover:text-white"
+            >
+              <Sparkles className="h-4 w-4" />
+              AI Outreach-Seite öffnen
+            </Link>
             <OutreachVoice leadId={id} companyName={lead.company_name ?? null} />
             {score && (
               <div className="rounded-xl border border-border bg-white p-4 lg:p-6">

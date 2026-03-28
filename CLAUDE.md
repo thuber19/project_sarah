@@ -67,11 +67,14 @@ src/app/
 │   └── magic-link-sent/page.tsx # "Check your inbox" confirmation
 ├── (app)/
 │   ├── dashboard/page.tsx      # Stats + live feed + score chart (+ empty state)
-│   ├── leads/page.tsx          # Filterable lead table + mobile cards (+ empty state)
+│   ├── leads/page.tsx          # Filterable lead table + mobile cards + bulk actions (+ empty state)
+│   ├── leads/leads-client.tsx  # Client wrapper: filter sheet, bulk selection, URL param sync
 │   ├── leads/[id]/page.tsx     # Lead detail (score breakdown)
+│   ├── leads/[id]/outreach/    # AI Outreach page (2-col desktop, stacked mobile)
 │   ├── leads/import/page.tsx   # CSV import with drag & drop
 │   ├── leads/import/success/   # Post-import success with scoring progress
-│   ├── discovery/page.tsx      # Lead search + results (+ empty state)
+│   ├── notifications/page.tsx  # Notifications list grouped by date (+ empty state)
+│   ├── discovery/page.tsx      # Lead search + results + running state (+ empty state)
 │   ├── scoring/page.tsx        # Score distribution + rule config (+ empty state)
 │   ├── export/page.tsx         # HubSpot Export & CRM (+ empty state)
 │   ├── settings/page.tsx       # Tabbed settings (profile, ICP, comm style, integrations)
@@ -91,14 +94,17 @@ src/components/
 ├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution, DashboardEmpty
 ├── scoring/                    # ScoringProgress, RescoreButton
 ├── settings/                   # IcpEditModal
-└── leads/                      # ScoreBadge, LeadTable, LeadFilters, LeadFilterSheet, LeadBulkToolbar, LeadSearchInput, LeadPagination, ScoreBreakdown, StreamingScoreBreakdown
+└── leads/                      # ScoreBadge, LeadTable, LeadFilters, LeadFilterSheet (mobile bottom sheet w/ score+industry+region+size), LeadBulkToolbar (score/export/delete), LeadSearchInput, LeadPagination, ScoreBreakdown, StreamingScoreBreakdown, OutreachDraft
 ```
 
 Most data pages are wired to real Supabase queries (dashboard, leads, lead detail, scoring, agent-logs, discovery, settings).
 All server actions use the standardized `ApiResponse<T>` envelope pattern (see above).
-Export page is still placeholder (Post-MVP). Empty state shows when no data exists.
+Export page has CSV export (working) + HubSpot integration (post-MVP placeholder). Empty state shows when no data exists.
 Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Agent Logs, Analyse, Export & CRM, Settings.
 Mobile tab bar: Dashboard, Leads, Discovery, Scoring, Settings (5 primary tabs).
+Notifications page: `/notifications` with grouped notifications (Heute/Gestern), linked from NotificationBell dropdown.
+AI Outreach: `/leads/[id]/outreach` — standalone page with lead context + email generation (reuses `OutreachDraft`).
+Lead bulk actions: Selection checkboxes in desktop table, bulk toolbar (score/export/delete). Filter sheet on mobile with extended filters (score range, industry, region, company size).
 
 ## Environment
 Copy `.env.example` to `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `APOLLO_API_KEY`, `GOOGLE_PLACES_API_KEY`.

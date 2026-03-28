@@ -17,6 +17,7 @@ interface LeadFilters {
   scoreRange: [number, number]
   industries: string[]
   regions: string[]
+  companySizes: string[]
 }
 
 interface LeadFilterSheetProps {
@@ -29,15 +30,23 @@ interface LeadFilterSheetProps {
 
 const INDUSTRY_OPTIONS = ['SaaS', 'FinTech', 'HealthTech', 'E-Commerce'] as const
 const REGION_OPTIONS = [
-  { value: 'AT', label: 'Osterreich' },
+  { value: 'AT', label: 'Österreich' },
   { value: 'DE', label: 'Deutschland' },
   { value: 'CH', label: 'Schweiz' },
+] as const
+
+const COMPANY_SIZE_OPTIONS = [
+  { value: '1-10', label: '1-10' },
+  { value: '11-50', label: '11-50' },
+  { value: '51-200', label: '51-200' },
+  { value: '200+', label: '200+' },
 ] as const
 
 const DEFAULT_FILTERS: LeadFilters = {
   scoreRange: [0, 100],
   industries: [],
   regions: [],
+  companySizes: [],
 }
 
 export function LeadFilterSheet({
@@ -64,6 +73,15 @@ export function LeadFilterSheet({
       regions: checked
         ? [...prev.regions, region]
         : prev.regions.filter((r) => r !== region),
+    }))
+  }
+
+  function handleCompanySizeToggle(size: string, checked: boolean) {
+    setLocalFilters((prev) => ({
+      ...prev,
+      companySizes: checked
+        ? [...prev.companySizes, size]
+        : prev.companySizes.filter((s) => s !== size),
     }))
   }
 
@@ -172,6 +190,25 @@ export function LeadFilterSheet({
                     onCheckedChange={(v) => handleRegionToggle(region.value, v === true)}
                   />
                   <span className="text-sm">{region.label}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {/* Company Sizes */}
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">Unternehmensgröße</legend>
+            <div className="flex flex-col gap-2.5">
+              {COMPANY_SIZE_OPTIONS.map((size) => (
+                <label
+                  key={size.value}
+                  className="flex min-h-12 cursor-pointer items-center gap-3"
+                >
+                  <Checkbox
+                    checked={localFilters.companySizes.includes(size.value)}
+                    onCheckedChange={(v) => handleCompanySizeToggle(size.value, v === true)}
+                  />
+                  <span className="text-sm">{size.label}</span>
                 </label>
               ))}
             </div>

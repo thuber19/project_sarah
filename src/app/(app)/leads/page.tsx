@@ -2,14 +2,11 @@ import { Suspense } from 'react'
 import { Compass, Upload, Users } from 'lucide-react'
 import { getLeadsAction } from '@/app/actions/leads.actions'
 import { requireAuth } from '@/lib/supabase/server'
-import { PAGE_SIZE } from '@/lib/constants'
-import { LeadFilters } from '@/components/leads/lead-filters'
-import { LeadTable } from '@/components/leads/lead-table'
 import { LeadSearchInput } from '@/components/leads/lead-search-input'
-import { LeadPagination } from '@/components/leads/lead-pagination'
 import { LeadExportButton } from '@/components/leads/lead-export-button'
 import { EmptyState } from '@/components/shared/empty-state'
 import { AppTopbar } from '@/components/layout/app-topbar'
+import { LeadsClient } from './leads-client'
 
 interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -65,23 +62,14 @@ export default async function LeadsPage({ searchParams }: Props) {
       />
 
       {hasLeads ? (
-        /* Content area */
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 lg:gap-5 lg:px-8 lg:pt-6">
-          <Suspense>
-            <LeadFilters />
-          </Suspense>
-
-          <LeadTable
-            leads={leads}
-            sort={sort}
-            dir={dir}
-            searchParams={currentSearchParams.toString()}
-          />
-
-          <Suspense>
-            <LeadPagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
-          </Suspense>
-        </div>
+        <LeadsClient
+          leads={leads}
+          totalCount={totalCount}
+          currentPage={page}
+          sort={sort}
+          dir={dir}
+          searchParams={currentSearchParams.toString()}
+        />
       ) : (
         <div className="flex flex-1 items-center justify-center p-4 lg:p-8">
           <EmptyState

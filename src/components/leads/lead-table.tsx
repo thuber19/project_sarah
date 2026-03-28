@@ -19,6 +19,9 @@ interface LeadTableProps {
   sort: string
   dir: string
   searchParams: string // current URL search params string for building sort links
+  selectedIds?: Set<string>
+  onToggleSelect?: (id: string) => void
+  onToggleAll?: () => void
 }
 
 function mapGrade(grade: string | null): DisplayGrade | null {
@@ -84,7 +87,8 @@ function sortHref(
   return `/leads?${params.toString()}`
 }
 
-export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
+export function LeadTable({ leads, sort, dir, searchParams, selectedIds, onToggleSelect, onToggleAll }: LeadTableProps) {
+  const allSelected = selectedIds && leads.length > 0 && selectedIds.size === leads.length
   if (leads.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-white p-6 text-center lg:p-12">
@@ -132,7 +136,11 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead scope="col" className="w-12">
-                <Checkbox aria-label="Alle auswählen" />
+                <Checkbox
+                  checked={allSelected ?? false}
+                  onCheckedChange={() => onToggleAll?.()}
+                  aria-label="Alle auswählen"
+                />
               </TableHead>
               <TableHead
                 scope="col"
@@ -203,9 +211,16 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
             {leads.map((lead) => {
               const displayGrade = mapGrade(lead.grade)
               return (
-                <TableRow key={lead.id} className="hover:bg-muted/50">
+                <TableRow
+                  key={lead.id}
+                  className={selectedIds?.has(lead.id) ? 'bg-accent-light hover:bg-accent-light/80' : 'hover:bg-muted/50'}
+                >
                   <TableCell>
-                    <Checkbox aria-label={`${lead.company_name ?? 'Lead'} auswählen`} />
+                    <Checkbox
+                      checked={selectedIds?.has(lead.id) ?? false}
+                      onCheckedChange={() => onToggleSelect?.(lead.id)}
+                      aria-label={`${lead.company_name ?? 'Lead'} auswählen`}
+                    />
                   </TableCell>
                   <TableCell>
                     <Link

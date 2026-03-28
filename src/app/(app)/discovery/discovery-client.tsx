@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Compass, Loader2, Play, Search, Settings, SlidersHorizontal } from 'lucide-react'
+import { Compass, Loader2, Play, Search, Settings, SlidersHorizontal, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import {
@@ -45,6 +45,8 @@ export function DiscoveryClient({
   const [region, setRegion] = useState(icpDefaults.region)
   const [technologies, setTechnologies] = useState(icpDefaults.technologies)
   const [keywords, setKeywords] = useState(icpDefaults.keywords)
+  const [progress, setProgress] = useState(0)
+  const [stopped, setStopped] = useState(false)
 
   // Discovered leads awaiting user selection (not yet saved to DB)
   const [discoveredLeads, setDiscoveredLeads] = useState<DiscoveredLead[]>([])
@@ -116,6 +118,8 @@ export function DiscoveryClient({
     }
 
     toast.info('Discovery gestartet...')
+    setStopped(false)
+    setProgress(0)
     runDiscovery({
       industries,
       companySize,
@@ -124,6 +128,24 @@ export function DiscoveryClient({
       keywords: keywords || undefined,
     })
   }
+
+  useEffect(() => {
+    if (!isPending || stopped) {
+      return
+    }
+    const interval = setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 90 : prev + Math.random() * 15))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [isPending, stopped])
+
+  function handleStop() {
+    setStopped(true)
+    setProgress(0)
+    toast.info('Discovery wird abgebrochen...')
+  }
+
+  const showRunningState = isPending && !stopped
 
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -284,25 +306,67 @@ export function DiscoveryClient({
               </button>
             </div>
 
-            {isPending && (
-              <div className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4 lg:p-6">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin text-accent" />
-                  <span className="text-sm font-medium text-foreground">Suche läuft...</span>
-                </div>
-                <div className="flex flex-col gap-2">
+            {showRunningState && (
+              <>
+                <div className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4">
                   <div className="flex items-center gap-2">
-                    <div className="size-2 rounded-full bg-green-500" />
-                    <span className="text-xs text-muted-foreground">Apollo.io</span>
-                    <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+                    <Loader2 className="size-4 animate-spin text-accent" />
+                    <span className="text-sm font-medium text-foreground">Suche aktiv</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="size-2 rounded-full bg-green-500" />
-                    <span className="text-xs text-muted-foreground">Google Places</span>
-                    <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+
+                  <div className="flex flex-col gap-1">
+                    <div className="h-1 w-full rounded-sm bg-border">
+                      <div
+                        className="h-1 rounded-sm bg-accent transition-all duration-700 ease-out"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {Math.round(progress)}% abgeschlossen
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {industries && (
+                      <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-foreground">
+                        {industries}
+                      </span>
+                    )}
+                    {region && (
+                      <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-foreground">
+                        {region}
+                      </span>
+                    )}
+                    {companySize && (
+                      <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-foreground">
+                        {companySize}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-muted-foreground">Apollo.io</span>
+                      <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-muted-foreground">Google Places</span>
+                      <span className="ml-auto text-xs font-medium text-green-600">Aktiv</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-destructive text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                >
+                  <Square className="size-4" aria-hidden="true" />
+                  Discovery stoppen
+                </button>
+              </>
             )}
 
             <Link
@@ -317,15 +381,17 @@ export function DiscoveryClient({
           <div className="flex flex-1 flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-semibold text-foreground">Ergebnisse</h2>
-                {showDiscovered ? (
-                  <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
-                    {discoveredLeads.length} neue Leads gefunden
-                  </span>
+                <h2 className="text-base font-semibold text-foreground">
+                  {showRunningState && latestLeads.length > 0
+                    ? 'Live-Ergebnisse'
+                    : 'Ergebnisse'}
+                </h2>
+                {showRunningState && latestLeads.length > 0 ? (
+                  <span className="text-xs font-medium text-accent">Nach Score</span>
                 ) : (
                   totalLeadsFound > 0 && (
                     <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
-                      {totalLeadsFound} Leads gespeichert
+                      {totalLeadsFound} neue Leads gefunden
                     </span>
                   )
                 )}
@@ -477,6 +543,30 @@ export function DiscoveryClient({
                       </TableRow>
                     ))
                   )}
+                  {showRunningState &&
+                    latestLeads.length > 0 &&
+                    Array.from({ length: 2 }).map((_, i) => (
+                      <TableRow key={`skeleton-${i}`} className="opacity-60">
+                        <TableCell>
+                          <div className="h-4 w-28 animate-pulse rounded bg-border" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse rounded bg-border" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-20 animate-pulse rounded bg-border" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-16 animate-pulse rounded bg-border" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-16 animate-pulse rounded bg-border" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-6 w-14 animate-pulse rounded-lg bg-border" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </div>
@@ -557,6 +647,24 @@ export function DiscoveryClient({
                   </Link>
                 ))
               )}
+              {showRunningState &&
+                latestLeads.length > 0 &&
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={`skeleton-mobile-${i}`}
+                    className="flex flex-col gap-2 rounded-xl border border-border bg-white p-4 opacity-60"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="h-4 w-32 animate-pulse rounded bg-border" />
+                      <div className="h-5 w-16 animate-pulse rounded-md bg-border" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-3 w-24 animate-pulse rounded bg-border" />
+                      <div className="h-3 w-20 animate-pulse rounded bg-border" />
+                      <div className="h-4 w-16 animate-pulse rounded bg-border" />
+                    </div>
+                  </div>
+                ))}
             </div>
 
             {showDiscovered && (

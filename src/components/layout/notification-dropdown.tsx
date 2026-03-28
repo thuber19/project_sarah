@@ -49,7 +49,7 @@ export function NotificationBell() {
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <span className="text-sm font-semibold text-foreground">Benachrichtigungen</span>
             <Link
-              href="/agent-logs"
+              href="/notifications"
               onClick={() => setOpen(false)}
               className="text-xs font-medium text-accent hover:underline"
             >

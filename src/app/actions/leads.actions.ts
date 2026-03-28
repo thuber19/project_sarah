@@ -17,6 +17,12 @@ const leadsQuerySchema = z.object({
   sort: z.enum(['total_score', 'company_name', 'created_at']).optional().default('total_score'),
   dir: z.enum(['asc', 'desc']).optional().default('desc'),
   page: z.coerce.number().int().min(1).optional().default(1),
+  // Extended filter params from LeadFilterSheet
+  scoreMin: z.coerce.number().int().min(0).max(100).optional(),
+  scoreMax: z.coerce.number().int().min(0).max(100).optional(),
+  industries: z.string().max(200).optional(),
+  regions: z.string().max(50).optional(),
+  companySizes: z.string().max(100).optional(),
 })
 
 export async function getLeadsAction(
@@ -29,14 +35,17 @@ export async function getLeadsAction(
     return fail('VALIDATION_ERROR', 'Ungültige Suchparameter')
   }
 
-  const { grade, q, sort, dir, page } = parsed.data
+  const { grade, q, sort, dir, page, scoreMin, scoreMax, industries, regions } = parsed.data
+  // Note: companySizes is accepted in the schema but not used for filtering
+  // because the leads table uses a free-text company_size field, not an enum.
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  const selectClause =
-    grade !== 'ALL'
-      ? 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores!inner(total_score, grade)'
-      : 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores(total_score, grade)'
+  // Use !inner join when score/grade filters are active to enforce INNER JOIN
+  const needsInnerJoin = grade !== 'ALL' || scoreMin !== undefined || scoreMax !== undefined
+  const selectClause = needsInnerJoin
+    ? 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores!inner(total_score, grade)'
+    : 'id, company_name, first_name, last_name, industry, location, updated_at, lead_scores(total_score, grade)'
 
   let query = supabase.from('leads').select(selectClause, { count: 'exact' }).eq('user_id', user.id)
 
@@ -53,6 +62,31 @@ export async function getLeadsAction(
     }
   }
 
+  // Score range filter
+  if (scoreMin !== undefined) {
+    query = query.gte('lead_scores.total_score', scoreMin)
+  }
+  if (scoreMax !== undefined) {
+    query = query.lte('lead_scores.total_score', scoreMax)
+  }
+
+  // Industry filter (comma-separated list)
+  if (industries) {
+    const industryList = industries.split(',').filter(Boolean)
+    if (industryList.length > 0) {
+      query = query.in('industry', industryList)
+    }
+  }
+
+  // Region filter (comma-separated country codes)
+  if (regions) {
+    const regionList = regions.split(',').filter(Boolean)
+    if (regionList.length > 0) {
+      query = query.in('location', regionList)
+    }
+  }
+
+  // Text search
   if (q) {
     query = query.or(`company_name.ilike.%${q}%,first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
   }
