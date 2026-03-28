@@ -22,8 +22,6 @@ const featureCards = [
   },
 ] as const
 
-const companyLogos = ['FINTEK', 'DATAWERK', 'ALPENTEC', 'NEROVA', 'CLOUDWERK', 'NEXTFLOW'] as const
-
 const chartBarHeights = [
   'h-[60%]',
   'h-[75%]',
@@ -64,12 +62,6 @@ export default function MarketingPage() {
               >
                 Jetzt starten — kostenlos
               </Link>
-              <button
-                type="button"
-                className="rounded-lg border border-border px-7 py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-              >
-                Demo ansehen
-              </button>
             </div>
           </div>
 
@@ -134,21 +126,6 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section className="flex w-full flex-col items-center gap-6 bg-white px-4 py-10 text-center lg:px-20 lg:py-12">
-        <p className="text-base font-medium text-muted-foreground">
-          Vertraut von 200+ Unternehmen im DACH-Raum
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-6 lg:gap-12">
-          {companyLogos.map((name) => (
-            <span
-              key={name}
-              className="text-sm font-bold uppercase tracking-wider text-muted-foreground/40 lg:text-lg"
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      </section>
     </>
   )
 }

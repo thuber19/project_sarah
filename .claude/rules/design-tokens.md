@@ -1,4 +1,12 @@
-# Design Token Rules (Path-scoped: src/app/, src/components/)
+---
+paths:
+  - src/components/**
+  - src/app/**/page.*
+  - src/app/**/layout.*
+  - src/app/globals.css
+---
+
+# Design Token Rules
 
 ## Color System — "Professional Trust" Variant
 Design source: `sarahdesign.pen` Frame "Variant 1 - Professional Trust"
@@ -39,14 +47,13 @@ Use for: agent log categories, data quality badges, threat levels, success/error
 | HubSpot Hover | `hover:bg-brand-hubspot-hover` | #FF6A45 |
 | HubSpot Light | `bg-brand-hubspot/15 text-brand-hubspot` | 15% opacity bg |
 
-## Score Grade Colors
-Always use semantic tokens, never hardcode hex:
-- HOT → `bg-score-hot` / `text-score-hot` (#EF4444)
-- QUALIFIED → `bg-score-qualified` / `text-score-qualified` (#F97316)
-- ENGAGED → `bg-score-engaged` / `text-score-engaged` (#EAB308)
-- POTENTIAL → `bg-score-potential` / `text-score-potential` (#3B82F6)
-- POOR_FIT → `bg-score-poor-fit` / `text-score-poor-fit` (#94A3B8)
+## Score Grade Colors (3-Grade System)
+Scoring uses 3 grades based on Company Score only (Person Score is a separate dimension):
+- TOP_MATCH (≥60) → `bg-score-hot-bg` / `text-score-hot-text` (#EF4444)
+- GOOD_FIT (30-59) → `bg-score-qualified-bg` / `text-score-qualified-text` (#F97316)
+- POOR_FIT (<30) → `bg-score-poor-fit-bg` / `text-score-poor-fit-text` (#94A3B8)
 
+Legacy 5-grade values (HOT, QUALIFIED, ENGAGED, POTENTIAL) are mapped via `mapLegacyGrade()`.
 Use `ScoreBadge` component from `src/components/leads/score-badge.tsx` for display.
 
 ## Typography
@@ -64,6 +71,8 @@ Use `ScoreBadge` component from `src/components/leads/score-badge.tsx` for displ
 - Active nav: `bg-sidebar-accent` (#334155)
 - Inactive nav: `text-sidebar-muted` (#94A3B8)
 - Width: 240px (`w-60`)
+- Nav items: Dashboard, Leads, Discovery, Scoring, Analyse, Export & CRM, Settings
+- Agent Logs hidden from user nav (admin-only, accessible via `/agent-logs` direct URL)
 
 ## Empty State Pattern
 All data pages use `EmptyState` from `src/components/shared/empty-state.tsx`:

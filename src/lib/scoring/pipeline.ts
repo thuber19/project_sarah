@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Lead, LeadScore } from '@/types/lead'
 import { getGradeForScore } from '@/lib/scoring/grade'
-import { calculateTwoPhaseScore, combinedScore, calculateRuleScore, totalFromBreakdown, type ICP } from './rule-engine'
+import { calculateTwoPhaseScore, combinedScore, calculateRuleScore, type ICP } from './rule-engine'
 import type { ExclusionCriteria } from '@/types/lead'
 import { getAIScoring } from './ai-scoring'
 import { logAgentAction } from '@/lib/agent-log'

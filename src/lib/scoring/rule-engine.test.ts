@@ -68,9 +68,9 @@ describe('calculateCompanyScore', () => {
   // Industry (max 25)
   // -----------------------------------------------------------------------
   describe('industry scoring', () => {
-    it('scores 0 for empty lead', () => {
+    it('scores 5 base points for empty lead (unknown industry)', () => {
       const { breakdown } = calculateCompanyScore(makeLead(), defaultIcp)
-      expect(breakdown.industry).toBe(0)
+      expect(breakdown.industry).toBe(5)
     })
 
     it('gives 25 for matching industry', () => {
@@ -79,10 +79,10 @@ describe('calculateCompanyScore', () => {
       expect(breakdown.industry).toBe(25)
     })
 
-    it('does not score industry when there is no match', () => {
+    it('gives 5 base points for industry with no ICP match', () => {
       const lead = makeLead({ industry: 'Healthcare' })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.industry).toBe(0)
+      expect(breakdown.industry).toBe(5)
     })
 
     it('industry match is case-insensitive', () => {
@@ -120,9 +120,9 @@ describe('calculateCompanyScore', () => {
       expect(breakdown.company_size).toBe(7)
     })
 
-    it('scores 0 for null company_size', () => {
+    it('scores 5 base points for null company_size', () => {
       const { breakdown } = calculateCompanyScore(makeLead(), defaultIcp)
-      expect(breakdown.company_size).toBe(0)
+      expect(breakdown.company_size).toBe(5)
     })
   })
 
@@ -170,22 +170,22 @@ describe('calculateCompanyScore', () => {
       expect(breakdown.geography).toBe(12)
     })
 
-    it('gives 0 for a country not in DACH and not in ICP targets', () => {
+    it('gives 5 base points for a country not in DACH and not in ICP targets', () => {
       const lead = makeLead({ country: 'Japan' })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.geography).toBe(0)
+      expect(breakdown.geography).toBe(5)
     })
 
-    it('gives 3 for having a domain (without country)', () => {
+    it('gives 6 for having a domain without country (3 base + 3 domain)', () => {
       const lead = makeLead({ company_domain: 'example.com' })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.geography).toBe(3)
+      expect(breakdown.geography).toBe(6)
     })
 
-    it('gives bonus for DACH legal entity in company name', () => {
+    it('gives 5 for DACH legal entity in company name without country (3 base + 2 entity)', () => {
       const lead = makeLead({ company_name: 'TechCorp GmbH' })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.geography).toBe(2)
+      expect(breakdown.geography).toBe(5)
     })
 
     it('caps geography at 20 for DACH country + domain + legal entity', () => {
@@ -257,20 +257,20 @@ describe('calculateCompanyScore', () => {
       expect(breakdown.signals).toBe(4)
     })
 
-    it('gives 0 for empty technologies array', () => {
+    it('gives 2 base points for empty technologies array (enriched raw_data)', () => {
       const lead = makeLead({
         raw_data: { technologies: [] },
       })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.signals).toBe(0)
+      expect(breakdown.signals).toBe(2)
     })
 
-    it('gives 0 for technologies that is not an array', () => {
+    it('gives 2 base points for technologies that is not an array (enriched raw_data)', () => {
       const lead = makeLead({
         raw_data: { technologies: 'React' },
       })
       const { breakdown } = calculateCompanyScore(lead, defaultIcp)
-      expect(breakdown.signals).toBe(0)
+      expect(breakdown.signals).toBe(2)
     })
 
     it('gives 3 for linkedin_url', () => {
@@ -411,9 +411,9 @@ describe('calculateCompanyScore', () => {
   // Full company score
   // -----------------------------------------------------------------------
   describe('total company score', () => {
-    it('scores 0 for empty lead', () => {
+    it('scores 13 base points for empty lead (industry=5 + size=5 + geography=3)', () => {
       const { score } = calculateCompanyScore(makeLead(), defaultIcp)
-      expect(score).toBe(0)
+      expect(score).toBe(13)
     })
 
     it('scores a well-matched company up to 100', () => {
@@ -711,10 +711,14 @@ describe('calculateRuleScore (legacy wrapper)', () => {
     expect(breakdown).toHaveProperty('timing')
   })
 
-  it('scores an empty lead to 0', () => {
+  it('scores an empty lead to 11 (base points: company_fit=10, buying_signals=1)', () => {
     const breakdown = calculateRuleScore(makeLead(), defaultIcp)
+    expect(breakdown.company_fit).toBe(10) // industry=5 + company_size=5
+    expect(breakdown.buying_signals).toBe(1) // round(signals=0 + geography=3 * 0.25) = 1
+    expect(breakdown.contact_fit).toBe(0)
+    expect(breakdown.timing).toBe(0)
     const total = totalFromBreakdown(breakdown)
-    expect(total).toBe(0)
+    expect(total).toBe(11)
   })
 
   it('company_fit maps from industry + company_size of company breakdown', () => {

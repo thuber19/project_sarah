@@ -3,7 +3,6 @@ import {
   calculateTwoPhaseScore,
   combinedScore,
   calculateRuleScore,
-  totalFromBreakdown,
   type ICP,
 } from '@/lib/scoring/rule-engine'
 import type { Lead } from '@/types/lead'

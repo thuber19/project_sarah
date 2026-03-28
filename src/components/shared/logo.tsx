@@ -25,7 +25,7 @@ export function Logo({
   const { icon, text } = sizeConfig[size]
 
   return (
-    <div className={`flex items-center gap-2 ${className ?? ''}`}>
+    <div className={`flex items-center gap-0.5 ${className ?? ''}`}>
       <Image
         src="/logo.png"
         alt="Sarah Logo"
@@ -34,7 +34,7 @@ export function Logo({
         className="shrink-0"
         priority
       />
-      {showText && <span className={`${text} ${textClassName}`}>Sarah</span>}
+      {showText && <span className={`${text} ${textClassName}`}>arah</span>}
     </div>
   )
 }
