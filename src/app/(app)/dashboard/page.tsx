@@ -37,28 +37,28 @@ async function getDashboardData(userId: string) {
     leads: { company_name: string | null; first_name: string | null; last_name: string | null }
   }>
 
-  const hotLeads = scores.filter((s) => s.grade === 'HOT').length
-  const qualifiedLeads = scores.filter((s) => ['HOT', 'QUALIFIED'].includes(s.grade)).length
+  const topMatches = scores.filter((s) => ['HOT', 'QUALIFIED', 'TOP_MATCH'].includes(s.grade)).length
+  const goodFits = scores.filter((s) => ['ENGAGED', 'POTENTIAL', 'GOOD_FIT'].includes(s.grade)).length
   const avgScore =
     scores.length > 0
       ? Math.round(scores.reduce((sum, s) => sum + s.total_score, 0) / scores.length)
       : 0
 
   const gradeCounts: Record<string, number> = {
-    HOT: 0,
-    QUALIFIED: 0,
-    ENGAGED: 0,
-    POTENTIAL: 0,
-    POOR: 0,
+    TOP_MATCH: 0,
+    GOOD_FIT: 0,
+    POOR_FIT: 0,
   }
   for (const s of scores) {
-    if (s.grade in gradeCounts) gradeCounts[s.grade]++
+    if (['HOT', 'QUALIFIED', 'TOP_MATCH'].includes(s.grade)) gradeCounts.TOP_MATCH++
+    else if (['ENGAGED', 'POTENTIAL', 'GOOD_FIT'].includes(s.grade)) gradeCounts.GOOD_FIT++
+    else gradeCounts.POOR_FIT++
   }
 
   return {
     totalLeads,
-    hotLeads,
-    qualifiedLeads,
+    topMatches,
+    goodFits,
     avgScore,
     gradeCounts,
     feedItems,
@@ -69,7 +69,7 @@ async function getDashboardData(userId: string) {
 
 export default async function DashboardPage() {
   const { user } = await requireAuth()
-  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored, recentLeads } =
+  const { totalLeads, topMatches, goodFits, avgScore, gradeCounts, totalScored, recentLeads } =
     await getDashboardData(user.id)
 
   return (
@@ -84,14 +84,14 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Leads gesamt" value={String(totalLeads)} changeType="neutral" />
             <StatCard
-              label="Qualifizierte Leads"
-              value={String(qualifiedLeads)}
-              changeType="positive"
+              label="Top Matches"
+              value={String(topMatches)}
+              changeType={topMatches > 0 ? 'positive' : 'neutral'}
             />
             <StatCard
-              label="Hot Leads"
-              value={String(hotLeads)}
-              changeType={hotLeads > 0 ? 'positive' : 'neutral'}
+              label="Good Fits"
+              value={String(goodFits)}
+              changeType={goodFits > 0 ? 'positive' : 'neutral'}
             />
             <StatCard
               label="Ø Score"

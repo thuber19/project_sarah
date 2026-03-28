@@ -7,8 +7,8 @@ import { ScoringRescoreSection } from './scoring-rescore-section'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
-type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
-type DisplayGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR_FIT'
+type Grade = 'TOP_MATCH' | 'GOOD_FIT' | 'POOR_FIT'
+type DisplayGrade = Grade
 
 interface DistributionItem {
   grade: Grade
@@ -28,28 +28,28 @@ interface ScoringRule {
 
 const scoringRules: ScoringRule[] = [
   {
-    name: 'Company Fit',
+    name: 'Company Score',
     description:
-      'Unternehmensgr\u00f6\u00dfe, Branche und Standort passen zum Ideal Customer Profile',
-    weight: '40%',
+      'Branche, Firmengr\u00f6\u00dfe und Region passen zum ICP. Ausschl\u00fcsse reduzieren den Score.',
+    weight: '60%',
     icon: 'building',
   },
   {
-    name: 'Technology Match',
-    description: 'Technologie-Stack des Unternehmens passt zu unserer L\u00f6sung',
-    weight: '25%',
-    icon: 'code',
-  },
-  {
-    name: 'Growth Signals',
-    description: 'Wachstumsindikatoren wie Funding, Stellenausschreibungen und Expansion',
-    weight: '25%',
+    name: 'Person Score',
+    description: 'Entscheidungstr\u00e4ger, Budgetverantwortung und Champion-Potenzial des Kontakts',
+    weight: '40%',
     icon: 'trending',
   },
   {
-    name: 'Market Relevance',
-    description: 'Relevanz im DACH-Markt und regionale Marktpr\u00e4senz',
-    weight: '10%',
+    name: 'Buying Signals',
+    description: 'Funding, Hiring, Tech-Stack und Social Presence der Firma',
+    weight: 'Teil von Company',
+    icon: 'code',
+  },
+  {
+    name: 'DACH-Relevanz',
+    description: 'Bonus f\u00fcr \u00d6sterreich, Deutschland und Schweiz',
+    weight: 'Teil von Company',
     icon: 'globe',
   },
 ]
@@ -63,21 +63,9 @@ const iconMap = {
 
 const gradeConfig: { grade: Grade; displayGrade: DisplayGrade; range: string; barColor: string }[] =
   [
-    { grade: 'HOT', displayGrade: 'HOT', range: '90-100', barColor: 'bg-score-hot' },
-    {
-      grade: 'QUALIFIED',
-      displayGrade: 'QUALIFIED',
-      range: '75-89',
-      barColor: 'bg-score-qualified',
-    },
-    { grade: 'ENGAGED', displayGrade: 'ENGAGED', range: '60-74', barColor: 'bg-score-engaged' },
-    {
-      grade: 'POTENTIAL',
-      displayGrade: 'POTENTIAL',
-      range: '40-59',
-      barColor: 'bg-score-potential',
-    },
-    { grade: 'POOR', displayGrade: 'POOR_FIT', range: '0-39', barColor: 'bg-score-poor-fit' },
+    { grade: 'TOP_MATCH', displayGrade: 'TOP_MATCH', range: '70-100', barColor: 'bg-score-hot' },
+    { grade: 'GOOD_FIT', displayGrade: 'GOOD_FIT', range: '40-69', barColor: 'bg-score-qualified' },
+    { grade: 'POOR_FIT', displayGrade: 'POOR_FIT', range: '0-39', barColor: 'bg-score-poor-fit' },
   ]
 
 export default async function ScoringPage() {
@@ -93,15 +81,18 @@ export default async function ScoringPage() {
 
   // Calculate distribution from real data
   const gradeCounts: Record<Grade, number> = {
-    HOT: 0,
-    QUALIFIED: 0,
-    ENGAGED: 0,
-    POTENTIAL: 0,
-    POOR: 0,
+    TOP_MATCH: 0,
+    GOOD_FIT: 0,
+    POOR_FIT: 0,
   }
   for (const s of scores ?? []) {
-    const g = s.grade as Grade
-    if (g in gradeCounts) gradeCounts[g]++
+    // Map legacy grades to new system
+    const g = s.grade as string
+    if (g === 'HOT' || g === 'QUALIFIED') gradeCounts.TOP_MATCH++
+    else if (g === 'ENGAGED' || g === 'POTENTIAL') gradeCounts.GOOD_FIT++
+    else if (g === 'TOP_MATCH') gradeCounts.TOP_MATCH++
+    else if (g === 'GOOD_FIT') gradeCounts.GOOD_FIT++
+    else gradeCounts.POOR_FIT++
   }
   const total = scores?.length ?? 0
   const hasScores = total > 0

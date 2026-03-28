@@ -3,14 +3,12 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-const GRADES = ['ALL', 'HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR_FIT'] as const
+const GRADES = ['ALL', 'TOP_MATCH', 'GOOD_FIT', 'POOR_FIT'] as const
 
 const GRADE_LABELS: Record<string, string> = {
   ALL: 'Alle',
-  HOT: 'HOT',
-  QUALIFIED: 'QUALIFIED',
-  ENGAGED: 'ENGAGED',
-  POTENTIAL: 'POTENTIAL',
+  TOP_MATCH: 'TOP MATCH',
+  GOOD_FIT: 'GOOD FIT',
   POOR_FIT: 'POOR FIT',
 }
 
@@ -26,7 +24,7 @@ export function LeadFilters() {
     } else {
       params.set('grade', grade)
     }
-    params.delete('page') // reset pagination on filter change
+    params.delete('page')
     router.replace(`/leads?${params.toString()}`)
   }
 

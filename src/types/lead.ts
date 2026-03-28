@@ -26,7 +26,10 @@ export interface Lead {
   updated_at: string
 }
 
-export type ScoreGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
+export type ScoreGrade = 'TOP_MATCH' | 'GOOD_FIT' | 'POOR_FIT'
+
+/** @deprecated Legacy grades — map to new grades via mapLegacyGrade() */
+export type LegacyScoreGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
 
 export interface ScoreBreakdown {
   company_fit: number // max 40
