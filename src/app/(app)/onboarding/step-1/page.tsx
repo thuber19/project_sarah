@@ -64,7 +64,9 @@ export default function OnboardingStep1() {
       </p>
 
       <div className="flex w-full flex-col gap-1.5">
-        <label className="text-sm font-medium text-foreground">Website URL</label>
+        <label htmlFor="website-url" className="text-sm font-medium text-foreground">
+          Website URL
+        </label>
         <Input
           id="website-url"
           placeholder="https://dein-unternehmen.at"

@@ -3,13 +3,14 @@ import { Compass, Settings, Sparkles } from 'lucide-react'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { LiveFeed } from '@/components/dashboard/live-feed'
 import { ScoreDistribution } from '@/components/dashboard/score-distribution'
+import { RecentLeads } from '@/components/dashboard/recent-leads'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { requireAuth } from '@/lib/supabase/server'
 
 async function getDashboardData(userId: string) {
   const { supabase } = await requireAuth()
 
-  const [leadsResult, scoresResult, feedResult] = await Promise.all([
+  const [leadsResult, scoresResult, feedResult, recentLeadsResult] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lead_scores').select('grade, total_score').eq('user_id', userId),
     supabase
@@ -18,11 +19,23 @@ async function getDashboardData(userId: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(8),
+    supabase
+      .from('lead_scores')
+      .select('lead_id, total_score, grade, leads(company_name, first_name, last_name)')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(5),
   ])
 
   const totalLeads = leadsResult.count ?? 0
   const scores = scoresResult.data ?? []
   const feedItems = feedResult.data ?? []
+  const recentLeads = (recentLeadsResult.data ?? []) as unknown as Array<{
+    lead_id: string
+    total_score: number
+    grade: 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
+    leads: { company_name: string | null; first_name: string | null; last_name: string | null }
+  }>
 
   const hotLeads = scores.filter((s) => s.grade === 'HOT').length
   const qualifiedLeads = scores.filter((s) => ['HOT', 'QUALIFIED'].includes(s.grade)).length
@@ -50,12 +63,13 @@ async function getDashboardData(userId: string) {
     gradeCounts,
     feedItems,
     totalScored: scores.length,
+    recentLeads,
   }
 }
 
 export default async function DashboardPage() {
   const { user } = await requireAuth()
-  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored } =
+  const { totalLeads, hotLeads, qualifiedLeads, avgScore, gradeCounts, totalScored, recentLeads } =
     await getDashboardData(user.id)
 
   return (
@@ -91,6 +105,8 @@ export default async function DashboardPage() {
             <LiveFeed />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
+
+          {recentLeads.length > 0 && <RecentLeads leads={recentLeads} />}
         </div>
       )}
     </div>

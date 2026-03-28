@@ -1,4 +1,4 @@
-import { streamText, Output } from 'ai'
+import { streamObject } from 'ai'
 import { z } from 'zod/v4'
 import { createClient } from '@/lib/supabase/server'
 import { model } from '@/lib/ai/provider'
@@ -90,10 +90,10 @@ export async function POST(req: Request) {
     { business, icp },
   )
 
-  const result = streamText({
+  const result = streamObject({
     model,
     system: systemPrompt,
-    output: Output.object({ schema: streamingScoringSchema }),
+    schema: streamingScoringSchema,
     prompt: `Analysiere diesen Lead detailliert für ein B2B SaaS im DACH-Markt.
 
 ## Lead-Daten

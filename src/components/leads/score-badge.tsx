@@ -3,12 +3,12 @@ import { cn } from '@/lib/utils'
 export type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR' | 'POOR_FIT'
 
 const gradeStyles: Record<Grade, string> = {
-  HOT: 'bg-score-hot text-white',
-  QUALIFIED: 'bg-score-qualified text-white',
-  ENGAGED: 'bg-score-engaged text-white',
-  POTENTIAL: 'bg-score-potential text-white',
-  POOR: 'bg-score-poor-fit text-white',
-  POOR_FIT: 'bg-score-poor-fit text-white',
+  HOT: 'bg-score-hot-bg text-score-hot-text',
+  QUALIFIED: 'bg-score-qualified-bg text-score-qualified-text',
+  ENGAGED: 'bg-score-engaged-bg text-score-engaged-text',
+  POTENTIAL: 'bg-score-potential-bg text-score-potential-text',
+  POOR: 'bg-score-poor-fit-bg text-score-poor-fit-text',
+  POOR_FIT: 'bg-score-poor-fit-bg text-score-poor-fit-text',
 }
 
 const gradeLabels: Record<Grade, string> = {
@@ -28,6 +28,8 @@ interface ScoreBadgeProps {
 export function ScoreBadge({ grade, className }: ScoreBadgeProps) {
   return (
     <span
+      role="status"
+      aria-label={`Lead score: ${gradeLabels[grade]}`}
       className={cn(
         'inline-flex rounded-full px-3.5 py-1 text-xs font-semibold',
         gradeStyles[grade],

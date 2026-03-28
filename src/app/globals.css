@@ -51,6 +51,16 @@
   --color-score-engaged: var(--score-engaged);
   --color-score-potential: var(--score-potential);
   --color-score-poor-fit: var(--score-poor-fit);
+  --color-score-hot-bg: var(--score-hot-bg);
+  --color-score-hot-text: var(--score-hot-text);
+  --color-score-qualified-bg: var(--score-qualified-bg);
+  --color-score-qualified-text: var(--score-qualified-text);
+  --color-score-engaged-bg: var(--score-engaged-bg);
+  --color-score-engaged-text: var(--score-engaged-text);
+  --color-score-potential-bg: var(--score-potential-bg);
+  --color-score-potential-text: var(--score-potential-text);
+  --color-score-poor-fit-bg: var(--score-poor-fit-bg);
+  --color-score-poor-fit-text: var(--score-poor-fit-text);
   --color-stat-positive-bg: var(--stat-positive-bg);
   --color-stat-negative-bg: var(--stat-negative-bg);
   --color-stat-neutral-bg: var(--stat-neutral-bg);
@@ -99,6 +109,18 @@
   --score-engaged: #eab308;
   --score-potential: #3b82f6;
   --score-poor-fit: #94a3b8;
+
+  /* Score badge accessible pairs (WCAG 4.5:1 text-on-bg) */
+  --score-hot-bg: #fee2e2;
+  --score-hot-text: #991b1b;
+  --score-qualified-bg: #ffedd5;
+  --score-qualified-text: #9a3412;
+  --score-engaged-bg: #fef9c3;
+  --score-engaged-text: #854d0e;
+  --score-potential-bg: #dbeafe;
+  --score-potential-text: #1e40af;
+  --score-poor-fit-bg: #f1f5f9;
+  --score-poor-fit-text: #334155;
 
   /* Stat change indicator backgrounds */
   --stat-positive-bg: #dcfce7;
@@ -158,6 +180,16 @@
   --score-engaged: #eab308;
   --score-potential: #3b82f6;
   --score-poor-fit: #94a3b8;
+  --score-hot-bg: rgba(239, 68, 68, 0.15);
+  --score-hot-text: #fca5a5;
+  --score-qualified-bg: rgba(249, 115, 22, 0.15);
+  --score-qualified-text: #fdba74;
+  --score-engaged-bg: rgba(234, 179, 8, 0.15);
+  --score-engaged-text: #fde047;
+  --score-potential-bg: rgba(59, 130, 246, 0.15);
+  --score-potential-text: #93c5fd;
+  --score-poor-fit-bg: rgba(148, 163, 184, 0.15);
+  --score-poor-fit-text: #cbd5e1;
   --stat-positive-bg: rgba(34, 197, 94, 0.15);
   --stat-negative-bg: rgba(239, 68, 68, 0.15);
   --stat-neutral-bg: rgba(59, 130, 246, 0.15);
@@ -186,5 +218,19 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Accessibility: Focus-visible indicators (WCAG 2.1 AA) */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+
+  /* Remove default outline for non-keyboard focus */
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }

@@ -1,4 +1,5 @@
-import { Building2, Code, Globe, Play, Star, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
+import { Building2, Code, Globe, Info, Play, Star, TrendingUp } from 'lucide-react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScoreBadge } from '@/components/leads/score-badge'
 import { ScoringRulesToggle } from './scoring-rules-toggle'
@@ -169,7 +170,11 @@ export default async function ScoringPage() {
 
             <div className="flex flex-col gap-0">
               {distributionData.map((item) => (
-                <div key={item.grade} className="flex items-center gap-4 py-2">
+                <Link
+                  key={item.grade}
+                  href={`/leads?grade=${item.displayGrade}`}
+                  className="flex items-center gap-4 rounded-lg py-2 transition-colors hover:bg-muted"
+                >
                   {/* Grade badge */}
                   <div className="w-[100px]">
                     <ScoreBadge grade={item.displayGrade} />
@@ -195,8 +200,13 @@ export default async function ScoringPage() {
                   <span className="w-10 text-right text-sm text-muted-foreground">
                     {item.percent}%
                   </span>
-                </div>
+                </Link>
               ))}
+            </div>
+
+            <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5 shrink-0" />
+              <span>Klicke auf einen Lead für eine detaillierte KI-Analyse</span>
             </div>
           </div>
 

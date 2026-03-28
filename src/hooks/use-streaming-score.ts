@@ -22,20 +22,56 @@ const streamingScoringSchema = z.object({
 
 export type StreamingScoringData = z.infer<typeof streamingScoringSchema>
 
+/** All schema field keys for progress tracking. */
+const ALL_FIELDS = Object.keys(streamingScoringSchema.shape) as (keyof StreamingScoringData)[]
+
+/** Fields that must be present for scoring to be considered complete. */
+const REQUIRED_FIELDS: (keyof StreamingScoringData)[] = [
+  'reasoning',
+  'recommendation',
+  'recommendation_text',
+  'company_fit_analysis',
+  'contact_fit_analysis',
+  'buying_signals_analysis',
+  'timing_analysis',
+]
+
+function hasValue(value: unknown): boolean {
+  return value !== undefined && value !== null
+}
+
 export function useStreamingScore() {
-  const { object, submit, isLoading, error } = useObject({
+  const { object, submit, isLoading, error, stop } = useObject({
     api: '/api/scoring/stream',
     schema: streamingScoringSchema,
   })
+
+  const data = object as StreamingScoringData | undefined
+
+  const isComplete = REQUIRED_FIELDS.every((field) => hasValue(data?.[field]))
+
+  const progress = data
+    ? Math.round(
+        (ALL_FIELDS.filter((field) => hasValue(data[field])).length / ALL_FIELDS.length) * 100,
+      )
+    : 0
 
   function scoreLeadStream(leadId: string) {
     submit({ leadId })
   }
 
+  function reset() {
+    submit(undefined)
+  }
+
   return {
-    data: object as StreamingScoringData | undefined,
+    data,
     isLoading,
+    isComplete,
+    progress,
     error,
     scoreLeadStream,
+    stop,
+    reset,
   }
 }

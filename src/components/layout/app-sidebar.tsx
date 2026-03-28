@@ -51,7 +51,7 @@ export function AppSidebar({ displayName, email, initials }: AppSidebarProps) {
           <span className="text-lg font-bold text-white">Sarah</span>
         </div>
 
-        <nav aria-label="Main navigation">
+        <nav aria-label="Hauptnavigation">
           <ul className="flex flex-col gap-1" role="list">
             {navItems.map(({ label, href, icon: Icon }) => {
               const isActive = pathname === href || pathname.startsWith(`${href}/`)

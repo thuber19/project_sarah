@@ -68,7 +68,10 @@ export function OutreachVoice({ leadId, companyName }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-6">
+    <div
+      className="rounded-xl border border-border bg-white p-6"
+      aria-busy={status === 'generating'}
+    >
       <div className="mb-4 flex items-center gap-2">
         <Mic className="h-4 w-4 text-accent" />
         <h2 className="text-base font-semibold text-foreground">Voice Message</h2>
@@ -107,7 +110,11 @@ export function OutreachVoice({ leadId, companyName }: Props) {
       >
         {status === 'generating' ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2
+              className="h-4 w-4 animate-spin"
+              role="status"
+              aria-label="Audio wird generiert"
+            />
             Generiere Audio…
           </>
         ) : (
@@ -127,7 +134,7 @@ export function OutreachVoice({ leadId, companyName }: Props) {
 
       {/* Audio player + download */}
       {status === 'ready' && audioUrl && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3" aria-live="polite">
           {/* Hidden native audio element */}
           <audio
             ref={audioRef}

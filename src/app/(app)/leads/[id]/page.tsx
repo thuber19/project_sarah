@@ -8,6 +8,7 @@ import { OutreachDraft } from '@/components/leads/outreach-draft'
 import { AnimatedScore } from '@/components/leads/animated-score'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { LeadResearch } from '@/components/leads/lead-research'
+import { LeadStreamingAnalysis } from '@/components/leads/lead-streaming-analysis'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
@@ -154,6 +155,8 @@ export default async function LeadDetailPage({ params }: Props) {
                 )}
               </div>
             )}
+
+            <LeadStreamingAnalysis leadId={id} hasExistingScore={!!score} />
 
             {/* Kontakt */}
             <div className="rounded-xl border border-border bg-white p-6">

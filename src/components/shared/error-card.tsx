@@ -12,7 +12,6 @@ interface ErrorCardProps {
 export function ErrorCard({ error, reset }: ErrorCardProps) {
   useEffect(() => {
     Sentry.captureException(error)
-    console.error(error)
   }, [error])
 
   return (
