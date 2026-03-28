@@ -16,10 +16,15 @@ export function MarketingNavbar() {
 
   return (
     <nav className="relative flex h-16 w-full items-center justify-between border-b border-border bg-white px-4 lg:h-[72px] lg:px-20">
-      <Link href="/" className="flex items-center">
-        <Logo size="sm" className="lg:hidden" textClassName="font-bold text-foreground" />
-        <Logo size="lg" className="hidden lg:flex" textClassName="font-bold text-foreground" />
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center">
+          <Logo size="sm" className="lg:hidden" textClassName="font-bold text-foreground" />
+          <Logo size="lg" className="hidden lg:flex" textClassName="font-bold text-foreground" />
+        </Link>
+        <span className="rounded-md bg-accent-light px-2 py-0.5 text-[11px] font-semibold text-accent">
+          Demo
+        </span>
+      </div>
 
       {/* Desktop nav */}
       <div className="hidden items-center gap-8 lg:flex">
