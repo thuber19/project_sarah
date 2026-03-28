@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Compass, Search, Settings, SlidersHorizontal } from 'lucide-react'
+import { Compass, Play, Search, Settings, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import {
