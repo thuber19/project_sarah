@@ -1,10 +1,10 @@
 'use server'
 
 import { createClient, requireAuth } from '@/lib/supabase/server'
-import { searchPeople, enrichPerson } from '@/lib/apollo/client'
+import { searchOrganizations } from '@/lib/apollo/client'
 import { textSearch } from '@/lib/google-places/client'
 import { optimizeSearchQuery } from '@/lib/ai/optimize-query'
-import type { ApolloPerson } from '@/lib/apollo/types'
+import type { ApolloOrganization } from '@/lib/apollo/types'
 import type { Database } from '@/types/database'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
@@ -43,33 +43,31 @@ async function logAgent(
   })
 }
 
-function apolloPersonToLead(person: ApolloPerson, userId: string, campaignId: string): LeadInsert {
-  const org = person.organization
+function apolloOrgToLead(org: ApolloOrganization, userId: string, campaignId: string): LeadInsert {
   return {
     user_id: userId,
     campaign_id: campaignId,
-    first_name: person.first_name,
-    last_name: person.last_name,
-    full_name: [person.first_name, person.last_name].filter(Boolean).join(' ') || null,
-    email: person.email,
-    linkedin_url: person.linkedin_url,
-    job_title: person.title,
-    seniority: person.seniority,
-    company_name: org?.name ?? null,
-    company_domain: org?.website_url ?? null,
-    industry: org?.industry ?? null,
-    company_size: org?.estimated_num_employees ? categorizeSize(org.estimated_num_employees) : null,
-    country: org?.country ?? null,
-    location: org?.city ? `${org.city}, ${org.country ?? ''}`.trim() : null,
+    first_name: null,
+    last_name: null,
+    full_name: null,
+    email: null,
+    linkedin_url: org.linkedin_url ?? null,
+    job_title: null,
+    seniority: null,
+    company_name: org.name ?? null,
+    company_domain: org.website_url ?? null,
+    industry: org.industry ?? null,
+    company_size: org.estimated_num_employees ? categorizeSize(org.estimated_num_employees) : null,
+    country: org.country ?? null,
+    location: org.city ? `${org.city}, ${org.country ?? ''}`.trim() : null,
     source: 'apollo',
-    apollo_id: person.id,
+    apollo_id: org.id,
     raw_data: {
-      twitter_url: org?.twitter_url,
-      technologies: org?.technologies,
-      total_funding: org?.total_funding_printed,
-      latest_funding_round: org?.latest_funding_round_type,
-      founded_year: org?.founded_year,
-      phone_numbers: person.phone_numbers?.map((p) => ({ ...p })),
+      twitter_url: org.twitter_url,
+      technologies: org.technologies,
+      total_funding: org.total_funding_printed,
+      latest_funding_round: org.latest_funding_round_type,
+      founded_year: org.founded_year,
     },
   }
 }
@@ -203,19 +201,18 @@ export async function startDiscoveryAction(
 
     const allLeads: LeadInsert[] = []
 
-    // Step 2: Apollo People Search
+    // Step 2: Apollo Organization Search (free plan compatible)
+    // mixed_people/search requires a paid plan — mixed_companies/search is available on free
     timer.start('apollo_search_ms')
     await logAgent(
       supabase,
       user.id,
       campaign.id,
       'leads_discovered',
-      'Suche Leads via Apollo.io...',
+      'Suche Unternehmen via Apollo.io...',
     )
     try {
-      const apolloResult = await searchPeople({
-        person_titles: optimizedQuery.apolloParams.personTitles,
-        person_seniorities: optimizedQuery.apolloParams.personSeniorities,
+      const apolloResult = await searchOrganizations({
         organization_num_employees_ranges: optimizedQuery.apolloParams.organizationSizes,
         organization_locations: optimizedQuery.apolloParams.organizationLocations,
         organization_keywords: [
@@ -230,27 +227,8 @@ export async function startDiscoveryAction(
         per_page: 25,
       })
 
-      // Enrich top results without email
-      const toEnrich = apolloResult.people.filter((p) => !p.email && p.first_name).slice(0, 10)
-      const enrichedMap = new Map<string, ApolloPerson>()
-
-      for (const person of toEnrich) {
-        try {
-          const result = await enrichPerson({
-            first_name: person.first_name ?? undefined,
-            last_name: person.last_name ?? undefined,
-            domain: person.organization?.website_url ?? undefined,
-            linkedin_url: person.linkedin_url ?? undefined,
-          })
-          if (result.person) enrichedMap.set(person.id, result.person)
-        } catch {
-          // skip failed enrichments
-        }
-      }
-
-      for (const person of apolloResult.people) {
-        const enriched = enrichedMap.get(person.id) ?? person
-        allLeads.push(apolloPersonToLead(enriched, user.id, campaign.id))
+      for (const org of apolloResult.organizations) {
+        allLeads.push(apolloOrgToLead(org, user.id, campaign.id))
       }
 
       await logAgent(
@@ -258,7 +236,7 @@ export async function startDiscoveryAction(
         user.id,
         campaign.id,
         'leads_discovered',
-        `${apolloResult.people.length} Leads via Apollo gefunden`,
+        `${apolloResult.organizations.length} Unternehmen via Apollo gefunden`,
       )
     } catch (error) {
       const apolloErrMsg = error instanceof Error ? error.message : String(error)
