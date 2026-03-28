@@ -90,32 +90,33 @@ const mockLeads: Lead[] = [
 
 export function LeadTable() {
   return (
-    <div className="rounded-xl border border-border bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-white">
+      <div className="overflow-y-auto max-h-[600px]">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-12">
+            <TableHead className="sticky top-0 z-10 bg-white w-12">
               <Checkbox aria-label="Alle auswählen" />
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Unternehmen
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Branche
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Standort
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Score
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Status
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Aktualisiert
             </TableHead>
-            <TableHead className="w-12 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="sticky top-0 z-10 bg-white w-12 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {/* Actions */}
             </TableHead>
           </TableRow>
@@ -162,6 +163,7 @@ export function LeadTable() {
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
