@@ -111,6 +111,7 @@ export async function saveOnboardingAction(
     .single()
 
   if (profileError || !businessProfile) {
+    console.error('saveOnboardingAction: business_profiles upsert failed', profileError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des Profils')
   }
 
@@ -128,6 +129,7 @@ export async function saveOnboardingAction(
   )
 
   if (icpError) {
+    console.error('saveOnboardingAction: icp_profiles upsert failed', icpError)
     return fail('INTERNAL_ERROR', 'Fehler beim Speichern des ICP')
   }
 
