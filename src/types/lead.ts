@@ -21,7 +21,7 @@ export interface Lead {
   updated_at: string
 }
 
-export type ScoreGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR_FIT'
+export type ScoreGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
 
 export interface ScoreBreakdown {
   company_fit: number // max 40
@@ -52,9 +52,9 @@ export interface AgentLog {
 }
 
 export function getGradeForScore(score: number): ScoreGrade {
-  if (score >= 90) return 'HOT'
-  if (score >= 75) return 'QUALIFIED'
-  if (score >= 60) return 'ENGAGED'
-  if (score >= 40) return 'POTENTIAL'
-  return 'POOR_FIT'
+  if (score >= 80) return 'HOT'
+  if (score >= 65) return 'QUALIFIED'
+  if (score >= 48) return 'ENGAGED'
+  if (score >= 30) return 'POTENTIAL'
+  return 'POOR'
 }

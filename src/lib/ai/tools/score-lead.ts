@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 import { calculateRuleScore, totalFromBreakdown } from '@/lib/scoring/rule-engine'
-import type { Lead } from '@/types/lead'
+import { getGradeForScore, type Lead } from '@/types/lead'
 import type { ICP } from '@/lib/scoring/rule-engine'
 import { logToolAction, type ToolContext } from './context'
 
@@ -65,17 +65,7 @@ export function createScoreLead(ctx: ToolContext) {
 
         const breakdown = calculateRuleScore(lead, icp)
         const totalScore = totalFromBreakdown(breakdown)
-
-        const grade =
-          totalScore >= 85
-            ? 'HOT'
-            : totalScore >= 70
-              ? 'QUALIFIED'
-              : totalScore >= 50
-                ? 'ENGAGED'
-                : totalScore >= 30
-                  ? 'POTENTIAL'
-                  : 'POOR_FIT'
+        const grade = getGradeForScore(totalScore)
 
         await logToolAction(ctx, 'lead_scored', `Score: ${params.firstName} ${params.lastName} = ${totalScore} (${grade})`, {
           totalScore,
@@ -96,7 +86,7 @@ export function createScoreLead(ctx: ToolContext) {
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Scoring fehlgeschlagen'
         await logToolAction(ctx, 'campaign_failed', `Scoring fehlgeschlagen: ${msg}`)
-        return { success: false as const, error: msg, totalScore: 0, grade: 'POOR_FIT' as const, breakdown: null }
+        return { success: false as const, error: msg, totalScore: 0, grade: 'POOR' as const, breakdown: null }
       }
     },
   })

@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreBadge } from "@/components/leads/score-badge";
 import { ScoringRulesToggle } from "./scoring-rules-toggle";
 
-type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
+type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR";
 
 interface DistributionItem {
   grade: Grade;
@@ -16,35 +16,35 @@ interface DistributionItem {
 const distributionData: DistributionItem[] = [
   {
     grade: "HOT",
-    range: "90-100",
+    range: "80-100",
     count: 15,
     percent: 12,
     barColor: "bg-score-hot",
   },
   {
     grade: "QUALIFIED",
-    range: "75-89",
+    range: "65-79",
     count: 31,
     percent: 24,
     barColor: "bg-score-qualified",
   },
   {
     grade: "ENGAGED",
-    range: "60-74",
+    range: "48-64",
     count: 28,
     percent: 22,
     barColor: "bg-score-engaged",
   },
   {
     grade: "POTENTIAL",
-    range: "40-59",
+    range: "30-47",
     count: 38,
     percent: 30,
     barColor: "bg-score-potential",
   },
   {
-    grade: "POOR_FIT",
-    range: "0-39",
+    grade: "POOR",
+    range: "0-29",
     count: 18,
     percent: 14,
     barColor: "bg-score-poor-fit",

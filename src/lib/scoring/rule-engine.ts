@@ -2,6 +2,29 @@ import type { Lead, ScoreBreakdown } from '@/types/lead'
 
 const DACH_COUNTRIES = ['austria', 'germany', 'switzerland', 'österreich', 'deutschland', 'schweiz', 'at', 'de', 'ch']
 
+// DACH legal entity suffixes — established legal entity is a positive buying signal
+const DACH_LEGAL_ENTITY_PATTERNS = ['gmbh', ' ag', ' kg', ' og', 'gesmbh', 'e.u.', ' se', ' eg', 'ewiv']
+
+// German/Austrian title → seniority score (used when Apollo doesn't set seniority enum)
+const DACH_TITLE_SENIORITY: Array<[string, number]> = [
+  ['geschäftsführer', 20],
+  ['geschäftsführerin', 20],
+  ['inhaber', 20],
+  ['inhaberin', 20],
+  ['gesellschafter', 18],
+  ['gesellschafterin', 18],
+  ['vorstand', 18],
+  ['vorstandsmitglied', 18],
+  ['prokurist', 14],
+  ['prokuristin', 14],
+  ['bereichsleiter', 14],
+  ['bereichsleiterin', 14],
+  ['abteilungsleiter', 10],
+  ['abteilungsleiterin', 10],
+  ['teamleiter', 10],
+  ['teamleiterin', 10],
+]
+
 const COMPANY_SIZE_SCORES: Record<string, number> = {
   '1-10': 5,
   '11-50': 10,
@@ -68,18 +91,35 @@ function scoreCompanyFit(lead: Lead, icp: ICP): number {
     score += 5
   }
 
+  // DACH legal entity bonus (+3) — GmbH/AG/KG etc. signal an established legal entity
+  if (lead.company_name) {
+    const name = lead.company_name.toLowerCase()
+    if (DACH_LEGAL_ENTITY_PATTERNS.some((p) => name.includes(p))) {
+      score += 3
+    }
+  }
+
   return Math.min(score, 40)
 }
 
 function scoreContactFit(lead: Lead, icp: ICP): number {
   let score = 0
 
-  // Seniority (0-12)
+  // Seniority (0-12) — Apollo enum or German title fallback
   if (lead.seniority) {
     const seniority = lead.seniority.toLowerCase()
     const seniorityScore = SENIORITY_SCORES[seniority]
     if (seniorityScore) {
       score += Math.min(seniorityScore, 12)
+    }
+  } else if (lead.title) {
+    // German title fallback when Apollo seniority is not set
+    const title = lead.title.toLowerCase()
+    for (const [keyword, s] of DACH_TITLE_SENIORITY) {
+      if (title.includes(keyword)) {
+        score += Math.min(s, 12)
+        break
+      }
     }
   }
 

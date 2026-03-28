@@ -12,7 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 type ExportStatus = "Exportiert" | "Ausstehend" | "Fehler";
-type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
+type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR";
 
 interface ExportEntry {
   company: string;
