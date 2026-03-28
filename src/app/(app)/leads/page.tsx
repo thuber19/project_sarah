@@ -1,52 +1,40 @@
-import { Bell, Search, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadTable } from "@/components/leads/lead-table";
+import { AppTopbar } from "@/components/layout/app-topbar";
+import { ScoringButton } from "@/components/leads/scoring-button";
+import { requireAuth } from "@/lib/supabase/server";
 
-export default function LeadsPage() {
+export default async function LeadsPage() {
+  const { user, supabase } = await requireAuth();
+
+  // Fetch user industry for premium modal context
+  const { data: profile } = await supabase
+    .from("business_profiles")
+    .select("icp_settings")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const icpSettings = profile?.icp_settings as Record<string, unknown> | null;
+  const userIndustry = (icpSettings?.industries as string | undefined) ?? null;
+
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">
-          Lead-Liste
-        </span>
-
-        <div className="flex items-center gap-4">
-          {/* Export button */}
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
-          >
-            <Upload className="h-4 w-4" />
-            Export
-          </button>
-
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Leads durchsuchen"
-            />
+      <AppTopbar
+        title="Lead-Liste"
+        actions={
+          <div className="flex items-center gap-2">
+            <ScoringButton userIndustry={userIndustry} />
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+            >
+              <Upload className="h-4 w-4" />
+              Export
+            </button>
           </div>
-
-          {/* Bell icon */}
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-
-          {/* Avatar */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Content area */}
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
@@ -54,7 +42,7 @@ export default function LeadsPage() {
         <LeadTable />
 
         {/* Pagination */}
-        <div className="flex items-center justify-between pb-6">
+        <nav aria-label="Seitennavigation" className="flex items-center justify-between pb-6">
           <span className="text-sm text-muted-foreground">
             127 Leads total
           </span>
@@ -62,7 +50,7 @@ export default function LeadsPage() {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
               aria-label="Vorherige Seite"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -72,7 +60,7 @@ export default function LeadsPage() {
               <button
                 key={page}
                 type="button"
-                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
+                className={`flex h-11 w-11 items-center justify-center rounded-lg text-sm transition-colors ${
                   page === 1
                     ? "bg-primary text-white"
                     : "border border-border text-foreground hover:bg-secondary"
@@ -86,13 +74,13 @@ export default function LeadsPage() {
 
             <button
               type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
+              className="flex h-11 w-11 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
               aria-label="Nächste Seite"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </nav>
       </div>
     </div>
   );
