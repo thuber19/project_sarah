@@ -1,3 +1,5 @@
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
@@ -11,6 +13,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .select('company_name')
     .eq('user_id', user.id)
     .maybeSingle()
+
+  // Onboarding redirect: new users without a business profile go to onboarding
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') ?? '/'
+  const onOnboarding = pathname.startsWith('/onboarding')
+  if (!profile && !onOnboarding) {
+    redirect('/onboarding/step-1')
+  }
 
   const rawName =
     (profile?.company_name as string | null) ??
