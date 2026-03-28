@@ -13,7 +13,7 @@ import type { Database } from '@/types/database'
 import type { ApiResponse } from '@/lib/api-response'
 import { ok, fail } from '@/lib/api-response'
 import { PipelineTimer } from '@/lib/pipeline/timer'
-import { deduplicateLeads } from '@/lib/pipeline/dedup'
+import { normalizeDomain } from '@/lib/pipeline/dedup'
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert']
 type AgentLogInsert = Database['public']['Tables']['agent_logs']['Insert']
@@ -428,6 +428,124 @@ export async function startDiscoveryAction(
     )
     return fail('INTERNAL_ERROR', 'Lead Discovery fehlgeschlagen. Bitte versuchen Sie es erneut.')
   }
+}
+
+// ---------------------------------------------------------------------------
+// Dedup for DiscoveredLead (pre-save, uses tempId not DB id)
+// ---------------------------------------------------------------------------
+
+function deduplicateDiscoveredLeads(leads: DiscoveredLead[]): DiscoveredLead[] {
+  const byDomain = new Map<string, DiscoveredLead>()
+  const noDomain: DiscoveredLead[] = []
+
+  for (const lead of leads) {
+    const rawDomain = lead.company_domain ?? lead.company_website
+    if (!rawDomain) {
+      noDomain.push(lead)
+      continue
+    }
+    const domain = normalizeDomain(rawDomain)
+    const existing = byDomain.get(domain)
+    if (!existing) {
+      byDomain.set(domain, lead)
+      continue
+    }
+    // Prefer apollo (richer data); merge non-null fields from winner into loser
+    const [winner, loser] = lead.source === 'apollo' ? [lead, existing] : [existing, lead]
+    const merged = { ...loser }
+    for (const key of Object.keys(winner) as (keyof DiscoveredLead)[]) {
+      if (winner[key] !== null && key !== 'tempId') {
+        ;(merged as Record<string, unknown>)[key] = winner[key]
+      }
+    }
+    merged.tempId = winner.tempId
+    byDomain.set(domain, merged)
+  }
+
+  return [...byDomain.values(), ...noDomain]
+}
+
+// ---------------------------------------------------------------------------
+// Save selected leads after user review
+// ---------------------------------------------------------------------------
+
+export async function saveSelectedLeadsAction(
+  campaignId: string,
+  leads: DiscoveredLead[],
+): Promise<ApiResponse<{ savedCount: number }>> {
+  const { user, supabase } = await requireAuth()
+
+  if (leads.length === 0) return ok({ savedCount: 0 })
+
+  const leadsToInsert: LeadInsert[] = leads.map((lead) => ({
+    user_id: user.id,
+    campaign_id: campaignId,
+    company_name: lead.company_name,
+    full_name: lead.full_name,
+    first_name: lead.first_name,
+    last_name: lead.last_name,
+    email: lead.email,
+    linkedin_url: lead.linkedin_url,
+    job_title: lead.job_title,
+    seniority: lead.seniority,
+    industry: lead.industry,
+    company_size: lead.company_size,
+    company_domain: lead.company_domain,
+    company_website: lead.company_website,
+    country: lead.country,
+    location: lead.location,
+    source: lead.source,
+    apollo_id: lead.apollo_id,
+    raw_data: lead.raw_data as LeadInsert['raw_data'],
+    enrichment_status: 'pending',
+  }))
+
+  const { data: insertedLeads, error } = await supabase
+    .from('leads')
+    .insert(leadsToInsert)
+    .select('id')
+
+  if (error || !insertedLeads) {
+    console.error('[Discovery] Lead insert failed:', error)
+    return fail('INTERNAL_ERROR', 'Leads konnten nicht gespeichert werden')
+  }
+
+  await logAgent(
+    supabase,
+    user.id,
+    campaignId,
+    'leads_discovered',
+    `${insertedLeads.length} Leads gespeichert`,
+  )
+
+  // Run scoring pipeline (best-effort)
+  try {
+    const { data: icpData } = await supabase
+      .from('icp_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    if (icpData) {
+      const { data: leadsForScoring } = await supabase
+        .from('leads')
+        .select('*')
+        .in(
+          'id',
+          insertedLeads.map((l) => l.id),
+        )
+      if (leadsForScoring) {
+        await runScoringPipeline(supabase, leadsForScoring as Lead[], icpData as ICP, user.id)
+      }
+    }
+  } catch (err) {
+    console.error('[Discovery] Scoring after save failed:', err)
+  }
+
+  // Trigger enrichment (fire-and-forget)
+  triggerEnrichment(campaignId).catch(() => {})
+
+  return ok({ savedCount: insertedLeads.length })
 }
 
 // ---------------------------------------------------------------------------

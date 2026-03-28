@@ -51,7 +51,7 @@ export function DiscoveryClient({ initialIcp, userInitials }: Props) {
         return
       }
 
-      setLeadsFound(result.data.leadsFound)
+      setLeadsFound(result.data.leads.length)
 
       // Load the actual leads found in this campaign
       const discovered = await getDiscoveryLeadsAction(result.data.campaignId)

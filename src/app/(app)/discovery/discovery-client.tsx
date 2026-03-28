@@ -8,8 +8,10 @@ import { toast } from 'sonner'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import {
   startDiscoveryAction,
+  saveSelectedLeadsAction,
   type IcpDefaults,
   type DiscoveryLead,
+  type DiscoveredLead,
 } from '@/app/actions/discovery.actions'
 import { discoveryFormSchema } from '@/lib/validation/schemas'
 import { useServerAction } from '@/hooks/use-server-action'
@@ -44,12 +46,61 @@ export function DiscoveryClient({
   const [technologies, setTechnologies] = useState(icpDefaults.technologies)
   const [keywords, setKeywords] = useState(icpDefaults.keywords)
 
+  // Discovered leads awaiting user selection (not yet saved to DB)
+  const [discoveredLeads, setDiscoveredLeads] = useState<DiscoveredLead[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null)
+
   const { execute: runDiscovery, isPending } = useServerAction(startDiscoveryAction, {
     onSuccess: (data) => {
-      toast.success(`${data.leadsFound} Leads gefunden!`)
+      setDiscoveredLeads(data.leads)
+      setSelectedIds(new Set(data.leads.map((l) => l.tempId)))
+      setActiveCampaignId(data.campaignId)
+      toast.success(
+        `${data.leads.length} Leads gefunden — wähle aus, welche du speichern möchtest`,
+      )
+    },
+  })
+
+  const { execute: saveLeads, isPending: isSaving } = useServerAction(saveSelectedLeadsAction, {
+    onSuccess: (data) => {
+      toast.success(`${data.savedCount} Leads gespeichert`)
+      setDiscoveredLeads([])
+      setSelectedIds(new Set())
+      setActiveCampaignId(null)
       router.refresh()
     },
   })
+
+  function handleSave() {
+    if (!activeCampaignId) return
+    const selected = discoveredLeads.filter((l) => selectedIds.has(l.tempId))
+    if (selected.length === 0) {
+      toast.error('Bitte wähle mindestens einen Lead aus')
+      return
+    }
+    saveLeads(activeCampaignId, selected)
+  }
+
+  const showDiscovered = discoveredLeads.length > 0
+  const allSelected = showDiscovered && selectedIds.size === discoveredLeads.length
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(discoveredLeads.map((l) => l.tempId)))
+    }
+  }
+
+  function toggleOne(tempId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tempId)) next.delete(tempId)
+      else next.add(tempId)
+      return next
+    })
+  }
 
   function handleDiscovery() {
     const validation = discoveryFormSchema.safeParse({
@@ -98,7 +149,7 @@ export function DiscoveryClient({
         }
       />
 
-      {!hasIcp && !hasDiscovery && latestLeads.length === 0 ? (
+      {!hasIcp && !hasDiscovery && latestLeads.length === 0 && !showDiscovered ? (
         <div className="flex flex-1 items-center justify-center px-4 py-8 lg:p-8">
           <div className="flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-6 lg:p-12">
             <div className="flex size-24 items-center justify-center rounded-full bg-accent-light">
@@ -267,19 +318,43 @@ export function DiscoveryClient({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-base font-semibold text-foreground">Ergebnisse</h2>
-                {totalLeadsFound > 0 && (
+                {showDiscovered ? (
                   <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
-                    {totalLeadsFound} neue Leads gefunden
+                    {discoveredLeads.length} neue Leads gefunden
                   </span>
+                ) : (
+                  totalLeadsFound > 0 && (
+                    <span className="rounded-md bg-accent-light px-2 py-1 text-xs font-medium text-accent">
+                      {totalLeadsFound} Leads gespeichert
+                    </span>
+                  )
                 )}
               </div>
-              {latestLeads.length > 0 && (
-                <Link
-                  href="/leads"
-                  className="text-sm font-medium text-accent transition-colors hover:text-accent/80"
-                >
-                  Alle anzeigen
-                </Link>
+              {showDiscovered ? (
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-sm text-muted-foreground lg:inline">
+                    {selectedIds.size} von {discoveredLeads.length} ausgewählt
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isSaving || selectedIds.size === 0}
+                    onClick={handleSave}
+                    className="min-h-12 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                  >
+                    {isSaving
+                      ? 'Wird gespeichert...'
+                      : `${selectedIds.size} Lead${selectedIds.size !== 1 ? 's' : ''} hinzufügen`}
+                  </button>
+                </div>
+              ) : (
+                latestLeads.length > 0 && (
+                  <Link
+                    href="/leads"
+                    className="text-sm font-medium text-accent transition-colors hover:text-accent/80"
+                  >
+                    Alle anzeigen
+                  </Link>
+                )
               )}
             </div>
 
@@ -287,6 +362,17 @@ export function DiscoveryClient({
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
+                    {showDiscovered && (
+                      <TableHead className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={toggleAll}
+                          aria-label="Alle auswählen"
+                          className="h-4 w-4 cursor-pointer rounded border-border accent-accent"
+                        />
+                      </TableHead>
+                    )}
                     <TableHead className="text-xs font-medium uppercase text-muted-foreground">
                       Unternehmen
                     </TableHead>
@@ -302,13 +388,52 @@ export function DiscoveryClient({
                     <TableHead className="text-xs font-medium uppercase text-muted-foreground">
                       Quelle
                     </TableHead>
-                    <TableHead className="text-xs font-medium uppercase text-muted-foreground">
-                      Aktion
-                    </TableHead>
+                    {!showDiscovered && (
+                      <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                        Aktion
+                      </TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {latestLeads.length === 0 ? (
+                  {showDiscovered ? (
+                    discoveredLeads.map((lead) => (
+                      <TableRow
+                        key={lead.tempId}
+                        className={`cursor-pointer ${selectedIds.has(lead.tempId) ? 'bg-accent-light/30' : ''}`}
+                        onClick={() => toggleOne(lead.tempId)}
+                      >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(lead.tempId)}
+                            onChange={() => toggleOne(lead.tempId)}
+                            aria-label={`${lead.company_name ?? 'Lead'} auswählen`}
+                            className="h-4 w-4 cursor-pointer rounded border-border accent-accent"
+                          />
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-foreground">
+                          {lead.company_name ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {lead.full_name ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {lead.industry ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {lead.location ?? '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {lead.source === 'apollo'
+                            ? 'Apollo.io'
+                            : lead.source === 'google_places'
+                              ? 'Google Places'
+                              : lead.source}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : latestLeads.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={6}
@@ -357,7 +482,47 @@ export function DiscoveryClient({
             </div>
 
             <div className="flex flex-col gap-3 lg:hidden">
-              {latestLeads.length === 0 ? (
+              {showDiscovered ? (
+                discoveredLeads.map((lead) => (
+                  <div
+                    key={lead.tempId}
+                    onClick={() => toggleOne(lead.tempId)}
+                    className={`flex flex-col gap-2 rounded-xl border bg-white p-4 transition-colors active:bg-muted ${
+                      selectedIds.has(lead.tempId) ? 'border-accent bg-accent-light/20' : 'border-border'
+                    }`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === ' ' && toggleOne(lead.tempId)}
+                    aria-pressed={selectedIds.has(lead.tempId)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(lead.tempId)}
+                          onChange={() => toggleOne(lead.tempId)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`${lead.company_name ?? 'Lead'} auswählen`}
+                          className="h-4 w-4 cursor-pointer rounded border-border accent-accent"
+                        />
+                        <span className="text-sm font-semibold text-foreground">
+                          {lead.company_name ?? '-'}
+                        </span>
+                      </div>
+                      <span className="rounded-md bg-accent-light px-2 py-0.5 text-xs font-medium text-accent">
+                        {lead.source === 'apollo' ? 'Apollo.io' : 'Google Places'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      {lead.full_name && <span>{lead.full_name}</span>}
+                      {lead.location && <span>{lead.location}</span>}
+                      {lead.industry && (
+                        <span className="rounded bg-secondary px-1.5 py-0.5">{lead.industry}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : latestLeads.length === 0 ? (
                 <div className="rounded-xl border border-border bg-white px-4 py-12 text-center text-sm text-muted-foreground">
                   {!hasDiscovery
                     ? 'Noch keine Discovery gestartet. Passe die Suchkriterien an und klicke auf "Leads finden".'
@@ -394,7 +559,25 @@ export function DiscoveryClient({
               )}
             </div>
 
-            {latestLeads.length > 0 && (
+            {showDiscovered && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {discoveredLeads.length} Leads gefunden — wähle aus und klicke auf &quot;Hinzufügen&quot;
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiscoveredLeads([])
+                    setSelectedIds(new Set())
+                    setActiveCampaignId(null)
+                  }}
+                  className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Verwerfen
+                </button>
+              </div>
+            )}
+            {!showDiscovered && latestLeads.length > 0 && (
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
                   {latestLeads.length} von {totalLeadsFound} Ergebnissen
