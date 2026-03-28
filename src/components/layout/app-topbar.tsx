@@ -1,6 +1,7 @@
 'use client'
 
 import { NotificationBell } from '@/components/layout/notification-dropdown'
+import { GlobalSearch } from '@/components/layout/global-search'
 
 interface AppTopbarProps {
   title: string
@@ -16,6 +17,7 @@ export function AppTopbar({ title, actions, initials = 'BG' }: AppTopbarProps) {
       <div className="flex items-center gap-4">
         {actions}
 
+        <GlobalSearch />
         <NotificationBell />
 
         <div

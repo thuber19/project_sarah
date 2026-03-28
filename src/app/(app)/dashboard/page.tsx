@@ -1,6 +1,8 @@
 import { StatCard } from '@/components/dashboard/stat-card'
 import { LiveFeed } from '@/components/dashboard/live-feed'
 import { ScoreDistribution } from '@/components/dashboard/score-distribution'
+import { PipelineStatus } from '@/components/dashboard/pipeline-status'
+import { IcpRefinementWidget } from '@/components/dashboard/icp-refinement-widget'
 import { RecentLeads } from '@/components/dashboard/recent-leads'
 import { DashboardEmpty } from '@/components/dashboard/dashboard-empty'
 import { AppTopbar } from '@/components/layout/app-topbar'
@@ -100,12 +102,16 @@ export default async function DashboardPage() {
             />
           </div>
 
+          <PipelineStatus discovered={totalLeads} scored={totalScored} contacted={0} />
+
           <div className="flex flex-col gap-6 lg:h-[400px] lg:flex-row">
             <LiveFeed />
             <ScoreDistribution counts={gradeCounts} total={totalScored} />
           </div>
 
           {recentLeads.length > 0 && <RecentLeads leads={recentLeads} />}
+
+          <IcpRefinementWidget />
         </div>
       )}
     </div>

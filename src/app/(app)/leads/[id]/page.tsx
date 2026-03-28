@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, ExternalLink, Mail, User, Sparkles } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Mail, Newspaper, User, Sparkles, Swords } from 'lucide-react'
+import { detectCompetitors, type CompetitorMatch } from '@/lib/ai/tools/detect-tech-stack'
+import { fetchCompanyNews, type NewsItem } from '@/lib/ai/tools/company-news'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { DataQualityBadge } from '@/components/leads/data-quality-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
@@ -10,10 +12,30 @@ import { AnimatedScore } from '@/components/leads/animated-score'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { LeadResearch } from '@/components/leads/lead-research'
 import { LeadStreamingAnalysis } from '@/components/leads/lead-streaming-analysis'
+import { LeadResearchButton } from '@/components/leads/lead-research-button'
+import { EmailGenerator } from '@/components/leads/email-generator'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
   params: Promise<{ id: string }>
+}
+
+const eventTypeLabels: Record<string, { label: string; className: string }> = {
+  funding: { label: 'Funding', className: 'bg-score-hot/10 text-score-hot' },
+  expansion: { label: 'Expansion', className: 'bg-score-engaged/10 text-score-engaged' },
+  hiring: { label: 'Hiring', className: 'bg-score-qualified/10 text-score-qualified' },
+  product_launch: { label: 'Produkt', className: 'bg-accent-light text-accent' },
+  leadership_change: { label: 'Leadership', className: 'bg-secondary text-muted-foreground' },
+  other: { label: 'News', className: 'bg-secondary text-muted-foreground' },
+}
+
+function EventTypeBadge({ type }: { type: string }) {
+  const config = eventTypeLabels[type] ?? eventTypeLabels.other
+  return (
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}>
+      {config.label}
+    </span>
+  )
 }
 
 function timeAgo(dateStr: string): string {
@@ -35,7 +57,7 @@ export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params
   const { user, supabase } = await requireAuth()
 
-  const [leadResult, scoreResult, researchResult] = await Promise.all([
+  const [leadResult, scoreResult, researchResult, icpResult] = await Promise.all([
     supabase
       .from('leads')
       .select(
@@ -54,10 +76,11 @@ export default async function LeadDetailPage({ params }: Props) {
       .maybeSingle(),
     supabase
       .from('lead_research')
-      .select('full_report')
+      .select('full_report, tech_stack')
       .eq('lead_id', id)
       .eq('user_id', user.id)
       .maybeSingle(),
+    supabase.from('icp_profiles').select('tech_stack').eq('user_id', user.id).maybeSingle(),
   ])
 
   if (leadResult.error || !leadResult.data) notFound()
@@ -65,15 +88,29 @@ export default async function LeadDetailPage({ params }: Props) {
   const lead = leadResult.data
   const score = scoreResult.data
   const research = researchResult.data
+  const techStack: string[] = (research?.tech_stack as string[] | null) ?? []
+  const icpTechStack: string[] = (icpResult.data?.tech_stack as string[] | null) ?? []
+  const icpTechSet = new Set(icpTechStack.map((t) => t.toLowerCase().trim()))
+  const competitorMatches: CompetitorMatch[] =
+    techStack.length > 0 ? detectCompetitors(techStack) : []
 
-  const { data: logs } = lead.campaign_id
-    ? await supabase
-        .from('agent_logs')
-        .select('id, action_type, message, created_at')
-        .eq('campaign_id', lead.campaign_id)
-        .order('created_at', { ascending: false })
-        .limit(5)
-    : { data: [] }
+  // Fetch company news + activity logs in parallel
+  const [logsResult, newsResult] = await Promise.all([
+    lead.campaign_id
+      ? supabase
+          .from('agent_logs')
+          .select('id, action_type, message, created_at')
+          .eq('campaign_id', lead.campaign_id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+      : Promise.resolve({ data: [] }),
+    lead.company_name
+      ? fetchCompanyNews(lead.company_name, lead.company_domain ?? undefined).catch(() => null)
+      : Promise.resolve(null),
+  ])
+
+  const logs = logsResult.data
+  const companyNews = newsResult?.news ?? []
 
   const joinedName = [lead.first_name, lead.last_name].filter(Boolean).join(' ')
   const displayName = (lead.full_name ?? joinedName) || 'Unbekannt'
@@ -151,7 +188,10 @@ export default async function LeadDetailPage({ params }: Props) {
             <OutreachVoice leadId={id} companyName={lead.company_name ?? null} />
             {score && (
               <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
-                <h2 className="mb-4 text-base font-semibold text-foreground">Score Breakdown</h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-foreground">Score Breakdown</h2>
+                  <LeadResearchButton leadId={id} companyName={lead.company_name} />
+                </div>
                 <ScoreBreakdown
                   companyFit={score.company_fit_score}
                   contactFit={score.contact_fit_score}
@@ -167,7 +207,9 @@ export default async function LeadDetailPage({ params }: Props) {
                 {score.recommended_action && (
                   <div className="mt-3 rounded-lg border border-accent/20 bg-accent-light p-3">
                     <p className="mb-0.5 text-xs font-medium text-accent">Empfehlung</p>
-                    <p className="break-words text-sm text-foreground">{score.recommended_action}</p>
+                    <p className="break-words text-sm text-foreground">
+                      {score.recommended_action}
+                    </p>
                   </div>
                 )}
               </div>
@@ -177,7 +219,10 @@ export default async function LeadDetailPage({ params }: Props) {
 
             {/* Kontakt */}
             <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
-              <h2 className="mb-4 text-base font-semibold text-foreground">Kontaktinformationen</h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">Kontaktinformationen</h2>
+                {!score && <LeadResearchButton leadId={id} companyName={lead.company_name} />}
+              </div>
               <div className="flex flex-col gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <User className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -189,7 +234,10 @@ export default async function LeadDetailPage({ params }: Props) {
                 {lead.email && (
                   <div className="flex items-center gap-3">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <a href={`mailto:${lead.email}`} className="truncate text-sm text-accent underline">
+                    <a
+                      href={`mailto:${lead.email}`}
+                      className="truncate text-sm text-accent underline"
+                    >
                       {lead.email}
                     </a>
                   </div>
@@ -208,6 +256,12 @@ export default async function LeadDetailPage({ params }: Props) {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Outreach / Email */}
+            <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+              <h2 className="mb-4 text-base font-semibold text-foreground">Outreach</h2>
+              <EmailGenerator leadId={id} />
             </div>
           </div>
 
@@ -263,6 +317,112 @@ export default async function LeadDetailPage({ params }: Props) {
                 )}
               </div>
             </div>
+
+            {techStack.length > 0 && (
+              <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+                <h2 className="mb-4 text-base font-semibold text-foreground">Technologien</h2>
+                <div className="flex flex-wrap gap-2">
+                  {techStack.map((tech) => {
+                    const isMatch = icpTechSet.has(tech.toLowerCase().trim())
+                    return (
+                      <span
+                        key={tech}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          isMatch
+                            ? 'bg-accent-light text-accent ring-1 ring-accent/30'
+                            : 'bg-secondary text-muted-foreground'
+                        }`}
+                        title={isMatch ? 'Passt zu deinem ICP Tech-Stack' : undefined}
+                      >
+                        {tech}
+                        {isMatch && ' \u2713'}
+                      </span>
+                    )
+                  })}
+                </div>
+                {icpTechStack.length > 0 && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {techStack.filter((t) => icpTechSet.has(t.toLowerCase().trim())).length} von{' '}
+                    {icpTechStack.length} ICP-Technologien erkannt
+                  </p>
+                )}
+              </div>
+            )}
+
+            {competitorMatches.length > 0 && (
+              <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Swords className="h-4 w-4 text-score-qualified" />
+                  <h2 className="text-base font-semibold text-foreground">Competitor-Analyse</h2>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {competitorMatches.map((match, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-score-qualified/20 bg-score-qualified/5 p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">
+                          {match.technology}
+                        </span>
+                        <span className="rounded-full bg-score-qualified/10 px-2 py-0.5 text-xs font-medium text-score-qualified">
+                          {match.category}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Wettbewerber: {match.competitors.slice(0, 4).join(', ')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {competitorMatches.length} Wettbewerber-Tool
+                  {competitorMatches.length !== 1 ? 's' : ''} erkannt — höhere
+                  Wechselbereitschaft möglich
+                </p>
+              </div>
+            )}
+
+            {companyNews.length > 0 && (
+              <div className="rounded-xl border border-border bg-white p-4 lg:p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-base font-semibold text-foreground">Neuigkeiten</h2>
+                </div>
+                <div className="flex flex-col gap-4">
+                  {companyNews.map((item: NewsItem, i: number) => (
+                    <div
+                      key={i}
+                      className="flex flex-col gap-1 border-b border-border pb-4 last:border-0 last:pb-0"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium leading-snug text-foreground">
+                          {item.title}
+                        </p>
+                        <EventTypeBadge type={item.event_type} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{item.summary}</p>
+                      <div className="mt-1 flex items-center justify-between">
+                        <p className="text-xs text-accent">{item.relevance}</p>
+                        {item.url ? (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-accent"
+                          >
+                            {item.source}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">{item.source}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {logs && logs.length > 0 && (
               <div className="rounded-xl border border-border bg-white p-4 lg:p-6">

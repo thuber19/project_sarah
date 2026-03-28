@@ -4,6 +4,8 @@ import { getLeadsAction } from '@/app/actions/leads.actions'
 import { requireAuth } from '@/lib/supabase/server'
 import { LeadSearchInput } from '@/components/leads/lead-search-input'
 import { LeadExportButton } from '@/components/leads/lead-export-button'
+import { ScoringButton } from '@/components/leads/scoring-button'
+import { HubSpotBulkExport } from '@/components/leads/hubspot-bulk-export'
 import { EmptyState } from '@/components/shared/empty-state'
 import { AppTopbar } from '@/components/layout/app-topbar'
 import { LeadsClient } from './leads-client'
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export default async function LeadsPage({ searchParams }: Props) {
-  await requireAuth()
+  const { user, supabase } = await requireAuth()
   const rawParams = await searchParams
 
   // Normalize searchParams to Record<string, string | undefined>
@@ -21,8 +23,26 @@ export default async function LeadsPage({ searchParams }: Props) {
     Object.entries(rawParams).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
   ) as Record<string, string | undefined>
 
-  const response = await getLeadsAction(params)
+  // Fetch leads + supporting data in parallel
+  const [response, profileResult, qualifiedResult] = await Promise.all([
+    getLeadsAction(params),
+    supabase
+      .from('business_profiles')
+      .select('icp_settings')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('lead_scores')
+      .select('lead_id')
+      .eq('user_id', user.id)
+      .in('grade', ['HOT', 'QUALIFIED', 'TOP_MATCH'])
+      .limit(100),
+  ])
+
   const { leads, totalCount } = response.success ? response.data : { leads: [], totalCount: 0 }
+  const icpSettings = profileResult.data?.icp_settings as Record<string, unknown> | null
+  const userIndustry = (icpSettings?.industries as string | undefined) ?? null
+  const qualifiedLeadIds = (qualifiedResult.data ?? []).map((l) => l.lead_id)
 
   const grade = params.grade ?? 'ALL'
   const sort = params.sort ?? 'total_score'
@@ -45,6 +65,8 @@ export default async function LeadsPage({ searchParams }: Props) {
         title="Lead-Liste"
         actions={
           <>
+            <ScoringButton userIndustry={userIndustry} />
+            <HubSpotBulkExport qualifiedLeadIds={qualifiedLeadIds} />
             <LeadExportButton grade={grade} q={params.q} />
             <Suspense
               fallback={

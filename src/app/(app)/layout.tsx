@@ -5,6 +5,9 @@ import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
 import { getBusinessProfile } from '@/lib/queries/cached'
+import { ScoringProgressBanner } from '@/components/layout/scoring-progress-banner'
+import { getActiveRun } from '@/app/actions/scoring.actions'
+import { Toaster } from 'sonner'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireAuth()
@@ -30,12 +33,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initials = rawName.slice(0, 2).toUpperCase()
   const email = user.email ?? ''
 
+  const activeRun = await getActiveRun()
+
   return (
     <div className="flex h-screen bg-muted">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      >
+        Zum Hauptinhalt springen
+      </a>
       <div className="hidden lg:flex">
         <AppSidebar displayName={rawName} email={email} initials={initials} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
+        <ScoringProgressBanner initialRun={activeRun} />
         <main
           id="main-content"
           tabIndex={-1}
@@ -46,6 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <MobileTabBar />
       <AgentChat />
+      <Toaster position="bottom-right" richColors />
     </div>
   )
 }
