@@ -189,7 +189,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  supabaseResponse.headers.set('Content-Security-Policy', buildCsp(nonce))
+  // Report-Only mode: CSP violations are logged but not enforced.
+  // Next.js inline hydration scripts don't receive the nonce automatically in
+  // production, causing legitimate scripts to be blocked. Track violations here
+  // and promote to enforcing once nonce propagation is verified end-to-end.
+  supabaseResponse.headers.set('Content-Security-Policy-Report-Only', buildCsp(nonce))
 
   return supabaseResponse
 }
