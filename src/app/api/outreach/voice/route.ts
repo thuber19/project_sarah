@@ -18,14 +18,16 @@ function getVoiceId(): string {
 
 export async function POST(req: Request): Promise<Response> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
   let leadId: string
   let tone: 'professional' | 'friendly'
 
   try {
-    const body = await req.json() as { leadId: string; tone?: 'professional' | 'friendly' }
+    const body = (await req.json()) as { leadId: string; tone?: 'professional' | 'friendly' }
     leadId = body.leadId
     tone = body.tone ?? 'professional'
     if (!leadId) return new Response('leadId is required', { status: 400 })
@@ -34,8 +36,19 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const [leadResult, profileResult] = await Promise.all([
-    supabase.from('leads').select('first_name, last_name, full_name, job_title, company_name, industry, company_size, location, country').eq('id', leadId).eq('user_id', user.id).single(),
-    supabase.from('business_profiles').select('company_name, industry, value_proposition, product_summary').eq('user_id', user.id).single(),
+    supabase
+      .from('leads')
+      .select(
+        'first_name, last_name, full_name, job_title, company_name, industry, company_size, location, country',
+      )
+      .eq('id', leadId)
+      .eq('user_id', user.id)
+      .single(),
+    supabase
+      .from('business_profiles')
+      .select('company_name, industry, value_proposition, product_summary')
+      .eq('user_id', user.id)
+      .single(),
   ])
 
   if (leadResult.error || !leadResult.data) {
@@ -92,7 +105,7 @@ Schreibe NUR das Skript, keine Erklärungen oder Anmerkungen.`
       headers: {
         'xi-api-key': getElevenLabsKey(),
         'Content-Type': 'application/json',
-        'Accept': 'audio/mpeg',
+        Accept: 'audio/mpeg',
       },
       body: JSON.stringify({
         text: script,

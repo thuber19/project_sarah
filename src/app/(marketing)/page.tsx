@@ -1,46 +1,39 @@
-import Link from "next/link";
-import { BarChart3, Globe, Search, Sparkles } from "lucide-react";
+import Link from 'next/link'
+import { BarChart3, Globe, Search, Sparkles } from 'lucide-react'
 
 const featureCards = [
   {
     icon: Globe,
-    title: "1. Website analysieren",
+    title: '1. Website analysieren',
     description:
-      "Sarah analysiert eure Website mit KI und erstellt automatisch euer Business-Profil, eine Zielgruppe und eure USPs — vollautomatisch.",
+      'Sarah analysiert eure Website mit KI und erstellt automatisch euer Business-Profil, eine Zielgruppe und eure USPs — vollautomatisch.',
   },
   {
     icon: Search,
-    title: "2. Leads entdecken",
+    title: '2. Leads entdecken',
     description:
-      "Automatische Lead-Discovery über Apollo und Google Maps — zugeschnitten für den DACH-Markt. Zielgenau.",
+      'Automatische Lead-Discovery über Apollo und Google Maps — zugeschnitten für den DACH-Markt. Zielgenau.',
   },
   {
     icon: BarChart3,
-    title: "3. Leads bewerten",
+    title: '3. Leads bewerten',
     description:
-      "KI-basiertes Scoring von 0-100 bewertet jeden Lead nach Relevanz, Potenzial und Kaufbereitschaft.",
+      'KI-basiertes Scoring von 0-100 bewertet jeden Lead nach Relevanz, Potenzial und Kaufbereitschaft.',
   },
-] as const;
+] as const
 
-const companyLogos = [
-  "FINTEK",
-  "DATAWERK",
-  "ALPENTEC",
-  "NEROVA",
-  "CLOUDWERK",
-  "NEXTFLOW",
-] as const;
+const companyLogos = ['FINTEK', 'DATAWERK', 'ALPENTEC', 'NEROVA', 'CLOUDWERK', 'NEXTFLOW'] as const
 
 const chartBarHeights = [
-  "h-[60%]",
-  "h-[75%]",
-  "h-[45%]",
-  "h-[90%]",
-  "h-[65%]",
-  "h-[80%]",
-  "h-[50%]",
-  "h-[95%]",
-] as const;
+  'h-[60%]',
+  'h-[75%]',
+  'h-[45%]',
+  'h-[90%]',
+  'h-[65%]',
+  'h-[80%]',
+  'h-[50%]',
+  'h-[95%]',
+] as const
 
 export default function MarketingPage() {
   return (
@@ -62,9 +55,8 @@ export default function MarketingPage() {
             </h1>
 
             <p className="text-lg leading-relaxed text-muted-foreground">
-              Sarah findet automatisch die besten Leads für dein Unternehmen.
-              KI-gestützte Website-Analyse, Lead-Discovery und intelligentes
-              Scoring — alles in einem Tool.
+              Sarah findet automatisch die besten Leads für dein Unternehmen. KI-gestützte
+              Website-Analyse, Lead-Discovery und intelligentes Scoring — alles in einem Tool.
             </p>
 
             <div className="mt-2 flex gap-4">
@@ -98,21 +90,15 @@ export default function MarketingPage() {
                 {/* Stats row */}
                 <div className="flex gap-2">
                   <div className="flex-1 rounded-lg border bg-white p-3">
-                    <p className="text-[10px] text-muted-foreground">
-                      Neue Leads
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">Neue Leads</p>
                     <p className="text-lg font-bold text-foreground">1,247</p>
                   </div>
                   <div className="flex-1 rounded-lg border bg-white p-3">
-                    <p className="text-[10px] text-muted-foreground">
-                      Score &Oslash;
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">Score &Oslash;</p>
                     <p className="text-lg font-bold text-foreground">84.2</p>
                   </div>
                   <div className="flex-1 rounded-lg border bg-white p-3">
-                    <p className="text-[10px] text-muted-foreground">
-                      Wachstum
-                    </p>
+                    <p className="text-[10px] text-muted-foreground">Wachstum</p>
                     <p className="text-lg font-bold text-success">+34%</p>
                   </div>
                 </div>
@@ -123,7 +109,7 @@ export default function MarketingPage() {
                     <div
                       key={index}
                       className={`w-full rounded-t-sm ${height} ${
-                        index % 2 === 0 ? "bg-accent" : "bg-accent/60"
+                        index % 2 === 0 ? 'bg-accent' : 'bg-accent/60'
                       }`}
                     />
                   ))}
@@ -137,9 +123,7 @@ export default function MarketingPage() {
       {/* Features Section */}
       <section className="w-full bg-muted p-20">
         <div className="mb-12 flex flex-col items-center gap-4 text-center">
-          <h2 className="text-3xl font-bold text-foreground">
-            So funktioniert Sarah
-          </h2>
+          <h2 className="text-3xl font-bold text-foreground">So funktioniert Sarah</h2>
           <p className="text-base text-muted-foreground">
             In drei einfachen Schritten zu qualifizierten Leads
           </p>
@@ -147,19 +131,12 @@ export default function MarketingPage() {
 
         <div className="grid grid-cols-3 gap-6">
           {featureCards.map((card) => (
-            <div
-              key={card.title}
-              className="flex flex-col gap-4 rounded-xl border bg-white p-8"
-            >
+            <div key={card.title} className="flex flex-col gap-4 rounded-xl border bg-white p-8">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-light">
                 <card.icon className="h-6 w-6 text-accent" />
               </div>
-              <h3 className="text-base font-semibold text-foreground">
-                {card.title}
-              </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {card.description}
-              </p>
+              <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{card.description}</p>
             </div>
           ))}
         </div>
@@ -182,5 +159,5 @@ export default function MarketingPage() {
         </div>
       </section>
     </>
-  );
+  )
 }

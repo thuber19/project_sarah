@@ -73,10 +73,7 @@ function buildIcpContext(icp: IcpProfile): string {
  * Builds a central system prompt with dynamic user/business context and static DACH knowledge.
  * Used as the single source of truth for all AI endpoints.
  */
-export function buildSystemPrompt(
-  role: string,
-  ctx: SystemPromptContext = {},
-): string {
+export function buildSystemPrompt(role: string, ctx: SystemPromptContext = {}): string {
   const sections = [
     `Du bist ${role}, spezialisiert auf den DACH-Markt (Deutschland, Österreich, Schweiz). Antworte immer auf Deutsch.`,
   ]

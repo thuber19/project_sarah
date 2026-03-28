@@ -1,55 +1,50 @@
-import { Tag } from "lucide-react";
+import { Tag } from 'lucide-react'
 
-import { PricingCard } from "@/components/marketing/pricing-card";
+import { PricingCard } from '@/components/marketing/pricing-card'
 
 const plans = [
   {
-    name: "Starter",
-    price: "Kostenlos",
-    description: "Perfekt zum Ausprobieren",
-    features: [
-      "50 Leads/Monat",
-      "Website-Analyse",
-      "Basic Scoring",
-      "E-Mail Support",
-    ],
-    ctaLabel: "Kostenlos starten",
-    ctaHref: "/login",
+    name: 'Starter',
+    price: 'Kostenlos',
+    description: 'Perfekt zum Ausprobieren',
+    features: ['50 Leads/Monat', 'Website-Analyse', 'Basic Scoring', 'E-Mail Support'],
+    ctaLabel: 'Kostenlos starten',
+    ctaHref: '/login',
   },
   {
-    name: "Professional",
-    price: "€49",
-    priceSuffix: "/Monat",
-    description: "Für wachsende Vertriebsteams",
+    name: 'Professional',
+    price: '€49',
+    priceSuffix: '/Monat',
+    description: 'Für wachsende Vertriebsteams',
     features: [
-      "500 Leads/Monat",
-      "Erweiterte Website-Analyse",
-      "KI-Scoring",
-      "Lead-Discovery",
-      "Priority Support",
-      "API-Zugang",
+      '500 Leads/Monat',
+      'Erweiterte Website-Analyse',
+      'KI-Scoring',
+      'Lead-Discovery',
+      'Priority Support',
+      'API-Zugang',
     ],
-    ctaLabel: "Jetzt starten",
-    ctaHref: "/login",
+    ctaLabel: 'Jetzt starten',
+    ctaHref: '/login',
     highlighted: true,
-    badge: "Beliebteste",
+    badge: 'Beliebteste',
   },
   {
-    name: "Enterprise",
-    price: "Auf Anfrage",
-    description: "Für große Teams mit individuellen Anforderungen",
+    name: 'Enterprise',
+    price: 'Auf Anfrage',
+    description: 'Für große Teams mit individuellen Anforderungen',
     features: [
-      "Unbegrenzte Leads",
-      "Custom KI-Modelle",
-      "Dedizierter Account Manager",
-      "SSO & SAML",
-      "Custom Integrationen",
-      "SLA Garantie",
+      'Unbegrenzte Leads',
+      'Custom KI-Modelle',
+      'Dedizierter Account Manager',
+      'SSO & SAML',
+      'Custom Integrationen',
+      'SLA Garantie',
     ],
-    ctaLabel: "Kontakt aufnehmen",
-    ctaHref: "/login",
+    ctaLabel: 'Kontakt aufnehmen',
+    ctaHref: '/login',
   },
-] as const;
+] as const
 
 export default function PricingPage() {
   return (
@@ -61,9 +56,7 @@ export default function PricingPage() {
           Preise & Pakete
         </span>
 
-        <h1 className="mt-4 text-4xl font-extrabold text-foreground">
-          Wähle den passenden Plan
-        </h1>
+        <h1 className="mt-4 text-4xl font-extrabold text-foreground">Wähle den passenden Plan</h1>
 
         <p className="mt-2 text-lg text-muted-foreground">
           Starte kostenlos und upgrade jederzeit. Keine versteckten Kosten.
@@ -82,5 +75,5 @@ export default function PricingPage() {
       {/* Divider */}
       <div className="h-px w-full bg-border" />
     </>
-  );
+  )
 }

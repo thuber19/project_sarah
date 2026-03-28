@@ -3,15 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport, type UIMessage } from 'ai'
-import {
-  Bot,
-  CheckCircle,
-  Loader2,
-  MessageCircle,
-  Send,
-  X,
-  XCircle,
-} from 'lucide-react'
+import { Bot, CheckCircle, Loader2, MessageCircle, Send, X, XCircle } from 'lucide-react'
 
 const TOOL_LABELS: Record<string, string> = {
   searchLeads: 'Lead-Suche via Apollo.io',
@@ -205,7 +197,10 @@ export function AgentChat() {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-border px-3 py-3">
+      <form
+        onSubmit={handleSubmit}
+        className="flex items-center gap-2 border-t border-border px-3 py-3"
+      >
         <input
           ref={inputRef}
           name="message"

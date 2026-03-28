@@ -64,7 +64,9 @@ async function apolloFetch<T>(endpoint: string, body: Record<string, unknown>): 
   throw new Error('Apollo API: max retries exceeded')
 }
 
-export async function searchPeople(params: ApolloPersonSearchParams): Promise<ApolloSearchResponse> {
+export async function searchPeople(
+  params: ApolloPersonSearchParams,
+): Promise<ApolloSearchResponse> {
   return apolloFetch<ApolloSearchResponse>('/api/v1/mixed_people/search', {
     ...params,
     per_page: params.per_page ?? 25,
@@ -72,7 +74,9 @@ export async function searchPeople(params: ApolloPersonSearchParams): Promise<Ap
   })
 }
 
-export async function enrichPerson(params: ApolloEnrichmentParams): Promise<ApolloEnrichmentResponse> {
+export async function enrichPerson(
+  params: ApolloEnrichmentParams,
+): Promise<ApolloEnrichmentResponse> {
   return apolloFetch<ApolloEnrichmentResponse>('/api/v1/people/match', {
     ...params,
     reveal_personal_emails: params.reveal_personal_emails ?? false,
@@ -80,7 +84,9 @@ export async function enrichPerson(params: ApolloEnrichmentParams): Promise<Apol
   })
 }
 
-export async function searchOrganizations(params: ApolloOrgSearchParams): Promise<ApolloOrgSearchResponse> {
+export async function searchOrganizations(
+  params: ApolloOrgSearchParams,
+): Promise<ApolloOrgSearchResponse> {
   return apolloFetch<ApolloOrgSearchResponse>('/api/v1/mixed_companies/search', {
     ...params,
     per_page: params.per_page ?? 25,

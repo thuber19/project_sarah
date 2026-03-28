@@ -29,7 +29,11 @@ export function createScoreLead(ctx: ToolContext) {
       }),
     }),
     execute: async (params) => {
-      await logToolAction(ctx, 'lead_scored', `Scoring gestartet für ${params.firstName} ${params.lastName}`)
+      await logToolAction(
+        ctx,
+        'lead_scored',
+        `Scoring gestartet für ${params.firstName} ${params.lastName}`,
+      )
 
       try {
         const lead = {
@@ -67,10 +71,15 @@ export function createScoreLead(ctx: ToolContext) {
         const totalScore = totalFromBreakdown(breakdown)
         const grade = getGradeForScore(totalScore)
 
-        await logToolAction(ctx, 'lead_scored', `Score: ${params.firstName} ${params.lastName} = ${totalScore} (${grade})`, {
-          totalScore,
-          grade,
-        })
+        await logToolAction(
+          ctx,
+          'lead_scored',
+          `Score: ${params.firstName} ${params.lastName} = ${totalScore} (${grade})`,
+          {
+            totalScore,
+            grade,
+          },
+        )
 
         return {
           success: true as const,
@@ -86,7 +95,13 @@ export function createScoreLead(ctx: ToolContext) {
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Scoring fehlgeschlagen'
         await logToolAction(ctx, 'campaign_failed', `Scoring fehlgeschlagen: ${msg}`)
-        return { success: false as const, error: msg, totalScore: 0, grade: 'POOR' as const, breakdown: null }
+        return {
+          success: false as const,
+          error: msg,
+          totalScore: 0,
+          grade: 'POOR' as const,
+          breakdown: null,
+        }
       }
     },
   })

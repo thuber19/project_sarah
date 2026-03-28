@@ -51,7 +51,13 @@ export async function POST() {
   }
 
   // Run pipeline async (non-blocking)
-  runDiscoveryPipeline(supabase, user.id, campaign.id, profile as BusinessProfile, icpData as IcpProfile).catch((error) => {
+  runDiscoveryPipeline(
+    supabase,
+    user.id,
+    campaign.id,
+    profile as BusinessProfile,
+    icpData as IcpProfile,
+  ).catch((error) => {
     console.error('[Campaign] Pipeline failed:', error)
   })
 

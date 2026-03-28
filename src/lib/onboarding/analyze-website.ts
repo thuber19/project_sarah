@@ -11,7 +11,9 @@ const analysisSchema = z.object({
   product_summary: z.string().describe('Was das Produkt/die Dienstleistung macht (1-2 Sätze)'),
   value_proposition: z.string().describe('Hauptnutzen für Kunden (1 Satz)'),
   target_market: z.string().describe('Beschreibung der Zielkunden'),
-  suggested_job_titles: z.array(z.string()).describe('Typische Job-Titel der Zielkunden (3-6 Stück)'),
+  suggested_job_titles: z
+    .array(z.string())
+    .describe('Typische Job-Titel der Zielkunden (3-6 Stück)'),
   suggested_seniority_levels: z
     .array(z.string())
     .describe('Seniority-Level: owner, founder, cxo, vp, director, manager'),
@@ -19,13 +21,17 @@ const analysisSchema = z.object({
   suggested_company_sizes: z
     .array(z.string())
     .describe('Unternehmensgrößen aus: 1-10, 11-50, 51-200, 201-500, 501-1000'),
-  suggested_regions: z.array(z.string()).describe('Zielregionen (z.B. DACH, Deutschland, Österreich)'),
+  suggested_regions: z
+    .array(z.string())
+    .describe('Zielregionen (z.B. DACH, Deutschland, Österreich)'),
 })
 
 export type WebsiteAnalysis = z.infer<typeof analysisSchema>
 
 export async function analyzeWebsite(content: ScrapedContent): Promise<WebsiteAnalysis> {
-  const systemPrompt = buildSystemPrompt('ein B2B Sales-Experte für Website-Analyse und ICP-Ableitung')
+  const systemPrompt = buildSystemPrompt(
+    'ein B2B Sales-Experte für Website-Analyse und ICP-Ableitung',
+  )
 
   const context = [
     `URL: ${content.url}`,

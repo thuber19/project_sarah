@@ -107,13 +107,18 @@ export default async function LeadDetailPage({ params }: Props) {
             <div className="mt-2 flex items-center gap-3">
               {grade && <ScoreBadge grade={grade} />}
               {(lead.location ?? lead.country) && (
-                <span className="text-sm text-muted-foreground">{lead.location ?? lead.country}</span>
+                <span className="text-sm text-muted-foreground">
+                  {lead.location ?? lead.country}
+                </span>
               )}
             </div>
           </div>
           {score && (
             <div className="text-right">
-              <AnimatedScore value={score.total_score} className={`text-4xl font-bold ${scoreColor}`} />
+              <AnimatedScore
+                value={score.total_score}
+                className={`text-4xl font-bold ${scoreColor}`}
+              />
               <p className="mt-1 text-sm font-medium text-muted-foreground">{grade}</p>
             </div>
           )}

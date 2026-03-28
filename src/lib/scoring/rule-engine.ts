@@ -1,9 +1,29 @@
 import type { Lead, ScoreBreakdown } from '@/types/lead'
 
-const DACH_COUNTRIES = ['austria', 'germany', 'switzerland', 'österreich', 'deutschland', 'schweiz', 'at', 'de', 'ch']
+const DACH_COUNTRIES = [
+  'austria',
+  'germany',
+  'switzerland',
+  'österreich',
+  'deutschland',
+  'schweiz',
+  'at',
+  'de',
+  'ch',
+]
 
 // DACH legal entity suffixes — established legal entity is a positive buying signal
-const DACH_LEGAL_ENTITY_PATTERNS = ['gmbh', ' ag', ' kg', ' og', 'gesmbh', 'e.u.', ' se', ' eg', 'ewiv']
+const DACH_LEGAL_ENTITY_PATTERNS = [
+  'gmbh',
+  ' ag',
+  ' kg',
+  ' og',
+  'gesmbh',
+  'e.u.',
+  ' se',
+  ' eg',
+  'ewiv',
+]
 
 // German/Austrian title → seniority score (used when Apollo doesn't set seniority enum)
 const DACH_TITLE_SENIORITY: Array<[string, number]> = [
@@ -128,7 +148,11 @@ function scoreContactFit(lead: Lead, icp: ICP): number {
     const title = lead.title.toLowerCase()
     if (icp.target_titles.some((t) => title.includes(t.toLowerCase()))) {
       score += 8
-    } else if (['ceo', 'cto', 'cfo', 'head', 'director', 'vp', 'geschäftsführer'].some((t) => title.includes(t))) {
+    } else if (
+      ['ceo', 'cto', 'cfo', 'head', 'director', 'vp', 'geschäftsführer'].some((t) =>
+        title.includes(t),
+      )
+    ) {
       score += 5
     }
   }

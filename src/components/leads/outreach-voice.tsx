@@ -145,7 +145,11 @@ export function OutreachVoice({ leadId, companyName }: Props) {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-white hover:bg-accent/90"
               aria-label={isPlaying ? 'Pause' : 'Abspielen'}
             >
-              {isPlaying ? <Square className="h-4 w-4 fill-white" /> : <Play className="h-4 w-4 fill-white" />}
+              {isPlaying ? (
+                <Square className="h-4 w-4 fill-white" />
+              ) : (
+                <Play className="h-4 w-4 fill-white" />
+              )}
             </button>
             <span className="flex-1 text-sm text-muted-foreground">
               {isPlaying ? 'Wird abgespielt…' : 'Bereit zum Abspielen'}

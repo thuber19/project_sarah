@@ -45,7 +45,13 @@ export interface LeadScore {
 export interface AgentLog {
   id: string
   user_id: string
-  event_type: 'lead_discovered' | 'lead_scored' | 'lead_enriched' | 'pipeline_started' | 'pipeline_completed' | 'error'
+  event_type:
+    | 'lead_discovered'
+    | 'lead_scored'
+    | 'lead_enriched'
+    | 'pipeline_started'
+    | 'pipeline_completed'
+    | 'error'
   message: string
   metadata: Record<string, unknown> | null
   created_at: string

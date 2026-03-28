@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  emailSchema,
-  urlSchema,
-  profileSchema,
-  icpSchema,
-  discoveryFormSchema,
-} from './schemas'
+import { emailSchema, urlSchema, profileSchema, icpSchema, discoveryFormSchema } from './schemas'
 
 // ---------------------------------------------------------------------------
 // emailSchema

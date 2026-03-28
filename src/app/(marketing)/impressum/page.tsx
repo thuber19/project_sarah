@@ -19,8 +19,10 @@ export default function ImpressumPage() {
         <section>
           <h2 className="mb-3 text-base font-semibold">Angaben gemäß § 5 ECG</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Sarah AI<br />
-            c/o Vienna Overnight AI Hackathon<br />
+            Sarah AI
+            <br />
+            c/o Vienna Overnight AI Hackathon
+            <br />
             1010 Wien, Österreich
           </p>
         </section>
@@ -38,7 +40,8 @@ export default function ImpressumPage() {
         <section>
           <h2 className="mb-3 text-base font-semibold">Projektverantwortliche</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Sarah K. (Product) · Sarah T. (AI/Backend)<br />
+            Sarah K. (Product) · Sarah T. (AI/Backend)
+            <br />
             Tobias H. (Full Stack) · Bernhard G. (Full Stack)
           </p>
         </section>

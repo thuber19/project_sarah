@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface PaginationProps {
   currentPage: number
@@ -36,9 +36,7 @@ export function LeadPagination({ currentPage, totalCount, pageSize }: Pagination
 
   return (
     <nav aria-label="Seitennavigation" className="flex items-center justify-between pb-6">
-      <span className="text-sm text-muted-foreground">
-        {totalCount} Leads total
-      </span>
+      <span className="text-sm text-muted-foreground">{totalCount} Leads total</span>
 
       <div className="flex items-center gap-1">
         <button
@@ -58,11 +56,11 @@ export function LeadPagination({ currentPage, totalCount, pageSize }: Pagination
             onClick={() => goToPage(page)}
             className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
               page === currentPage
-                ? "bg-primary text-white"
-                : "border border-border text-foreground hover:bg-secondary"
+                ? 'bg-primary text-white'
+                : 'border border-border text-foreground hover:bg-secondary'
             }`}
             aria-label={`Seite ${page}`}
-            aria-current={page === currentPage ? "page" : undefined}
+            aria-current={page === currentPage ? 'page' : undefined}
           >
             {page}
           </button>

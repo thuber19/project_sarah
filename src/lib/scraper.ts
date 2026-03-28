@@ -39,14 +39,14 @@ export interface ScrapedContent {
 
 function isBlockedHost(hostname: string): boolean {
   if (BLOCKED_HOSTNAMES.has(hostname)) return true
-  if (/^10\./.test(hostname)) return true                          // RFC-1918 Class A
-  if (/^192\.168\./.test(hostname)) return true                    // RFC-1918 Class C
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true   // RFC-1918 Class B
-  if (/^169\.254\./.test(hostname)) return true                    // Link-local (APIPA)
-  if (/^22[4-9]\./.test(hostname)) return true                     // Multicast 224.0.0.0/4
-  if (/^23[0-9]\./.test(hostname)) return true                     // Multicast 230–239
-  if (/^fc00:/i.test(hostname)) return true                        // IPv6 Unique Local
-  if (/^fe80:/i.test(hostname)) return true                        // IPv6 Link-local
+  if (/^10\./.test(hostname)) return true // RFC-1918 Class A
+  if (/^192\.168\./.test(hostname)) return true // RFC-1918 Class C
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true // RFC-1918 Class B
+  if (/^169\.254\./.test(hostname)) return true // Link-local (APIPA)
+  if (/^22[4-9]\./.test(hostname)) return true // Multicast 224.0.0.0/4
+  if (/^23[0-9]\./.test(hostname)) return true // Multicast 230–239
+  if (/^fc00:/i.test(hostname)) return true // IPv6 Unique Local
+  if (/^fe80:/i.test(hostname)) return true // IPv6 Link-local
   return false
 }
 
@@ -57,7 +57,9 @@ export async function scrapeWebsite(rawUrl: string): Promise<ScrapedContent> {
   try {
     url = new URL(normalizedUrl)
   } catch {
-    throw new Error('Ungültige URL — bitte vollständige Adresse eingeben (z.B. https://beispiel.at)')
+    throw new Error(
+      'Ungültige URL — bitte vollständige Adresse eingeben (z.B. https://beispiel.at)',
+    )
   }
 
   if (!SAFE_PROTOCOLS.includes(url.protocol)) {

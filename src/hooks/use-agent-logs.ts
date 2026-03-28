@@ -89,9 +89,10 @@ export function useAgentLogs({ limit = 50 }: UseAgentLogsOptions = {}) {
     const today = new Date().toISOString().split('T')[0]
     const todayLogs = logs.filter((l) => l.created_at.startsWith(today))
     const errors = todayLogs.filter((l) => l.action_type === 'campaign_failed')
-    const successRate = todayLogs.length > 0
-      ? (((todayLogs.length - errors.length) / todayLogs.length) * 100).toFixed(1)
-      : '0'
+    const successRate =
+      todayLogs.length > 0
+        ? (((todayLogs.length - errors.length) / todayLogs.length) * 100).toFixed(1)
+        : '0'
 
     return {
       todayCount: todayLogs.length,

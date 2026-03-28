@@ -1,10 +1,10 @@
-import Link from "next/link";
+import Link from 'next/link'
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "#about", label: "About" },
-] as const;
+  { href: '#features', label: 'Features' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '#about', label: 'About' },
+] as const
 
 export function MarketingNavbar() {
   return (
@@ -32,5 +32,5 @@ export function MarketingNavbar() {
         Kostenlos starten
       </Link>
     </nav>
-  );
+  )
 }

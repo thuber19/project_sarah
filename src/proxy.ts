@@ -79,10 +79,7 @@ function applyRateLimit(request: NextRequest, userId: string | null): NextRespon
   }
 
   // Discovery / scrape pipeline — expensive, strict hourly limit
-  if (
-    pathname.startsWith('/api/campaign/') ||
-    pathname.startsWith('/api/scrape')
-  ) {
+  if (pathname.startsWith('/api/campaign/') || pathname.startsWith('/api/scrape')) {
     const key = userId ? `discovery:${userId}` : `discovery:${ip}`
     const result = checkRateLimit(key, LIMITS.discovery)
     if (!result.allowed) return tooManyRequests(result)
@@ -136,7 +133,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           )
         },
       },

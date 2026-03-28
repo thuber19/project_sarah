@@ -27,7 +27,10 @@ function categorize(actionType: AgentLog['action_type']): ActionCategory {
   }
 }
 
-const categoryConfig: Record<ActionCategory, { icon: React.ElementType; bg: string; color: string }> = {
+const categoryConfig: Record<
+  ActionCategory,
+  { icon: React.ElementType; bg: string; color: string }
+> = {
   discovery: { icon: Compass, bg: 'bg-blue-50', color: 'text-accent' },
   scoring: { icon: Target, bg: 'bg-green-50', color: 'text-success' },
   enrichment: { icon: Sparkles, bg: 'bg-yellow-50', color: 'text-warning' },
@@ -84,16 +87,26 @@ export function LiveFeed() {
             return (
               <div
                 key={log.id}
-                className={cn('flex items-center gap-3 px-5 py-3', !isLast && 'border-b border-border')}
+                className={cn(
+                  'flex items-center gap-3 px-5 py-3',
+                  !isLast && 'border-b border-border',
+                )}
               >
-                <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', config.bg)}>
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                    config.bg,
+                  )}
+                >
                   <Icon className={cn('h-4 w-4', config.color)} />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-foreground">{log.message}</p>
                   <span className="text-xs text-muted-foreground">{timeAgo(log.created_at)}</span>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatTime(log.created_at)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {formatTime(log.created_at)}
+                </span>
               </div>
             )
           })

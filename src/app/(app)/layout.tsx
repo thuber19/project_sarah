@@ -35,7 +35,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen bg-muted">
       <AppSidebar displayName={rawName} email={email} initials={initials} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main id="main-content" className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex flex-1 flex-col overflow-y-auto">
+          {children}
+        </main>
       </div>
       <AgentChat />
     </div>

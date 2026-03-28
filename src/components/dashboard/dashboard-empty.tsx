@@ -1,12 +1,12 @@
-import { Compass, Play, Search, Settings2, Star } from "lucide-react";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { EmptyState } from "@/components/shared/empty-state";
+import { Compass, Play, Search, Settings2, Star } from 'lucide-react'
+import { StatCard } from '@/components/dashboard/stat-card'
+import { EmptyState } from '@/components/shared/empty-state'
 
 interface HelpCardProps {
-  step: string;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
+  step: string
+  title: string
+  description: string
+  icon: React.ReactNode
 }
 
 function HelpCard({ step, title, description, icon }: HelpCardProps) {
@@ -19,11 +19,9 @@ function HelpCard({ step, title, description, icon }: HelpCardProps) {
         <p className="text-xs font-medium text-accent">{step}</p>
         <p className="text-sm font-semibold text-foreground">{title}</p>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        {description}
-      </p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
     </div>
-  );
+  )
 }
 
 export function DashboardEmpty() {
@@ -31,12 +29,8 @@ export function DashboardEmpty() {
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
       {/* Welcome header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">
-          Willkommen, Bernhard!
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Lass uns deine ersten Leads finden.
-        </p>
+        <h1 className="text-xl font-bold text-foreground">Willkommen, Bernhard!</h1>
+        <p className="text-sm text-muted-foreground">Lass uns deine ersten Leads finden.</p>
       </div>
 
       {/* Stats row — zeroed out */}
@@ -53,13 +47,13 @@ export function DashboardEmpty() {
         title="Noch keine Leads"
         description="Starte deine erste Lead Discovery, um qualifizierte Unternehmen im DACH-Raum zu finden."
         primaryAction={{
-          label: "Erste Discovery starten",
-          href: "/discovery",
+          label: 'Erste Discovery starten',
+          href: '/discovery',
           icon: Play,
         }}
         secondaryAction={{
-          label: "ICP anpassen",
-          href: "/settings?tab=icp",
+          label: 'ICP anpassen',
+          href: '/settings?tab=icp',
         }}
       />
 
@@ -85,5 +79,5 @@ export function DashboardEmpty() {
         />
       </div>
     </div>
-  );
+  )
 }

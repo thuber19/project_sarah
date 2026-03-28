@@ -27,8 +27,11 @@ export default function GlobalError({
               Ein kritischer Fehler ist aufgetreten. Bitte lade die Seite neu.
             </p>
           </div>
-          <button type="button" onClick={reset}
-            className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800">
+          <button
+            type="button"
+            onClick={reset}
+            className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+          >
             <RefreshCw className="h-4 w-4" />
             Seite neu laden
           </button>

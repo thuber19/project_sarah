@@ -25,7 +25,9 @@ export const websiteAnalysisSchema = z.object({
   suggestedCompanySizes: z
     .array(z.string())
     .describe('Unternehmensgrößen aus: 1-10, 11-50, 51-200, 201-500, 501-1000'),
-  suggestedRegions: z.array(z.string()).describe('Zielregionen (z.B. DACH, Deutschland, Österreich)'),
+  suggestedRegions: z
+    .array(z.string())
+    .describe('Zielregionen (z.B. DACH, Deutschland, Österreich)'),
 })
 
 export type WebsiteAnalysis = z.infer<typeof websiteAnalysisSchema>

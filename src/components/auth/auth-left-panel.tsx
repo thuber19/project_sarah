@@ -6,36 +6,26 @@ export function AuthLeftPanel() {
         <div className="w-12 h-1 rounded-full bg-accent" />
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold text-primary-foreground">
-            Sarah
-          </h1>
-          <p className="text-lg text-sidebar-muted">
-            Dein AI Sales Agent f&uuml;r den DACH-Markt
-          </p>
+          <h1 className="text-3xl font-bold text-primary-foreground">Sarah</h1>
+          <p className="text-lg text-sidebar-muted">Dein AI Sales Agent f&uuml;r den DACH-Markt</p>
         </div>
 
         {/* Benefit items */}
         <div className="mt-8 flex flex-col gap-5">
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-success" />
-            <span className="text-[15px] text-sidebar-muted">
-              Automatische Lead-Discovery
-            </span>
+            <span className="text-[15px] text-sidebar-muted">Automatische Lead-Discovery</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-success" />
-            <span className="text-[15px] text-sidebar-muted">
-              KI-gest&uuml;tztes Scoring
-            </span>
+            <span className="text-[15px] text-sidebar-muted">KI-gest&uuml;tztes Scoring</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-success" />
-            <span className="text-[15px] text-sidebar-muted">
-              DSGVO-konform
-            </span>
+            <span className="text-[15px] text-sidebar-muted">DSGVO-konform</span>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

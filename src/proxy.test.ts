@@ -140,7 +140,15 @@ describe('proxy', () => {
     })
 
     it('redirects to /login for all protected routes when unauthenticated', async () => {
-      const protectedPaths = ['/dashboard', '/leads', '/discovery', '/scoring', '/agent-logs', '/export', '/settings']
+      const protectedPaths = [
+        '/dashboard',
+        '/leads',
+        '/discovery',
+        '/scoring',
+        '/agent-logs',
+        '/export',
+        '/settings',
+      ]
 
       for (const path of protectedPaths) {
         vi.clearAllMocks()

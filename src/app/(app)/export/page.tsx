@@ -1,17 +1,15 @@
-import { Bell, Search } from "lucide-react";
-import { ExportContent } from "./export-content";
+import { Bell, Search } from 'lucide-react'
+import { ExportContent } from './export-content'
 
 export default function ExportPage() {
   // TODO: Replace with real data from Supabase
-  const hasConnection = false;
+  const hasConnection = false
 
   return (
     <div className="flex h-full flex-1 flex-col">
       {/* Top bar */}
       <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">
-          Export &amp; CRM
-        </span>
+        <span className="text-base font-semibold text-foreground">Export &amp; CRM</span>
 
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -40,5 +38,5 @@ export default function ExportPage() {
 
       <ExportContent hasConnection={hasConnection} />
     </div>
-  );
+  )
 }

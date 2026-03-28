@@ -16,10 +16,18 @@ export function createAnalyzeWebsite(ctx: ToolContext) {
 
       try {
         const scraped = await scrapeWebsite(params.url)
-        await logToolAction(ctx, 'website_scraped', `Website gescraped: ${scraped.title ?? params.url}`)
+        await logToolAction(
+          ctx,
+          'website_scraped',
+          `Website gescraped: ${scraped.title ?? params.url}`,
+        )
 
         const analysis = await runAnalysis(scraped)
-        await logToolAction(ctx, 'website_analyzed', `Website analysiert: ${analysis.companyName} (${analysis.industry})`)
+        await logToolAction(
+          ctx,
+          'website_analyzed',
+          `Website analysiert: ${analysis.companyName} (${analysis.industry})`,
+        )
 
         return {
           success: true as const,

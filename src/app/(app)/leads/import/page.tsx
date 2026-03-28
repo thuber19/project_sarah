@@ -1,17 +1,9 @@
-"use client";
+'use client'
 
-import { useRef, useState, useCallback } from "react";
-import {
-  ArrowLeft,
-  Search,
-  Bell,
-  Upload,
-  FileText,
-  CheckCircle2,
-  ArrowRight,
-} from "lucide-react";
-import Link from "next/link";
-import { Switch } from "@/components/ui/switch";
+import { useRef, useState, useCallback } from 'react'
+import { ArrowLeft, Search, Bell, Upload, FileText, CheckCircle2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+import { Switch } from '@/components/ui/switch'
 import {
   Table,
   TableBody,
@@ -19,75 +11,75 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 const PREVIEW_DATA = [
   {
-    company: "CloudMake GmbH",
-    industry: "SaaS",
-    location: "Wien, AT",
+    company: 'CloudMake GmbH',
+    industry: 'SaaS',
+    location: 'Wien, AT',
     employees: 45,
-    website: "cloudmake.at",
+    website: 'cloudmake.at',
   },
   {
-    company: "SalesPro AG",
-    industry: "FinTech",
-    location: "Berlin, DE",
+    company: 'SalesPro AG',
+    industry: 'FinTech',
+    location: 'Berlin, DE',
     employees: 120,
-    website: "salespro.de",
+    website: 'salespro.de',
   },
   {
-    company: "AlpenTech Solutions",
-    industry: "Cloud",
-    location: "Zürich, CH",
+    company: 'AlpenTech Solutions',
+    industry: 'Cloud',
+    location: 'Zürich, CH',
     employees: 85,
-    website: "alpentech.ch",
+    website: 'alpentech.ch',
   },
   {
-    company: "NordCloud Systems",
-    industry: "SaaS",
-    location: "Hamburg, DE",
+    company: 'NordCloud Systems',
+    industry: 'SaaS',
+    location: 'Hamburg, DE',
     employees: 200,
-    website: "nordcloud.de",
+    website: 'nordcloud.de',
   },
   {
-    company: "DevSecPay GmbH",
-    industry: "FinTech",
-    location: "München, DE",
+    company: 'DevSecPay GmbH',
+    industry: 'FinTech',
+    location: 'München, DE',
     employees: 65,
-    website: "devsecpay.de",
+    website: 'devsecpay.de',
   },
-];
+]
 
 const FIELD_MAPPINGS = [
-  { label: "Firmenname", field: "company_name" },
-  { label: "Branche", field: "industry" },
-  { label: "Standort", field: "location" },
-  { label: "Mitarbeiter", field: "employee_count" },
-  { label: "Website", field: "website" },
-];
+  { label: 'Firmenname', field: 'company_name' },
+  { label: 'Branche', field: 'industry' },
+  { label: 'Standort', field: 'location' },
+  { label: 'Mitarbeiter', field: 'employee_count' },
+  { label: 'Website', field: 'website' },
+]
 
 export default function LeadImportPage() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
+    e.preventDefault()
+    setIsDragOver(true)
+  }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
+    e.preventDefault()
+    setIsDragOver(false)
+  }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+    e.preventDefault()
+    setIsDragOver(false)
     // File handling would go here
-  }, []);
+  }, [])
 
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -101,9 +93,7 @@ export default function LeadImportPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <span className="text-base font-semibold text-foreground">
-            Leads importieren
-          </span>
+          <span className="text-base font-semibold text-foreground">Leads importieren</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -137,12 +127,10 @@ export default function LeadImportPage() {
         <div className="flex flex-1 flex-col gap-6">
           {/* Header */}
           <div>
-            <h1 className="text-lg font-semibold text-foreground">
-              CSV-Datei importieren
-            </h1>
+            <h1 className="text-lg font-semibold text-foreground">CSV-Datei importieren</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Importiere deine bestehenden Leads aus einer CSV-Datei. Sarah
-              bewertet sie automatisch.
+              Importiere deine bestehenden Leads aus einer CSV-Datei. Sarah bewertet sie
+              automatisch.
             </p>
           </div>
 
@@ -155,15 +143,13 @@ export default function LeadImportPage() {
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                fileInputRef.current?.click();
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                fileInputRef.current?.click()
               }
             }}
             className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-12 transition-colors ${
-              isDragOver
-                ? "border-accent bg-accent-light/60"
-                : "border-accent bg-accent-light/40"
+              isDragOver ? 'border-accent bg-accent-light/60' : 'border-accent bg-accent-light/40'
             }`}
             aria-label="CSV-Datei hochladen"
           >
@@ -179,9 +165,7 @@ export default function LeadImportPage() {
               <Upload className="h-6 w-6 text-accent" />
             </div>
 
-            <span className="text-sm font-semibold text-foreground">
-              CSV-Datei hierher ziehen
-            </span>
+            <span className="text-sm font-semibold text-foreground">CSV-Datei hierher ziehen</span>
 
             <span className="text-sm font-medium text-accent hover:underline">
               oder Datei auswählen
@@ -198,9 +182,7 @@ export default function LeadImportPage() {
               <FileText className="h-5 w-5 text-success" />
             </div>
             <div className="flex flex-1 flex-col">
-              <span className="text-sm font-medium text-foreground">
-                leads_export_2026.csv
-              </span>
+              <span className="text-sm font-medium text-foreground">leads_export_2026.csv</span>
               <span className="text-xs text-muted-foreground">
                 127 Zeilen &middot; 2.3 KB &middot; Hochgeladen vor 2 Min.
               </span>
@@ -214,9 +196,7 @@ export default function LeadImportPage() {
               <span className="text-sm font-semibold text-foreground">
                 Vorschau (erste 5 Zeilen)
               </span>
-              <Badge className="bg-accent-light text-accent">
-                127 Leads erkannt
-              </Badge>
+              <Badge className="bg-accent-light text-accent">127 Leads erkannt</Badge>
             </div>
 
             <div className="rounded-xl border border-border bg-white">
@@ -233,15 +213,11 @@ export default function LeadImportPage() {
                 <TableBody>
                   {PREVIEW_DATA.map((row) => (
                     <TableRow key={row.company}>
-                      <TableCell className="font-medium">
-                        {row.company}
-                      </TableCell>
+                      <TableCell className="font-medium">{row.company}</TableCell>
                       <TableCell>{row.industry}</TableCell>
                       <TableCell>{row.location}</TableCell>
                       <TableCell>{row.employees}</TableCell>
-                      <TableCell className="text-accent">
-                        {row.website}
-                      </TableCell>
+                      <TableCell className="text-accent">{row.website}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -254,19 +230,14 @@ export default function LeadImportPage() {
         <div className="flex w-[320px] shrink-0 flex-col gap-6">
           {/* Field mapping card */}
           <div className="rounded-xl border border-border bg-white p-6">
-            <h2 className="text-sm font-semibold text-foreground">
-              Feld-Mapping
-            </h2>
+            <h2 className="text-sm font-semibold text-foreground">Feld-Mapping</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Ordne deine CSV-Spalten den Sarah-Feldern zu.
             </p>
 
             <div className="mt-5 flex flex-col gap-3">
               {FIELD_MAPPINGS.map(({ label, field }) => (
-                <div
-                  key={field}
-                  className="flex items-center justify-between"
-                >
+                <div key={field} className="flex items-center justify-between">
                   <span className="text-sm text-foreground">{label}</span>
                   <div className="flex items-center gap-2">
                     <ArrowRight className="h-3 w-3 text-muted-foreground" />
@@ -281,9 +252,7 @@ export default function LeadImportPage() {
 
           {/* Import settings card */}
           <div className="rounded-xl border border-border bg-white p-6">
-            <h2 className="text-sm font-semibold text-foreground">
-              Import-Einstellungen
-            </h2>
+            <h2 className="text-sm font-semibold text-foreground">Import-Einstellungen</h2>
 
             <div className="mt-5 flex flex-col gap-4">
               <label className="flex items-center justify-between">
@@ -292,16 +261,12 @@ export default function LeadImportPage() {
               </label>
 
               <label className="flex items-center justify-between">
-                <span className="text-sm text-foreground">
-                  Duplikate überspringen
-                </span>
+                <span className="text-sm text-foreground">Duplikate überspringen</span>
                 <Switch defaultChecked />
               </label>
 
               <label className="flex items-center justify-between">
-                <span className="text-sm text-foreground">
-                  Branchen-Enrichment
-                </span>
+                <span className="text-sm text-foreground">Branchen-Enrichment</span>
                 <Switch defaultChecked />
               </label>
             </div>
@@ -320,5 +285,5 @@ export default function LeadImportPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

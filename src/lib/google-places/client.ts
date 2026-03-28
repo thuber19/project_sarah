@@ -71,7 +71,10 @@ function getApiKey(): string {
   return key
 }
 
-async function placesFetch<T>(endpoint: string, options: RequestInit & { fieldMask: string }): Promise<T> {
+async function placesFetch<T>(
+  endpoint: string,
+  options: RequestInit & { fieldMask: string },
+): Promise<T> {
   const { fieldMask, ...fetchOptions } = options
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -130,13 +133,10 @@ export async function textSearch(params: PlaceTextSearchParams): Promise<PlaceTe
 }
 
 export async function getPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const response = await placesFetch<GooglePlaceDetailRaw>(
-    `/places/${placeId}`,
-    {
-      method: 'GET',
-      fieldMask: DETAIL_FIELDS,
-    },
-  )
+  const response = await placesFetch<GooglePlaceDetailRaw>(`/places/${placeId}`, {
+    method: 'GET',
+    fieldMask: DETAIL_FIELDS,
+  })
 
   return {
     ...normalizePlace(response),
@@ -150,7 +150,7 @@ function normalizePlace(raw: GooglePlaceRaw): Place {
   const displayName = raw.displayName
   return {
     id: raw.id ?? '',
-    displayName: typeof displayName === 'object' ? displayName?.text ?? '' : displayName ?? '',
+    displayName: typeof displayName === 'object' ? (displayName?.text ?? '') : (displayName ?? ''),
     formattedAddress: raw.formattedAddress ?? '',
     websiteUri: raw.websiteUri ?? null,
     nationalPhoneNumber: raw.nationalPhoneNumber ?? null,

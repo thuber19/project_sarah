@@ -8,7 +8,9 @@ const MAX_URL_LENGTH = 2_048
 export async function POST(request: Request) {
   // Auth check — endpoint must not be publicly accessible
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -43,7 +45,10 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Unbekannter Fehler'
 
     if (message.includes('timeout') || message.includes('abort')) {
-      return NextResponse.json({ error: 'Website nicht erreichbar (Timeout nach 10s)' }, { status: 504 })
+      return NextResponse.json(
+        { error: 'Website nicht erreichbar (Timeout nach 10s)' },
+        { status: 504 },
+      )
     }
 
     return NextResponse.json({ error: 'Scraping fehlgeschlagen' }, { status: 502 })

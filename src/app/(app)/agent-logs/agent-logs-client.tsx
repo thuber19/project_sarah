@@ -1,92 +1,81 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import {
-  AlertCircle,
-  Compass,
-  Sparkles,
-  Target,
-} from "lucide-react";
+import { useState } from 'react'
+import { AlertCircle, Compass, Sparkles, Target } from 'lucide-react'
 
-type LogCategory = "Alle" | "Discovery" | "Scoring" | "Enrichment" | "Errors";
-type LogStatus = "Erfolg" | "Fehler" | "Info";
-type EventType = "Discovery" | "Scoring" | "Enrichment" | "Error";
+type LogCategory = 'Alle' | 'Discovery' | 'Scoring' | 'Enrichment' | 'Errors'
+type LogStatus = 'Erfolg' | 'Fehler' | 'Info'
+type EventType = 'Discovery' | 'Scoring' | 'Enrichment' | 'Error'
 
 export interface AgentLogEntry {
-  id: string;
-  time: string;
-  type: EventType;
-  message: string;
-  status: LogStatus;
+  id: string
+  time: string
+  type: EventType
+  message: string
+  status: LogStatus
 }
 
 export interface AgentLogsStats {
-  totalToday: number;
-  successRate: number;
-  lastActivity: string;
+  totalToday: number
+  successRate: number
+  lastActivity: string
 }
 
 interface AgentLogsClientProps {
-  logs: AgentLogEntry[];
-  stats: AgentLogsStats;
+  logs: AgentLogEntry[]
+  stats: AgentLogsStats
 }
 
-const filterTabs: LogCategory[] = [
-  "Alle",
-  "Discovery",
-  "Scoring",
-  "Enrichment",
-  "Errors",
-];
+const filterTabs: LogCategory[] = ['Alle', 'Discovery', 'Scoring', 'Enrichment', 'Errors']
 
 function getEventIcon(type: EventType) {
   switch (type) {
-    case "Discovery":
+    case 'Discovery':
       return (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50">
           <Compass className="h-4 w-4 text-accent" />
         </div>
-      );
-    case "Scoring":
+      )
+    case 'Scoring':
       return (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50">
           <Target className="h-4 w-4 text-success" />
         </div>
-      );
-    case "Enrichment":
+      )
+    case 'Enrichment':
       return (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-50">
           <Sparkles className="h-4 w-4 text-warning" />
         </div>
-      );
-    case "Error":
+      )
+    case 'Error':
       return (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50">
           <AlertCircle className="h-4 w-4 text-destructive" />
         </div>
-      );
+      )
   }
 }
 
 function getStatusBadge(status: LogStatus) {
   switch (status) {
-    case "Erfolg":
-      return <span className="shrink-0 text-xs font-medium text-success">Erfolg</span>;
-    case "Fehler":
-      return <span className="shrink-0 text-xs font-medium text-destructive">Fehler</span>;
-    case "Info":
-      return <span className="shrink-0 text-xs font-medium text-accent">Info</span>;
+    case 'Erfolg':
+      return <span className="shrink-0 text-xs font-medium text-success">Erfolg</span>
+    case 'Fehler':
+      return <span className="shrink-0 text-xs font-medium text-destructive">Fehler</span>
+    case 'Info':
+      return <span className="shrink-0 text-xs font-medium text-accent">Info</span>
   }
 }
 
 export function AgentLogsClient({ logs, stats }: AgentLogsClientProps) {
-  const [activeFilter, setActiveFilter] = useState<LogCategory>("Alle");
+  const [activeFilter, setActiveFilter] = useState<LogCategory>('Alle')
 
   const filteredLogs = logs.filter((log) => {
-    if (activeFilter === "Alle") return true;
-    if (activeFilter === "Errors") return log.type === "Error";
-    return log.type === activeFilter;
-  });
+    if (activeFilter === 'Alle') return true
+    if (activeFilter === 'Errors') return log.type === 'Error'
+    return log.type === activeFilter
+  })
 
   return (
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-8">
@@ -115,8 +104,8 @@ export function AgentLogsClient({ logs, stats }: AgentLogsClientProps) {
             onClick={() => setActiveFilter(tab)}
             className={`cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
               activeFilter === tab
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
             }`}
           >
             {tab}
@@ -131,7 +120,7 @@ export function AgentLogsClient({ logs, stats }: AgentLogsClientProps) {
             <div
               key={log.id}
               className={`flex items-start gap-4 px-6 py-4 ${
-                index < filteredLogs.length - 1 ? "border-b border-border" : ""
+                index < filteredLogs.length - 1 ? 'border-b border-border' : ''
               }`}
             >
               {/* Timestamp */}
@@ -160,5 +149,5 @@ export function AgentLogsClient({ logs, stats }: AgentLogsClientProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -25,8 +25,11 @@ export default function ExportError({ error, reset }: ErrorProps) {
             Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.
           </p>
         </div>
-        <button type="button" onClick={reset}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90">
+        <button
+          type="button"
+          onClick={reset}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+        >
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
         </button>

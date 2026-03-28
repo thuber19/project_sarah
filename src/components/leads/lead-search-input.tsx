@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { useRef, useEffect } from "react"
-import { Search } from "lucide-react"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useRef, useEffect } from 'react'
+import { Search } from 'lucide-react'
 
 export function LeadSearchInput() {
   const router = useRouter()

@@ -19,10 +19,16 @@ interface DiscoveryResult {
 }
 
 async function setCampaignStatus(supabase: SupabaseClient, campaignId: string, status: string) {
-  await supabase.from('campaigns').update({ status, updated_at: new Date().toISOString() }).eq('id', campaignId)
+  await supabase
+    .from('campaigns')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', campaignId)
 }
 
-function apolloPersonToLead(person: ApolloPerson, userId: string): Omit<Lead, 'id' | 'created_at' | 'updated_at'> {
+function apolloPersonToLead(
+  person: ApolloPerson,
+  userId: string,
+): Omit<Lead, 'id' | 'created_at' | 'updated_at'> {
   const org = person.organization
   return {
     user_id: userId,
@@ -35,7 +41,9 @@ function apolloPersonToLead(person: ApolloPerson, userId: string): Omit<Lead, 'i
     company_name: org?.name ?? null,
     company_domain: org?.website_url ?? null,
     company_industry: org?.industry ?? null,
-    company_size: org?.estimated_num_employees ? categorizeCompanySize(org.estimated_num_employees) : null,
+    company_size: org?.estimated_num_employees
+      ? categorizeCompanySize(org.estimated_num_employees)
+      : null,
     company_revenue: org?.annual_revenue_printed ?? null,
     company_country: org?.country ?? null,
     company_city: org?.city ?? null,
@@ -63,7 +71,13 @@ function categorizeCompanySize(employees: number): string {
 }
 
 function placesToLeads(
-  places: { displayName: string; websiteUri: string | null; nationalPhoneNumber: string | null; formattedAddress: string; id: string },
+  places: {
+    displayName: string
+    websiteUri: string | null
+    nationalPhoneNumber: string | null
+    formattedAddress: string
+    id: string
+  },
   userId: string,
 ): Omit<Lead, 'id' | 'created_at' | 'updated_at'> {
   return {
@@ -88,7 +102,9 @@ function placesToLeads(
 }
 
 async function enrichTopLeads(people: ApolloPerson[]): Promise<ApolloPerson[]> {
-  const toEnrich = people.slice(0, MAX_ENRICHMENTS).filter((p) => !p.email && (p.first_name || p.last_name))
+  const toEnrich = people
+    .slice(0, MAX_ENRICHMENTS)
+    .filter((p) => !p.email && (p.first_name || p.last_name))
   const enriched: ApolloPerson[] = []
 
   for (let i = 0; i < toEnrich.length; i += ENRICHMENT_CONCURRENCY) {
@@ -134,7 +150,12 @@ export async function runDiscoveryPipeline(
     // Step 2: Optimize search queries
     await logAgentEvent(supabase, userId, 'pipeline_started', 'Optimiere Suchparameter mit AI...')
     const optimizedQuery = await optimizeSearchQuery(businessProfile, icpProfile)
-    await logAgentEvent(supabase, userId, 'lead_discovered', `Suchstrategie: ${optimizedQuery.reasoning}`)
+    await logAgentEvent(
+      supabase,
+      userId,
+      'lead_discovered',
+      `Suchstrategie: ${optimizedQuery.reasoning}`,
+    )
 
     // Step 3: Apollo People Search
     await logAgentEvent(supabase, userId, 'lead_discovered', 'Suche Leads via Apollo.io...')
@@ -151,16 +172,32 @@ export async function runDiscoveryPipeline(
         per_page: 25,
       })
       apolloPeople = apolloResult.people
-      await logAgentEvent(supabase, userId, 'lead_discovered', `${apolloPeople.length} Leads via Apollo gefunden`, {
-        count: apolloPeople.length,
-      })
+      await logAgentEvent(
+        supabase,
+        userId,
+        'lead_discovered',
+        `${apolloPeople.length} Leads via Apollo gefunden`,
+        {
+          count: apolloPeople.length,
+        },
+      )
     } catch (error) {
       console.error('[Discovery] Apollo search failed:', error)
-      await logAgentEvent(supabase, userId, 'error', 'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort')
+      await logAgentEvent(
+        supabase,
+        userId,
+        'error',
+        'Apollo-Suche fehlgeschlagen, fahre mit Google Places fort',
+      )
     }
 
     // Step 4: Google Places Search
-    await logAgentEvent(supabase, userId, 'lead_discovered', 'Suche lokale Unternehmen via Google Places...')
+    await logAgentEvent(
+      supabase,
+      userId,
+      'lead_discovered',
+      'Suche lokale Unternehmen via Google Places...',
+    )
     const placesLeadData: Omit<Lead, 'id' | 'created_at' | 'updated_at'>[] = []
     for (const query of optimizedQuery.googlePlacesQueries) {
       try {
@@ -172,9 +209,15 @@ export async function runDiscoveryPipeline(
         console.error(`[Discovery] Google Places search failed for "${query.query}":`, error)
       }
     }
-    await logAgentEvent(supabase, userId, 'lead_discovered', `${placesLeadData.length} lokale Unternehmen via Google Places gefunden`, {
-      count: placesLeadData.length,
-    })
+    await logAgentEvent(
+      supabase,
+      userId,
+      'lead_discovered',
+      `${placesLeadData.length} lokale Unternehmen via Google Places gefunden`,
+      {
+        count: placesLeadData.length,
+      },
+    )
 
     // Step 5: Enrich top Apollo leads
     if (apolloPeople.length > 0) {
@@ -203,7 +246,12 @@ export async function runDiscoveryPipeline(
       throw new Error(`Failed to save leads: ${saveError?.message}`)
     }
 
-    await logAgentEvent(supabase, userId, 'lead_discovered', `${savedLeads.length} Leads gespeichert`)
+    await logAgentEvent(
+      supabase,
+      userId,
+      'lead_discovered',
+      `${savedLeads.length} Leads gespeichert`,
+    )
 
     // Step 7: Score all leads
     await logAgentEvent(supabase, userId, 'lead_scored', 'Bewerte und score Leads...')
@@ -234,7 +282,12 @@ export async function runDiscoveryPipeline(
   } catch (error) {
     console.error('[Discovery] Pipeline failed:', error)
     await setCampaignStatus(supabase, campaignId, 'failed')
-    await logAgentEvent(supabase, userId, 'error', `Pipeline fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
+    await logAgentEvent(
+      supabase,
+      userId,
+      'error',
+      `Pipeline fehlgeschlagen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`,
+    )
     throw error
   }
 }

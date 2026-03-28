@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { Mail, AtSign, RefreshCw, ArrowLeft, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AuthLeftPanel } from "@/components/auth/auth-left-panel";
+import Link from 'next/link'
+import { Mail, AtSign, RefreshCw, ArrowLeft, Shield } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { AuthLeftPanel } from '@/components/auth/auth-left-panel'
 
 export default function MagicLinkSentPage() {
   return (
@@ -23,16 +23,14 @@ export default function MagicLinkSentPage() {
 
           {/* Subtitle */}
           <p className="mt-2 text-sm text-muted-foreground text-center">
-            Wir haben dir einen Magic Link an deine E-Mail-Adresse gesendet.
-            Bitte klicke auf den Link, um dich anzumelden.
+            Wir haben dir einen Magic Link an deine E-Mail-Adresse gesendet. Bitte klicke auf den
+            Link, um dich anzumelden.
           </p>
 
           {/* Email display */}
           <div className="mt-6 flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3">
             <AtSign className="h-4 w-4 text-accent" />
-            <span className="text-sm text-foreground">
-              sarah@unternehmen.de
-            </span>
+            <span className="text-sm text-foreground">sarah@unternehmen.de</span>
           </div>
 
           {/* Resend button */}
@@ -58,5 +56,5 @@ export default function MagicLinkSentPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }

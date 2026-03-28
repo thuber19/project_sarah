@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { Checkbox } from "@/components/ui/checkbox"
+import Link from 'next/link'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableHeader,
@@ -7,12 +7,12 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table"
-import { ScoreBadge } from "@/components/leads/score-badge"
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
-import type { LeadListItem } from "@/types/lead"
+} from '@/components/ui/table'
+import { ScoreBadge } from '@/components/leads/score-badge'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import type { LeadListItem } from '@/types/lead'
 
-type DisplayGrade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT"
+type DisplayGrade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR_FIT'
 
 interface LeadTableProps {
   leads: LeadListItem[]
@@ -32,7 +32,15 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('de-AT')
 }
 
-function SortIcon({ field, currentSort, currentDir }: { field: string; currentSort: string; currentDir: string }) {
+function SortIcon({
+  field,
+  currentSort,
+  currentDir,
+}: {
+  field: string
+  currentSort: string
+  currentDir: string
+}) {
   if (currentSort !== field) {
     return (
       <>
@@ -41,27 +49,34 @@ function SortIcon({ field, currentSort, currentDir }: { field: string; currentSo
       </>
     )
   }
-  return currentDir === 'asc'
-    ? (
-      <>
-        <ArrowUp className="ml-1 inline h-3 w-3" />
-        <span className="sr-only">, aufsteigend sortiert</span>
-      </>
-    )
-    : (
-      <>
-        <ArrowDown className="ml-1 inline h-3 w-3" />
-        <span className="sr-only">, absteigend sortiert</span>
-      </>
-    )
+  return currentDir === 'asc' ? (
+    <>
+      <ArrowUp className="ml-1 inline h-3 w-3" />
+      <span className="sr-only">, aufsteigend sortiert</span>
+    </>
+  ) : (
+    <>
+      <ArrowDown className="ml-1 inline h-3 w-3" />
+      <span className="sr-only">, absteigend sortiert</span>
+    </>
+  )
 }
 
-function getAriaSortValue(field: string, currentSort: string, currentDir: string): "ascending" | "descending" | "none" {
-  if (currentSort !== field) return "none"
-  return currentDir === 'asc' ? "ascending" : "descending"
+function getAriaSortValue(
+  field: string,
+  currentSort: string,
+  currentDir: string,
+): 'ascending' | 'descending' | 'none' {
+  if (currentSort !== field) return 'none'
+  return currentDir === 'asc' ? 'ascending' : 'descending'
 }
 
-function sortHref(field: string, currentSort: string, currentDir: string, searchParams: string): string {
+function sortHref(
+  field: string,
+  currentSort: string,
+  currentDir: string,
+  searchParams: string,
+): string {
   const params = new URLSearchParams(searchParams)
   params.set('sort', field)
   params.set('dir', currentSort === field && currentDir === 'desc' ? 'asc' : 'desc')
@@ -86,8 +101,14 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
             <TableHead className="w-12">
               <Checkbox aria-label="Alle auswählen" />
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground" aria-sort={getAriaSortValue('company_name', sort, dir)}>
-              <Link href={sortHref('company_name', sort, dir, searchParams)} className="inline-flex items-center hover:text-foreground">
+            <TableHead
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              aria-sort={getAriaSortValue('company_name', sort, dir)}
+            >
+              <Link
+                href={sortHref('company_name', sort, dir, searchParams)}
+                className="inline-flex items-center hover:text-foreground"
+              >
                 Unternehmen
                 <SortIcon field="company_name" currentSort={sort} currentDir={dir} />
               </Link>
@@ -98,8 +119,14 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Standort
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground" aria-sort={getAriaSortValue('total_score', sort, dir)}>
-              <Link href={sortHref('total_score', sort, dir, searchParams)} className="inline-flex items-center hover:text-foreground">
+            <TableHead
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              aria-sort={getAriaSortValue('total_score', sort, dir)}
+            >
+              <Link
+                href={sortHref('total_score', sort, dir, searchParams)}
+                className="inline-flex items-center hover:text-foreground"
+              >
                 Score
                 <SortIcon field="total_score" currentSort={sort} currentDir={dir} />
               </Link>
@@ -107,8 +134,14 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Status
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground" aria-sort={getAriaSortValue('created_at', sort, dir)}>
-              <Link href={sortHref('created_at', sort, dir, searchParams)} className="inline-flex items-center hover:text-foreground">
+            <TableHead
+              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              aria-sort={getAriaSortValue('created_at', sort, dir)}
+            >
+              <Link
+                href={sortHref('created_at', sort, dir, searchParams)}
+                className="inline-flex items-center hover:text-foreground"
+              >
                 Aktualisiert
                 <SortIcon field="created_at" currentSort={sort} currentDir={dir} />
               </Link>
@@ -131,7 +164,8 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
                     href={`/leads/${lead.id}`}
                     className="font-medium text-foreground hover:text-accent hover:underline"
                   >
-                    {lead.company_name ?? (`${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || '—')}
+                    {lead.company_name ??
+                      (`${lead.first_name ?? ''} ${lead.last_name ?? ''}`.trim() || '—')}
                   </Link>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
@@ -148,7 +182,11 @@ export function LeadTable({ leads, sort, dir, searchParams }: LeadTableProps) {
                   )}
                 </TableCell>
                 <TableCell>
-                  {displayGrade ? <ScoreBadge grade={displayGrade} /> : <span className="text-sm text-muted-foreground">—</span>}
+                  {displayGrade ? (
+                    <ScoreBadge grade={displayGrade} />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDate(lead.updated_at)}

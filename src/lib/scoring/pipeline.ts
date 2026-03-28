@@ -92,7 +92,12 @@ export async function runScoringPipeline(
   icp: ICP,
   userId: string,
 ): Promise<ScoringPipelineResult> {
-  await logAgentEvent(supabase, userId, 'pipeline_started', `Scoring Pipeline gestartet für ${leads.length} Leads`)
+  await logAgentEvent(
+    supabase,
+    userId,
+    'pipeline_started',
+    `Scoring Pipeline gestartet für ${leads.length} Leads`,
+  )
 
   const rawResults = await processInBatches(leads, CONCURRENCY_LIMIT, (lead) =>
     scoreOneLead(supabase, lead, icp, userId),

@@ -55,7 +55,9 @@ export default function OnboardingStep3() {
   const [storedIcp] = useState(getStoredIcp)
   const [industries, setIndustries] = useState<string[]>(storedIcp?.industries ?? [])
   const [companySize, setCompanySize] = useState('10-100')
-  const [regions, setRegions] = useState<Record<string, boolean>>(() => deriveRegions(storedIcp?.regions ?? []))
+  const [regions, setRegions] = useState<Record<string, boolean>>(() =>
+    deriveRegions(storedIcp?.regions ?? []),
+  )
   const [techStack, setTechStack] = useState<string[]>([])
   const [scoreThreshold, setScoreThreshold] = useState(60)
 
@@ -66,7 +68,8 @@ export default function OnboardingStep3() {
 
     const icpData: IcpData = {
       job_titles: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').job_titles ?? [],
-      seniority_levels: JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').seniority_levels ?? [],
+      seniority_levels:
+        JSON.parse(sessionStorage.getItem('onboarding_icp') ?? '{}').seniority_levels ?? [],
       industries,
       company_sizes: [companySize],
       regions: selectedRegions,
@@ -80,7 +83,9 @@ export default function OnboardingStep3() {
   return (
     <div className="flex w-full max-w-[700px] flex-col gap-7 rounded-xl border border-border bg-white p-9">
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold text-foreground">Definiere dein ideales Kundenprofil</h1>
+        <h1 className="text-xl font-semibold text-foreground">
+          Definiere dein ideales Kundenprofil
+        </h1>
         <p className="text-sm text-muted-foreground">
           Basierend auf der Analyse empfehlen wir folgende Kriterien. Passe sie an.
         </p>
@@ -92,7 +97,10 @@ export default function OnboardingStep3() {
           <label className="text-sm font-medium text-foreground">Zielbranchen</label>
           <div className="flex flex-wrap items-center gap-2">
             {industries.map((industry) => (
-              <TagPill key={industry} onRemove={() => setIndustries((prev) => prev.filter((i) => i !== industry))}>
+              <TagPill
+                key={industry}
+                onRemove={() => setIndustries((prev) => prev.filter((i) => i !== industry))}
+              >
                 {industry}
               </TagPill>
             ))}
@@ -140,7 +148,10 @@ export default function OnboardingStep3() {
           <label className="text-sm font-medium text-foreground">Technologie-Stack</label>
           <div className="flex flex-wrap items-center gap-2">
             {techStack.map((tech) => (
-              <TagPill key={tech} onRemove={() => setTechStack((prev) => prev.filter((t) => t !== tech))}>
+              <TagPill
+                key={tech}
+                onRemove={() => setTechStack((prev) => prev.filter((t) => t !== tech))}
+              >
                 {tech}
               </TagPill>
             ))}

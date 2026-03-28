@@ -1,20 +1,20 @@
-import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from 'next/link'
+import type { LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface EmptyStateAction {
-  label: string;
-  href: string;
-  icon?: LucideIcon;
+  label: string
+  href: string
+  icon?: LucideIcon
 }
 
 interface EmptyStateProps {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  primaryAction: EmptyStateAction;
-  secondaryAction?: EmptyStateAction;
-  className?: string;
+  icon: LucideIcon
+  title: string
+  description: string
+  primaryAction: EmptyStateAction
+  secondaryAction?: EmptyStateAction
+  className?: string
 }
 
 export function EmptyState({
@@ -25,13 +25,13 @@ export function EmptyState({
   secondaryAction,
   className,
 }: EmptyStateProps) {
-  const PrimaryIcon = primaryAction.icon;
-  const SecondaryIcon = secondaryAction?.icon;
+  const PrimaryIcon = primaryAction.icon
+  const SecondaryIcon = secondaryAction?.icon
 
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-12",
+        'flex flex-col items-center gap-6 rounded-xl border border-border bg-white p-12',
         className,
       )}
     >
@@ -54,9 +54,7 @@ export function EmptyState({
           href={primaryAction.href}
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90"
         >
-          {PrimaryIcon && (
-            <PrimaryIcon className="size-4" aria-hidden="true" />
-          )}
+          {PrimaryIcon && <PrimaryIcon className="size-4" aria-hidden="true" />}
           {primaryAction.label}
         </Link>
         {secondaryAction && (
@@ -64,13 +62,11 @@ export function EmptyState({
             href={secondaryAction.href}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
-            {SecondaryIcon && (
-              <SecondaryIcon className="size-4" aria-hidden="true" />
-            )}
+            {SecondaryIcon && <SecondaryIcon className="size-4" aria-hidden="true" />}
             {secondaryAction.label}
           </Link>
         )}
       </div>
     </div>
-  );
+  )
 }

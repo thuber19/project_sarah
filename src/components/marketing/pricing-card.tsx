@@ -1,18 +1,18 @@
-import Link from "next/link";
-import { Check } from "lucide-react";
+import Link from 'next/link'
+import { Check } from 'lucide-react'
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils'
 
 interface PricingCardProps {
-  name: string;
-  price: string;
-  priceSuffix?: string;
-  description: string;
-  features: readonly string[];
-  ctaLabel: string;
-  ctaHref: string;
-  highlighted?: boolean;
-  badge?: string;
+  name: string
+  price: string
+  priceSuffix?: string
+  description: string
+  features: readonly string[]
+  ctaLabel: string
+  ctaHref: string
+  highlighted?: boolean
+  badge?: string
 }
 
 export function PricingCard({
@@ -29,10 +29,8 @@ export function PricingCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col rounded-xl bg-white p-8",
-        highlighted
-          ? "border-2 border-accent"
-          : "border border-border"
+        'relative flex flex-col rounded-xl bg-white p-8',
+        highlighted ? 'border-2 border-accent' : 'border border-border',
       )}
     >
       {badge && (
@@ -44,14 +42,8 @@ export function PricingCard({
       <h3 className="text-lg font-bold italic text-foreground">{name}</h3>
 
       <div className="mt-2">
-        <span className="text-3xl font-extrabold text-foreground">
-          {price}
-        </span>
-        {priceSuffix && (
-          <span className="text-base text-muted-foreground">
-            {priceSuffix}
-          </span>
-        )}
+        <span className="text-3xl font-extrabold text-foreground">{price}</span>
+        {priceSuffix && <span className="text-base text-muted-foreground">{priceSuffix}</span>}
       </div>
 
       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
@@ -70,14 +62,14 @@ export function PricingCard({
       <Link
         href={ctaHref}
         className={cn(
-          "mt-8 inline-flex h-9 w-full items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors",
+          'mt-8 inline-flex h-9 w-full items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors',
           highlighted
-            ? "bg-accent text-white hover:bg-accent/90"
-            : "border border-border bg-white text-foreground hover:bg-secondary"
+            ? 'bg-accent text-white hover:bg-accent/90'
+            : 'border border-border bg-white text-foreground hover:bg-secondary',
         )}
       >
         {ctaLabel}
       </Link>
     </div>
-  );
+  )
 }

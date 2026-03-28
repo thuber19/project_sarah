@@ -8,7 +8,9 @@ import type { BusinessProfile, IcpProfile } from '@/types/database'
 
 const aiScoringSchema = z.object({
   reasoning: z.string().describe('Ausführliche Begründung des Scores auf Deutsch (2-3 Sätze)'),
-  recommendation: z.enum(['sofort_kontaktieren', 'nurture', 'beobachten', 'skip']).describe('Empfohlene Aktion'),
+  recommendation: z
+    .enum(['sofort_kontaktieren', 'nurture', 'beobachten', 'skip'])
+    .describe('Empfohlene Aktion'),
   recommendation_text: z.string().describe('Kurze Handlungsempfehlung auf Deutsch (1 Satz)'),
 })
 

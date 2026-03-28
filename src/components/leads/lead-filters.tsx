@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { useRouter, useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const GRADES = ['ALL', 'HOT', 'QUALIFIED', 'ENGAGED', 'POTENTIAL', 'POOR_FIT'] as const
 
@@ -39,10 +39,10 @@ export function LeadFilters() {
           onClick={() => handleFilter(grade)}
           aria-pressed={active === grade}
           className={cn(
-            "cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+            'cursor-pointer rounded-lg px-4 py-1.5 text-sm font-medium transition-colors',
             active === grade
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
           )}
         >
           {GRADE_LABELS[grade]}

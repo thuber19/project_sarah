@@ -1,8 +1,8 @@
-import { Search } from "lucide-react";
-import { NotificationBell } from "@/components/layout/notification-dropdown";
+import { Search } from 'lucide-react'
+import { NotificationBell } from '@/components/layout/notification-dropdown'
 
 interface AppTopbarProps {
-  title: string;
+  title: string
 }
 
 export function AppTopbar({ title }: AppTopbarProps) {
@@ -35,5 +35,5 @@ export function AppTopbar({ title }: AppTopbarProps) {
         </div>
       </div>
     </header>
-  );
+  )
 }

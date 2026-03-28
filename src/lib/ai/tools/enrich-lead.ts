@@ -19,7 +19,11 @@ export function createEnrichLead(ctx: ToolContext) {
       region: z.enum(['at', 'de', 'ch']).optional().describe('Ländercode für Google Places'),
     }),
     execute: async (params) => {
-      await logToolAction(ctx, 'website_scraped', `Enrichment gestartet für ${params.companyName ?? params.email ?? 'Lead'}`)
+      await logToolAction(
+        ctx,
+        'website_scraped',
+        `Enrichment gestartet für ${params.companyName ?? params.email ?? 'Lead'}`,
+      )
 
       const results: {
         apollo: Record<string, unknown> | null
@@ -67,8 +71,15 @@ export function createEnrichLead(ctx: ToolContext) {
           }
         }
 
-        const sources = [results.apollo && 'Apollo', results.googlePlaces && 'Google Places'].filter(Boolean)
-        await logToolAction(ctx, 'website_analyzed', `Enrichment abgeschlossen via ${sources.join(' + ') || 'keine Daten'}`)
+        const sources = [
+          results.apollo && 'Apollo',
+          results.googlePlaces && 'Google Places',
+        ].filter(Boolean)
+        await logToolAction(
+          ctx,
+          'website_analyzed',
+          `Enrichment abgeschlossen via ${sources.join(' + ') || 'keine Daten'}`,
+        )
 
         return { success: true as const, ...results }
       } catch (error) {

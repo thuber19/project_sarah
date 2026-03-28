@@ -16,13 +16,17 @@ export function createGetLeadDetails(ctx: ToolContext) {
         const [leadResult, scoreResult] = await Promise.all([
           supabase
             .from('leads')
-            .select('id, first_name, last_name, email, title, seniority, company_name, company_industry, company_size, company_country, company_city, linkedin_url, source, created_at')
+            .select(
+              'id, first_name, last_name, email, title, seniority, company_name, company_industry, company_size, company_country, company_city, linkedin_url, source, created_at',
+            )
             .eq('id', params.leadId)
             .eq('user_id', userId)
             .single(),
           supabase
             .from('lead_scores')
-            .select('total_score, grade, company_fit, contact_fit, buying_signals, timing, ai_reasoning, ai_recommendation')
+            .select(
+              'total_score, grade, company_fit, contact_fit, buying_signals, timing, ai_reasoning, ai_recommendation',
+            )
             .eq('lead_id', params.leadId)
             .eq('user_id', userId)
             .single(),

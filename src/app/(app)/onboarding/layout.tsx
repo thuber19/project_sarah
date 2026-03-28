@@ -1,26 +1,26 @@
-"use client";
+'use client'
 
-import { usePathname } from "next/navigation";
-import { Bot } from "lucide-react";
+import { usePathname } from 'next/navigation'
+import { Bot } from 'lucide-react'
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 4
 
 function parseStep(pathname: string): number {
-  const match = pathname.match(/\/onboarding\/step-(\d+)/);
+  const match = pathname.match(/\/onboarding\/step-(\d+)/)
   if (match) {
-    const step = parseInt(match[1], 10);
-    return step >= 1 && step <= TOTAL_STEPS ? step : 1;
+    const step = parseInt(match[1], 10)
+    return step >= 1 && step <= TOTAL_STEPS ? step : 1
   }
-  return 1;
+  return 1
 }
 
 export default function OnboardingLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  const pathname = usePathname();
-  const currentStep = parseStep(pathname);
+  const pathname = usePathname()
+  const currentStep = parseStep(pathname)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-between bg-muted pb-8 pt-10">
@@ -38,17 +38,17 @@ export default function OnboardingLayout({
 
           <div className="flex items-center gap-1.5">
             {Array.from({ length: TOTAL_STEPS }, (_, i) => {
-              const step = i + 1;
-              const isActiveOrCompleted = step <= currentStep;
+              const step = i + 1
+              const isActiveOrCompleted = step <= currentStep
 
               return (
                 <div
                   key={step}
                   className={`h-2 w-2 rounded-full ${
-                    isActiveOrCompleted ? "bg-accent" : "bg-border"
+                    isActiveOrCompleted ? 'bg-accent' : 'bg-border'
                   }`}
                 />
-              );
+              )
             })}
           </div>
         </div>
@@ -67,5 +67,5 @@ export default function OnboardingLayout({
         DSGVO-konform &middot; Deine Daten sind sicher
       </p>
     </div>
-  );
+  )
 }

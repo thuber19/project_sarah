@@ -1,6 +1,6 @@
-import { Download, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScoreBadge } from "@/components/leads/score-badge";
+import { Download, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { ScoreBadge } from '@/components/leads/score-badge'
 import {
   Table,
   TableBody,
@@ -8,46 +8,93 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
 
-type ExportStatus = "Exportiert" | "Ausstehend" | "Fehler";
-type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR";
+type ExportStatus = 'Exportiert' | 'Ausstehend' | 'Fehler'
+type Grade = 'HOT' | 'QUALIFIED' | 'ENGAGED' | 'POTENTIAL' | 'POOR'
 
 interface ExportEntry {
-  company: string;
-  score: number;
-  grade: Grade;
-  status: ExportStatus;
-  date: string;
-  hubspotId: string;
+  company: string
+  score: number
+  grade: Grade
+  status: ExportStatus
+  date: string
+  hubspotId: string
 }
 
 const mockExports: ExportEntry[] = [
-  { company: "TechVentures GmbH", score: 92, grade: "HOT", status: "Exportiert", date: "27. Mär. 2026, 14:32", hubspotId: "HS-4892" },
-  { company: "DataFlow AG", score: 85, grade: "QUALIFIED", status: "Exportiert", date: "27. Mär. 2026, 14:15", hubspotId: "HS-4891" },
-  { company: "CloudMesh GmbH", score: 79, grade: "QUALIFIED", status: "Ausstehend", date: "27. Mär. 2026, 13:58", hubspotId: "—" },
-  { company: "AlpenTech Solutions", score: 73, grade: "ENGAGED", status: "Exportiert", date: "27. Mär. 2026, 13:44", hubspotId: "HS-4890" },
-  { company: "SecureApp GmbH", score: 68, grade: "ENGAGED", status: "Fehler", date: "27. Mär. 2026, 13:30", hubspotId: "—" },
-];
+  {
+    company: 'TechVentures GmbH',
+    score: 92,
+    grade: 'HOT',
+    status: 'Exportiert',
+    date: '27. Mär. 2026, 14:32',
+    hubspotId: 'HS-4892',
+  },
+  {
+    company: 'DataFlow AG',
+    score: 85,
+    grade: 'QUALIFIED',
+    status: 'Exportiert',
+    date: '27. Mär. 2026, 14:15',
+    hubspotId: 'HS-4891',
+  },
+  {
+    company: 'CloudMesh GmbH',
+    score: 79,
+    grade: 'QUALIFIED',
+    status: 'Ausstehend',
+    date: '27. Mär. 2026, 13:58',
+    hubspotId: '—',
+  },
+  {
+    company: 'AlpenTech Solutions',
+    score: 73,
+    grade: 'ENGAGED',
+    status: 'Exportiert',
+    date: '27. Mär. 2026, 13:44',
+    hubspotId: 'HS-4890',
+  },
+  {
+    company: 'SecureApp GmbH',
+    score: 68,
+    grade: 'ENGAGED',
+    status: 'Fehler',
+    date: '27. Mär. 2026, 13:30',
+    hubspotId: '—',
+  },
+]
 
 const fieldMappings = [
-  { sarah: "Firmenname", hubspot: "company" },
-  { sarah: "Firmenwebsite", hubspot: "website" },
-  { sarah: "Score", hubspot: "sarah_score" },
-  { sarah: "Status", hubspot: "lifecyclestage" },
-  { sarah: "Branche", hubspot: "industry" },
-  { sarah: "E-Mail", hubspot: "email" },
-];
+  { sarah: 'Firmenname', hubspot: 'company' },
+  { sarah: 'Firmenwebsite', hubspot: 'website' },
+  { sarah: 'Score', hubspot: 'sarah_score' },
+  { sarah: 'Status', hubspot: 'lifecyclestage' },
+  { sarah: 'Branche', hubspot: 'industry' },
+  { sarah: 'E-Mail', hubspot: 'email' },
+]
 
 function getStatusBadge(status: ExportStatus) {
   switch (status) {
-    case "Exportiert":
-      return <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-success">Exportiert</span>;
-    case "Ausstehend":
-      return <span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-warning">Ausstehend</span>;
-    case "Fehler":
-      return <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-destructive">Fehler</span>;
+    case 'Exportiert':
+      return (
+        <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-success">
+          Exportiert
+        </span>
+      )
+    case 'Ausstehend':
+      return (
+        <span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-xs font-medium text-warning">
+          Ausstehend
+        </span>
+      )
+    case 'Fehler':
+      return (
+        <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-destructive">
+          Fehler
+        </span>
+      )
   }
 }
 
@@ -115,33 +162,69 @@ export function ExportConnected() {
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <h2 className="text-base font-semibold text-foreground">Export-Warteschlange</h2>
             <div className="flex gap-2">
-              <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">Alle</button>
-              <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">Ausstehend</button>
-              <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary">Exportiert</button>
+              <button
+                type="button"
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
+              >
+                Alle
+              </button>
+              <button
+                type="button"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary"
+              >
+                Ausstehend
+              </button>
+              <button
+                type="button"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary"
+              >
+                Exportiert
+              </button>
             </div>
           </div>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">Unternehmen</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">Score</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">Status</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">Exportdatum</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">HubSpot-ID</TableHead>
-                <TableHead className="text-xs font-medium uppercase text-muted-foreground">Aktion</TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  Unternehmen
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  Score
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  Status
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  Exportdatum
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  HubSpot-ID
+                </TableHead>
+                <TableHead className="text-xs font-medium uppercase text-muted-foreground">
+                  Aktion
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {mockExports.map((entry) => (
                 <TableRow key={entry.company}>
-                  <TableCell className="text-sm font-medium text-foreground">{entry.company}</TableCell>
-                  <TableCell><ScoreBadge grade={entry.grade} /></TableCell>
+                  <TableCell className="text-sm font-medium text-foreground">
+                    {entry.company}
+                  </TableCell>
+                  <TableCell>
+                    <ScoreBadge grade={entry.grade} />
+                  </TableCell>
                   <TableCell>{getStatusBadge(entry.status)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{entry.date}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{entry.hubspotId}</TableCell>
                   <TableCell>
-                    {entry.status === "Fehler" && (
-                      <button type="button" className="text-xs font-medium text-accent hover:underline">Erneut</button>
+                    {entry.status === 'Fehler' && (
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-accent hover:underline"
+                      >
+                        Erneut
+                      </button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -201,5 +284,5 @@ export function ExportConnected() {
         </div>
       </div>
     </div>
-  );
+  )
 }

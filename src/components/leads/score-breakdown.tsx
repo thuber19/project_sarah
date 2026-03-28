@@ -28,7 +28,10 @@ export function ScoreBreakdown(props: ScoreBreakdownProps) {
               </span>
             </div>
             <div className="h-2.5 rounded-full bg-secondary">
-              <div className={`h-2.5 rounded-full ${cat.color}`} style={{ width: `${widthPercent}%` }} />
+              <div
+                className={`h-2.5 rounded-full ${cat.color}`}
+                style={{ width: `${widthPercent}%` }}
+              />
             </div>
           </div>
         )

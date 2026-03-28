@@ -10,7 +10,9 @@ export function createSearchLeads(ctx: ToolContext) {
     inputSchema: z.object({
       personTitles: z.array(z.string()).optional().describe('Jobtitel auf Englisch und Deutsch'),
       personSeniorities: z
-        .array(z.enum(['owner', 'founder', 'c_suite', 'vp', 'director', 'manager', 'senior', 'entry']))
+        .array(
+          z.enum(['owner', 'founder', 'c_suite', 'vp', 'director', 'manager', 'senior', 'entry']),
+        )
         .optional()
         .describe('Apollo Seniority-Level'),
       organizationSizes: z
@@ -18,7 +20,10 @@ export function createSearchLeads(ctx: ToolContext) {
         .optional()
         .describe('Firmengröße'),
       industries: z.array(z.string()).optional().describe('Apollo industry tags (auf Englisch)'),
-      locations: z.array(z.string()).optional().describe('Länder und Städte (z.B. Austria, Germany, Switzerland, Wien)'),
+      locations: z
+        .array(z.string())
+        .optional()
+        .describe('Länder und Städte (z.B. Austria, Germany, Switzerland, Wien)'),
       keywords: z.array(z.string()).optional().describe('Keywords für Zielunternehmen'),
       technologies: z.array(z.string()).optional().describe('Technologien der Zielunternehmen'),
       perPage: z.number().min(1).max(100).optional().describe('Ergebnisse pro Seite (max 100)'),
@@ -55,10 +60,15 @@ export function createSearchLeads(ctx: ToolContext) {
           linkedinUrl: p.linkedin_url,
         }))
 
-        await logToolAction(ctx, 'leads_discovered', `${people.length} Leads gefunden via Apollo.io`, {
-          totalResults: result.pagination?.total_entries ?? 0,
-          returned: people.length,
-        })
+        await logToolAction(
+          ctx,
+          'leads_discovered',
+          `${people.length} Leads gefunden via Apollo.io`,
+          {
+            totalResults: result.pagination?.total_entries ?? 0,
+            returned: people.length,
+          },
+        )
 
         return {
           success: true as const,
