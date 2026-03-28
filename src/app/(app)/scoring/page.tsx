@@ -1,4 +1,4 @@
-import { Building2, Code, Globe, Play, Settings2, Star, TrendingUp } from 'lucide-react'
+import { Building2, Code, Globe, Play, Star, TrendingUp } from 'lucide-react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ScoreBadge } from '@/components/leads/score-badge'
 import { ScoringRulesToggle } from './scoring-rules-toggle'
@@ -104,6 +104,7 @@ export default async function ScoringPage() {
   }
   const total = scores?.length ?? 0
   const hasScores = total > 0
+  const hasLeads = leadIds.length > 0
 
   const distributionData: DistributionItem[] = gradeConfig.map(
     ({ grade, displayGrade, range, barColor }) => ({
@@ -120,21 +121,16 @@ export default async function ScoringPage() {
     <div className="flex h-full flex-1 flex-col">
       <AppTopbar title="Scoring-Übersicht" />
 
-      {!hasScores ? (
+      {!hasLeads ? (
         <div className="flex flex-1 items-center justify-center p-8">
           <EmptyState
             icon={Star}
-            title="Noch keine Scores"
-            description="Starte eine Discovery, um Leads automatisch zu bewerten und zu priorisieren."
+            title="Noch keine Leads"
+            description="Starte eine Discovery, um Leads zu finden und automatisch zu bewerten."
             primaryAction={{
               label: 'Discovery starten',
               href: '/discovery',
               icon: Play,
-            }}
-            secondaryAction={{
-              label: 'Scoring konfigurieren',
-              href: '/scoring',
-              icon: Settings2,
             }}
           />
         </div>
@@ -148,6 +144,21 @@ export default async function ScoringPage() {
               Konfiguriere die Bewertungskriterien für deine Leads
             </p>
           </div>
+
+          {/* Unscored leads banner */}
+          {!hasScores && (
+            <div className="flex items-center justify-between rounded-xl border border-accent/30 bg-accent-light p-6">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">
+                  {leadIds.length} Leads noch nicht bewertet
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Starte die Bewertung, um deine Leads automatisch zu scoren und zu priorisieren.
+                </p>
+              </div>
+              <ScoringRescoreSection leadIds={leadIds} />
+            </div>
+          )}
 
           {/* Score Distribution card */}
           <div className="rounded-xl border border-border bg-white p-6">
