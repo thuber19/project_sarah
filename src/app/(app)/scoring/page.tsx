@@ -1,6 +1,9 @@
-import { Bell, Building2, Code, Globe, Search, TrendingUp } from "lucide-react";
+import { Building2, Clock, TrendingUp, User } from "lucide-react";
 import { ScoreBadge } from "@/components/leads/score-badge";
+import { AppTopbar } from "@/components/layout/app-topbar";
 import { ScoringRulesToggle } from "./scoring-rules-toggle";
+import { ScoringRunStatus } from "./scoring-run-status";
+import { getLatestRun } from "@/app/actions/scoring.actions";
 
 type Grade = "HOT" | "QUALIFIED" | "ENGAGED" | "POTENTIAL" | "POOR_FIT";
 
@@ -15,35 +18,35 @@ interface DistributionItem {
 const distributionData: DistributionItem[] = [
   {
     grade: "HOT",
-    range: "90-100",
+    range: "85-100",
     count: 15,
     percent: 12,
     barColor: "bg-score-hot",
   },
   {
     grade: "QUALIFIED",
-    range: "75-89",
+    range: "70-84",
     count: 31,
     percent: 24,
     barColor: "bg-score-qualified",
   },
   {
     grade: "ENGAGED",
-    range: "60-74",
+    range: "55-69",
     count: 28,
     percent: 22,
     barColor: "bg-score-engaged",
   },
   {
     grade: "POTENTIAL",
-    range: "40-59",
+    range: "35-54",
     count: 38,
     percent: 30,
     barColor: "bg-score-potential",
   },
   {
     grade: "POOR_FIT",
-    range: "0-39",
+    range: "0-34",
     count: 18,
     percent: 14,
     barColor: "bg-score-poor-fit",
@@ -54,93 +57,68 @@ interface ScoringRule {
   name: string;
   description: string;
   weight: string;
-  icon: "building" | "code" | "trending" | "globe";
+  maxPoints: number;
+  icon: "building" | "user" | "trending" | "clock";
 }
 
 const scoringRules: ScoringRule[] = [
   {
     name: "Company Fit",
     description:
-      "Unternehmensgröße, Branche und Standort passen zum Ideal Customer Profile",
+      "Branche, Unternehmensgröße, DACH-Standort, Firmentyp (GmbH/AG) und Web-Präsenz",
     weight: "40%",
+    maxPoints: 40,
     icon: "building",
   },
   {
-    name: "Technology Match",
+    name: "Contact Fit",
     description:
-      "Technologie-Stack des Unternehmens passt zu unserer Lösung",
-    weight: "25%",
-    icon: "code",
+      "Seniority-Level, Titel-Match zum ICP, deutsche Titel (Geschäftsführer, Vorstand, etc.)",
+    weight: "20%",
+    maxPoints: 20,
+    icon: "user",
   },
   {
-    name: "Growth Signals",
+    name: "Buying Signals",
     description:
-      "Wachstumsindikatoren wie Funding, Stellenausschreibungen und Expansion",
+      "Funding-Runden, Stellenausschreibungen, Technologie-Stack und Social-Media-Präsenz",
     weight: "25%",
+    maxPoints: 25,
     icon: "trending",
   },
   {
-    name: "Market Relevance",
-    description: "Relevanz im DACH-Markt und regionale Marktpräsenz",
-    weight: "10%",
-    icon: "globe",
+    name: "Timing",
+    description:
+      "Aktualität der Kontakt- und Unternehmensdaten als Indikator für Engagement",
+    weight: "15%",
+    maxPoints: 15,
+    icon: "clock",
   },
 ];
 
 const iconMap = {
   building: Building2,
-  code: Code,
+  user: User,
   trending: TrendingUp,
-  globe: Globe,
+  clock: Clock,
 } as const;
 
-export default function ScoringPage() {
+export default async function ScoringPage() {
+  const latestRun = await getLatestRun()
+  const activeRun = latestRun?.status === 'running' ? latestRun : null
+
   return (
     <div className="flex h-full flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex h-16 items-center justify-between border-b border-border bg-white px-8">
-        <span className="text-base font-semibold text-foreground">
-          Scoring-Übersicht
-        </span>
-
-        <div className="flex items-center gap-4">
-          {/* Search input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Suchen..."
-              className="w-64 rounded-lg border border-border bg-white py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="Suchen"
-            />
-          </div>
-
-          {/* Bell icon */}
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Benachrichtigungen"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-
-          {/* Avatar */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-semibold text-white">
-            BG
-          </div>
-        </div>
-      </div>
+      <AppTopbar title="Scoring-Übersicht" />
 
       {/* Content area */}
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-8">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">
-            Scoring-Übersicht
-          </h1>
+        <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             Konfiguriere die Bewertungskriterien für deine Leads
           </p>
+          <ScoringRunStatus initialRun={activeRun} />
         </div>
 
         {/* Score Distribution card */}
@@ -173,6 +151,11 @@ export default function ScoringPage() {
                   <div
                     className={`h-full rounded-full ${item.barColor}`}
                     style={{ width: `${item.percent}%` }}
+                    role="progressbar"
+                    aria-valuenow={item.percent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`${item.grade}: ${item.percent}% (${item.count} Leads)`}
                   />
                 </div>
 
