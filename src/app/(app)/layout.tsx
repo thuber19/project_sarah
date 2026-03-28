@@ -1,4 +1,5 @@
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { AgentChat } from '@/components/chat/agent-chat'
 import { requireAuth } from '@/lib/supabase/server'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
       </div>
+      <AgentChat />
     </div>
   )
 }
