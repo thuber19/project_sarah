@@ -137,7 +137,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
           <button
             type="button"
             onClick={() => setShowHistory(!showHistory)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Gesprächsverlauf"
           >
             <History className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex min-h-12 min-w-12 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Chat schließen"
           >
             <X className="h-4 w-4" />
@@ -271,7 +271,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
           <button
             type="button"
             onClick={stop}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+            className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
             aria-label="Abbrechen"
           >
             <X className="h-4 w-4" />
@@ -279,7 +279,7 @@ export function AgentChat({ conversationId: initialConversationId }: AgentChatPr
         ) : (
           <button
             type="submit"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent/90"
+            className="flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent/90"
             aria-label="Senden"
           >
             <Send className="h-4 w-4" />

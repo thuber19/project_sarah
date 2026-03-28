@@ -43,7 +43,7 @@ export function LeadPagination({ currentPage, totalCount, pageSize }: Pagination
           type="button"
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Vorherige Seite"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -54,7 +54,7 @@ export function LeadPagination({ currentPage, totalCount, pageSize }: Pagination
             key={page}
             type="button"
             onClick={() => goToPage(page)}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
+            className={`flex min-h-12 min-w-12 items-center justify-center rounded-lg text-sm transition-colors ${
               page === currentPage
                 ? 'bg-primary text-white'
                 : 'border border-border text-foreground hover:bg-secondary'
@@ -70,7 +70,7 @@ export function LeadPagination({ currentPage, totalCount, pageSize }: Pagination
           type="button"
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Nächste Seite"
         >
           <ChevronRight className="h-4 w-4" />

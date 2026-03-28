@@ -14,16 +14,6 @@ function PlaceholderContent() {
   return <p className="py-8 text-center text-sm text-muted-foreground">Demnächst verfügbar</p>
 }
 
-const INTEGRATIONS = [
-  {
-    name: 'Apollo.io',
-    description: 'Lead-Recherche & Kontaktdaten',
-    iconLetter: 'A',
-    iconBg: 'bg-blue-600',
-    connected: !!process.env.NEXT_PUBLIC_APOLLO_CONNECTED,
-  },
-] as const
-
 function toCommaStr(arr: string[] | null | undefined) {
   return arr?.join(', ') ?? ''
 }
@@ -223,41 +213,6 @@ export function SettingsClient({ profile, icp, email }: SettingsClientProps) {
                 </div>
               </section>
 
-              {/* Integrations */}
-              <section>
-                <h2 className="text-base font-semibold text-foreground">
-                  Verbundene Integrationen
-                </h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  Verknüpfe deine API-Verbindungen und Datenquellen
-                </p>
-
-                {INTEGRATIONS.map((integration) => (
-                  <div
-                    key={integration.name}
-                    className="mt-4 flex items-center gap-4 rounded-lg border border-border p-4"
-                  >
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full ${integration.iconBg}`}
-                    >
-                      <span className="text-sm font-bold text-white">{integration.iconLetter}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-foreground">
-                        {integration.name}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {integration.description}
-                      </span>
-                    </div>
-                    <span
-                      className={`ml-auto rounded-lg px-4 py-1.5 text-xs font-medium ${integration.connected ? 'bg-accent text-white' : 'bg-muted text-muted-foreground'}`}
-                    >
-                      {integration.connected ? 'Verbunden' : 'Nicht verbunden'}
-                    </span>
-                  </div>
-                ))}
-              </section>
             </div>
           </TabsContent>
 

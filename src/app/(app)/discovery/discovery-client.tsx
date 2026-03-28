@@ -231,31 +231,6 @@ export function DiscoveryClient({
               </button>
             </div>
 
-            {/* Datenquellen card */}
-            <div className="rounded-xl border border-border bg-white p-6">
-              <h2 className="mb-3 text-base font-semibold text-foreground">Datenquellen</h2>
-
-              <div className="flex flex-col gap-2">
-                {/* Apollo.io */}
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                    A
-                  </div>
-                  <span className="text-sm font-medium text-foreground">Apollo.io</span>
-                  <span className="text-xs font-medium text-success">Aktiv</span>
-                </div>
-
-                {/* Google Places */}
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
-                    G
-                  </div>
-                  <span className="text-sm font-medium text-foreground">Google Places</span>
-                  <span className="text-xs font-medium text-success">Aktiv</span>
-                </div>
-              </div>
-            </div>
-
             {/* Settings link */}
             <Link
               href="/settings?tab=icp"
