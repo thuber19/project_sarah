@@ -37,23 +37,37 @@ pnpm db:types     # supabase gen types typescript --local > src/lib/database.typ
 ## Frontend Structure
 ```
 src/app/
-├── (marketing)/page.tsx        # Landing page (hero, features, social proof)
-├── (auth)/login/page.tsx       # Split-screen magic link login
+├── (marketing)/
+│   ├── page.tsx                # Landing page (hero, features, social proof)
+│   └── pricing/page.tsx        # 3-tier pricing (Starter/Professional/Enterprise)
+├── (auth)/
+│   ├── login/page.tsx          # Split-screen magic link login
+│   └── magic-link-sent/page.tsx # "Check your inbox" confirmation
 ├── (app)/
-│   ├── dashboard/page.tsx      # Stats + live feed + score chart
-│   ├── leads/page.tsx          # Filterable lead table
+│   ├── dashboard/page.tsx      # Stats + live feed + score chart (+ empty state)
+│   ├── leads/page.tsx          # Filterable lead table (+ empty state)
 │   ├── leads/[id]/page.tsx     # Lead detail (score breakdown)
-│   ├── discovery/page.tsx      # Lead search + results
-│   ├── scoring/page.tsx        # Score distribution + rule config
+│   ├── leads/import/page.tsx   # CSV import with drag & drop
+│   ├── discovery/page.tsx      # Lead search + results (+ empty state)
+│   ├── scoring/page.tsx        # Score distribution + rule config (+ empty state)
+│   ├── export/page.tsx         # HubSpot Export & CRM (+ empty state)
 │   ├── settings/page.tsx       # Tabbed settings (profile, ICP, integrations)
-│   ├── agent-logs/page.tsx     # Activity timeline
-│   └── onboarding/step-{1-4}/  # 4-step onboarding wizard
+│   ├── agent-logs/page.tsx     # Activity timeline (+ empty state)
+│   └── onboarding/
+│       ├── step-{1-4}/         # 4-step onboarding wizard
+│       └── analysis/page.tsx   # AI website analysis loading screen
 src/components/
 ├── ui/                         # shadcn/ui primitives (20+ components)
-├── layout/                     # AppSidebar, AppTopbar, MarketingNavbar
-├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution
+├── shared/                     # EmptyState (reusable across all pages)
+├── layout/                     # AppSidebar, AppTopbar, NotificationBell, MarketingNavbar
+├── auth/                       # AuthLeftPanel (shared left panel for auth pages)
+├── marketing/                  # PricingCard
+├── dashboard/                  # StatCard, LiveFeed, ScoreDistribution, DashboardEmpty
 └── leads/                      # ScoreBadge, LeadTable, LeadFilters, ScoreBreakdown
 ```
+
+All data pages have empty state conditionals (toggle `hasLeads`/`hasDiscovery`/etc. flags).
+Sidebar navigation: Dashboard, Leads, Discovery, Scoring, Agent Logs, Export & CRM, Settings.
 
 ## Environment
 Copy `.env.example` to `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `APOLLO_API_KEY`, `GOOGLE_PLACES_API_KEY`.

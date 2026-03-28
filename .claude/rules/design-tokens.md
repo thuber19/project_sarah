@@ -38,8 +38,16 @@ Use `ScoreBadge` component from `src/components/leads/score-badge.tsx` for displ
 - Inactive nav: `text-sidebar-muted` (#94A3B8)
 - Width: 240px (`w-60`)
 
+## Empty State Pattern
+All data pages use `EmptyState` from `src/components/shared/empty-state.tsx`:
+- 96px circle (`bg-accent-light`) + 48px icon (`text-accent`)
+- Title (`text-xl font-bold`) + description (`text-sm text-muted-foreground text-center`)
+- Primary CTA (filled accent) + optional secondary CTA (outline)
+- Conditional rendering: `hasLeads`/`hasDiscovery`/etc. boolean flags
+
 ## Anti-Patterns
 - Never use `bg-gray-*` or `text-gray-*` — always use semantic tokens
 - Never hardcode hex colors in components — use CSS variables via Tailwind
 - Never use `font-family: Inter` directly — use `font-sans` class
 - Score colors MUST use `--score-*` tokens, not semantic red/orange/yellow
+- shadcn/ui `Button` uses `@base-ui/react` — no `asChild` prop available. Use `Link` with Tailwind classes for link-as-button patterns.

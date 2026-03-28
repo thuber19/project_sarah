@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
+import { AuthLeftPanel } from '@/components/auth/auth-left-panel'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,24 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Panel */}
-      <div className="hidden w-1/2 bg-primary lg:flex">
-        <div className="flex w-full flex-col justify-center gap-10 bg-[radial-gradient(ellipse_at_20%_80%,rgba(59,130,246,0.15),transparent_70%)] px-16 py-20">
-          <div className="w-12 h-1 rounded-full bg-accent" />
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold text-primary-foreground">Sarah</h1>
-            <p className="text-lg text-sidebar-muted">Dein AI Sales Agent für den DACH-Markt</p>
-          </div>
-          <div className="mt-8 flex flex-col gap-5">
-            {['Automatische Lead-Discovery', 'KI-gestütztes Scoring', 'DSGVO-konform'].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-success" />
-                <span className="text-[15px] text-sidebar-muted">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <AuthLeftPanel />
 
       {/* Right Panel */}
       <div className="flex w-full flex-col items-center justify-center bg-white px-10 py-10 lg:w-1/2 lg:px-20">

@@ -10,6 +10,7 @@ import {
   Compass,
   Target,
   Activity,
+  Share2,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Discovery", href: "/discovery", icon: Compass },
   { label: "Scoring", href: "/scoring", icon: Target },
   { label: "Agent Logs", href: "/agent-logs", icon: Activity },
+  { label: "Export & CRM", href: "/export", icon: Share2 },
   { label: "Settings", href: "/settings", icon: Settings },
 ] as const;
 

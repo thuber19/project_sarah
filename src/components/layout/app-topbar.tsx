@@ -1,4 +1,5 @@
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { NotificationBell } from "@/components/layout/notification-dropdown";
 
 interface AppTopbarProps {
   title: string;
@@ -22,14 +23,8 @@ export function AppTopbar({ title }: AppTopbarProps) {
           />
         </div>
 
-        {/* Notification bell */}
-        <button
-          type="button"
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Benachrichtigungen"
-        >
-          <Bell className="size-5" />
-        </button>
+        {/* Notification bell with dropdown */}
+        <NotificationBell />
 
         {/* User avatar */}
         <div

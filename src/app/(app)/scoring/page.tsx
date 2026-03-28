@@ -1,4 +1,5 @@
-import { Bell, Building2, Code, Globe, Search, TrendingUp } from "lucide-react";
+import { Bell, Building2, Code, Globe, Play, Search, Settings2, Star, TrendingUp } from "lucide-react";
+import { EmptyState } from "@/components/shared/empty-state";
 import { ScoreBadge } from "@/components/leads/score-badge";
 import { ScoringRulesToggle } from "./scoring-rules-toggle";
 
@@ -94,6 +95,9 @@ const iconMap = {
   globe: Globe,
 } as const;
 
+// TODO: Replace with real data check from Supabase
+const hasScores = true;
+
 export default function ScoringPage() {
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -131,7 +135,26 @@ export default function ScoringPage() {
         </div>
       </div>
 
-      {/* Content area */}
+      {!hasScores ? (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <EmptyState
+            icon={Star}
+            title="Noch keine Scores"
+            description="Starte eine Discovery, um Leads automatisch zu bewerten und zu priorisieren."
+            primaryAction={{
+              label: "Discovery starten",
+              href: "/discovery",
+              icon: Play,
+            }}
+            secondaryAction={{
+              label: "Scoring konfigurieren",
+              href: "/scoring",
+              icon: Settings2,
+            }}
+          />
+        </div>
+      ) : (
+      /* Content area */
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto p-8">
         {/* Header */}
         <div>
@@ -245,6 +268,7 @@ export default function ScoringPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,10 @@
-import { Bell, Search, Upload, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, Compass, Search, Upload, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadTable } from "@/components/leads/lead-table";
+import { EmptyState } from "@/components/shared/empty-state";
+
+// TODO: Replace with real data check from Supabase
+const hasLeads = true;
 
 export default function LeadsPage() {
   return (
@@ -48,52 +52,72 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Content area */}
-      <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
-        <LeadFilters />
-        <LeadTable />
+      {hasLeads ? (
+        /* Content area */
+        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-8 pt-6">
+          <LeadFilters />
+          <LeadTable />
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between pb-6">
-          <span className="text-sm text-muted-foreground">
-            127 Leads total
-          </span>
+          {/* Pagination */}
+          <div className="flex items-center justify-between pb-6">
+            <span className="text-sm text-muted-foreground">
+              127 Leads total
+            </span>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
-              aria-label="Vorherige Seite"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            {[1, 2, 3, 4, 5].map((page) => (
+            <div className="flex items-center gap-1">
               <button
-                key={page}
                 type="button"
-                className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
-                  page === 1
-                    ? "bg-primary text-white"
-                    : "border border-border text-foreground hover:bg-secondary"
-                }`}
-                aria-label={`Seite ${page}`}
-                aria-current={page === 1 ? "page" : undefined}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
+                aria-label="Vorherige Seite"
               >
-                {page}
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            ))}
 
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
-              aria-label="Nächste Seite"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              {[1, 2, 3, 4, 5].map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors ${
+                    page === 1
+                      ? "bg-primary text-white"
+                      : "border border-border text-foreground hover:bg-secondary"
+                  }`}
+                  aria-label={`Seite ${page}`}
+                  aria-current={page === 1 ? "page" : undefined}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-foreground transition-colors hover:bg-secondary"
+                aria-label="Nächste Seite"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-1 items-center justify-center p-8">
+          <EmptyState
+            icon={Users}
+            title="Noch keine Leads"
+            description="Starte eine Lead Discovery oder importiere Leads manuell."
+            primaryAction={{
+              label: "Discovery starten",
+              href: "/discovery",
+              icon: Compass,
+            }}
+            secondaryAction={{
+              label: "Leads importieren",
+              href: "/leads/import",
+              icon: Upload,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
