@@ -17,6 +17,8 @@ interface ResearchReport {
   full_report: string
 }
 
+export type { ResearchReport }
+
 export async function researchLead(
   lead: Lead,
   businessUrl?: string

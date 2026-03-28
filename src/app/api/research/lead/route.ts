@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/supabase/server'
-import { researchLead } from '@/lib/ai/tools/research-lead'
+import { researchLead, type ResearchReport } from '@/lib/ai/tools/research-lead'
 
 export async function POST(request: Request) {
   try {
@@ -52,12 +52,40 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder()
     const generator = await researchLead(lead, websiteUrl)
 
+    let report: ResearchReport | null = null
+
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of generator) {
-            const message = `data: ${JSON.stringify({ chunk })}\n\n`
-            controller.enqueue(encoder.encode(message))
+            if (chunk && typeof chunk === 'object' && 'tech_stack' in chunk) {
+              // This is the final report
+              report = chunk
+            } else {
+              // This is a text chunk
+              const message = `data: ${JSON.stringify({ chunk })}\n\n`
+              controller.enqueue(encoder.encode(message))
+            }
+          }
+
+          // Save the research report to the database
+          if (report) {
+            const { error: saveError } = await supabase
+              .from('lead_research')
+              .insert({
+                user_id: user.id,
+                lead_id: leadId,
+                tech_stack: report.tech_stack,
+                hiring_activity: report.hiring_activity,
+                growth_signals: report.growth_signals,
+                dach_data: report.dach_data,
+                full_report: report.full_report,
+                research_at: new Date().toISOString(),
+              })
+
+            if (saveError) {
+              console.error('Failed to save research:', saveError)
+            }
           }
 
           controller.enqueue(encoder.encode('data: [DONE]\n\n'))

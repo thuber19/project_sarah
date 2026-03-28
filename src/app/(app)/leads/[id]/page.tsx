@@ -4,6 +4,7 @@ import { ArrowLeft, Bell, ExternalLink, Mail, Search, User } from 'lucide-react'
 import { ScoreBadge, type Grade } from '@/components/leads/score-badge'
 import { ScoreBreakdown } from '@/components/leads/score-breakdown'
 import { AnimatedScore } from '@/components/leads/animated-score'
+import { LeadResearchButton } from '@/components/leads/lead-research-button'
 import { requireAuth } from '@/lib/supabase/server'
 
 interface Props {
@@ -124,7 +125,13 @@ export default async function LeadDetailPage({ params }: Props) {
           <div className="flex flex-1 flex-col gap-8">
             {score && (
               <div className="rounded-xl border border-border bg-white p-6">
-                <h2 className="mb-4 text-base font-semibold text-foreground">Score Breakdown</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-foreground">Score Breakdown</h2>
+                  <LeadResearchButton
+                    leadId={id}
+                    companyName={lead.company_name}
+                  />
+                </div>
                 <ScoreBreakdown
                   companyFit={score.company_fit_score}
                   contactFit={score.contact_fit_score}
@@ -148,7 +155,15 @@ export default async function LeadDetailPage({ params }: Props) {
 
             {/* Kontakt */}
             <div className="rounded-xl border border-border bg-white p-6">
-              <h2 className="mb-4 text-base font-semibold text-foreground">Kontaktinformationen</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-foreground">Kontaktinformationen</h2>
+                {!score && (
+                  <LeadResearchButton
+                    leadId={id}
+                    companyName={lead.company_name}
+                  />
+                )}
+              </div>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-muted-foreground" />
