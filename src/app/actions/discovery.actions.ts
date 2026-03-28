@@ -472,10 +472,10 @@ function deduplicateDiscoveredLeads(leads: DiscoveredLead[]): DiscoveredLead[] {
 export async function saveSelectedLeadsAction(
   campaignId: string,
   leads: DiscoveredLead[],
-): Promise<ApiResponse<{ savedCount: number }>> {
+): Promise<ApiResponse<{ savedCount: number; savedLeadIds: string[] }>> {
   const { user, supabase } = await requireAuth()
 
-  if (leads.length === 0) return ok({ savedCount: 0 })
+  if (leads.length === 0) return ok({ savedCount: 0, savedLeadIds: [] })
 
   const leadsToInsert: LeadInsert[] = leads.map((lead) => ({
     user_id: user.id,
@@ -510,6 +510,8 @@ export async function saveSelectedLeadsAction(
     return fail('INTERNAL_ERROR', 'Leads konnten nicht gespeichert werden')
   }
 
+  const savedIds = insertedLeads.map((l) => l.id)
+
   await logAgent(
     supabase,
     user.id,
@@ -518,34 +520,10 @@ export async function saveSelectedLeadsAction(
     `${insertedLeads.length} Leads gespeichert`,
   )
 
-  // Run scoring pipeline (best-effort)
-  try {
-    const { data: icpData } = await supabase
-      .from('icp_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    if (icpData) {
-      const { data: leadsForScoring } = await supabase
-        .from('leads')
-        .select('*')
-        .in(
-          'id',
-          insertedLeads.map((l) => l.id),
-        )
-      if (leadsForScoring) {
-        await runScoringPipeline(supabase, leadsForScoring as Lead[], icpData as ICP, user.id)
-      }
-    }
-  } catch (err) {
-    console.error('[Discovery] Scoring after save failed:', err)
-  }
-
   // Trigger enrichment (fire-and-forget)
   triggerEnrichment(campaignId).catch(() => {})
 
-  return ok({ savedCount: insertedLeads.length })
+  return ok({ savedCount: insertedLeads.length, savedLeadIds: savedIds })
 }
 
 // ---------------------------------------------------------------------------

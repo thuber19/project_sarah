@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Compass, Loader2, Play, Search, Settings, SlidersHorizontal, Square } from 'lucide-react'
+import { Compass, Loader2, Play, Search, Settings, SlidersHorizontal, Square, Target, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/shared/empty-state'
 import { AppTopbar } from '@/components/layout/app-topbar'
@@ -54,6 +54,12 @@ export function DiscoveryClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null)
 
+  // After save: scoring state
+  const [savedLeadIds, setSavedLeadIds] = useState<string[]>([])
+  const [isScoring, setIsScoring] = useState(false)
+  const [scoringDone, setScoringDone] = useState(false)
+  const [scoringProgress, setScoringProgress] = useState<{ current: number; total: number } | null>(null)
+
   const { execute: runDiscovery, isPending } = useServerAction(startDiscoveryAction, {
     onSuccess: (data) => {
       setDiscoveredLeads(data.leads)
@@ -67,13 +73,69 @@ export function DiscoveryClient({
 
   const { execute: saveLeads, isPending: isSaving } = useServerAction(saveSelectedLeadsAction, {
     onSuccess: (data) => {
-      toast.success(`${data.savedCount} Leads gespeichert`)
+      toast.success(`${data.savedCount} Leads gespeichert — bereit zum Scoren`)
+      setSavedLeadIds(data.savedLeadIds)
       setDiscoveredLeads([])
       setSelectedIds(new Set())
       setActiveCampaignId(null)
+      setScoringDone(false)
       router.refresh()
     },
   })
+
+  const handleScore = useCallback(async () => {
+    if (savedLeadIds.length === 0) return
+    setIsScoring(true)
+    setScoringProgress({ current: 0, total: savedLeadIds.length })
+
+    try {
+      const response = await fetch('/api/scoring/batch-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadIds: savedLeadIds }),
+      })
+
+      if (!response.ok) throw new Error('Scoring fehlgeschlagen')
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No stream')
+
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              if (data.type === 'progress') {
+                setScoringProgress({ current: data.current, total: data.total })
+              } else if (data.type === 'done') {
+                toast.success(`${data.scored} Leads gescored`)
+                setScoringDone(true)
+                setSavedLeadIds([])
+                router.refresh()
+              }
+            } catch {
+              // Ignore partial SSE chunks
+            }
+          }
+        }
+      }
+    } catch {
+      toast.error('Scoring fehlgeschlagen. Bitte auf der Scoring-Seite erneut versuchen.')
+    } finally {
+      setIsScoring(false)
+      setScoringProgress(null)
+    }
+  }, [savedLeadIds, router])
 
   function handleSave() {
     if (!activeCampaignId) return
@@ -367,6 +429,68 @@ export function DiscoveryClient({
           </div>
 
           <div className="flex flex-1 flex-col gap-4">
+            {/* Score banner — shown after leads are saved */}
+            {savedLeadIds.length > 0 && !scoringDone && (
+              <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-accent-light p-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-start gap-3">
+                  <Target className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {savedLeadIds.length} neue Leads bereit zum Scoren
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Starte das Company-Scoring, um die Leads zu klassifizieren (TOP MATCH / GOOD FIT / POOR FIT).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleScore}
+                  disabled={isScoring}
+                  className="flex shrink-0 items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+                >
+                  {isScoring ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Target className="h-4 w-4" />
+                  )}
+                  {isScoring ? 'Scoring läuft...' : 'Jetzt scoren'}
+                </button>
+              </div>
+            )}
+
+            {/* Scoring progress */}
+            {isScoring && scoringProgress && (
+              <div className="rounded-lg border border-border bg-white p-3">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                  <span>Lead {scoringProgress.current} von {scoringProgress.total}</span>
+                  <span>{Math.round((scoringProgress.current / scoringProgress.total) * 100)}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-300"
+                    style={{ width: `${(scoringProgress.current / scoringProgress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Scoring done */}
+            {scoringDone && (
+              <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+                <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Scoring abgeschlossen</p>
+                  <p className="text-xs text-muted-foreground">
+                    Alle Leads wurden bewertet.{' '}
+                    <Link href="/scoring" className="font-medium text-accent hover:underline">
+                      Zur Scoring-Übersicht →
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-base font-semibold text-foreground">
